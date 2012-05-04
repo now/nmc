@@ -1,0 +1,12 @@
+build/
+Makefile
+Makefile.in
+aclocal.m4
+config.log
+config.status
+configure
+test/atconfig
+test/atlocal
+test/package.m4
+test/testsuite
+testsuite.log

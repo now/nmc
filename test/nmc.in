@@ -1,0 +1,8 @@
+#! @SHELL@
+# @configure_input@
+# Wrapper around a non-installed nmc to make it work as an installed one.
+
+# Use the shipped files, not those installed.
+NMC_PKGDATADIR='@abs_top_srcdir@/data'
+export NMC_PKGDATADIR
+exec $PRENMC '@abs_top_builddir@/src/bison' ${1+"$@"}
