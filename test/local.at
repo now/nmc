@@ -1,0 +1,9 @@
+m4_version_prereq([2.58])
+
+m4_define([AT_NMC_CHECK],
+[AT_CHECK([nmc <]$1, [0],
+[<?xml version="1.0" encoding="UTF-8"?>
+<nml>]
+$2
+[</nml>
+])])

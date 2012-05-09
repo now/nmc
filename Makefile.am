@@ -1,3 +1,14 @@
+AM_CPPFLAGS = $(XML_CFLAGS)
+
+bin_PROGRAMS = src/nmc
+
+src_nmc_SOURCES = \
+	src/nmc.c
+
+src_nmc_LDADD = $(XML_LIBS)
+
+check_SCRIPTS = test/nmc
+
 TESTSUITE_AT =
 
 TESTSUITE = $(testdir)/testsuite
@@ -23,13 +34,13 @@ $(testdir)/package.m4: $(top_srcdir)/configure.ac
 	} >'$@'
 
 check-local: $(testdir)/atconfig $(testdir)/atlocal $(TESTSUITE)
-	$(SHELL) '$(TESTSUITE)' AUTOTEST_PATH='$(top_srcdir)/bin' $(TESTSUITEFLAGS)
+	$(SHELL) '$(TESTSUITE)' -C '$(testdir)' $(TESTSUITEFLAGS)
 
 installcheck-local: $(testdir)/atconfig $(testdir)/atlocal $(TESTSUITE)
-	$(SHELL) '$(TESTSUITE)' AUTOTEST_PATH='$(bindir)' $(TESTSUITEFLAGS)
+	$(SHELL) '$(TESTSUITE)' -C '$(testdir)' AUTOTEST_PATH='$(bindir)' $(TESTSUITEFLAGS)
 
 clean-local:
-	test ! -f '$(TESTSUITE)' || $(SHELL) '$(TESTSUITE)' --clean
+	test ! -f '$(TESTSUITE)' || $(SHELL) '$(TESTSUITE)' -C '$(testdir)' --clean
 
 $(TESTSUITE): $(testdir)/testsuite.at $(testdir)/package.m4 $(TESTSUITE_AT)
 	$(AUTOTEST) -I '$(testdir)' -o $@.tmp $@.at

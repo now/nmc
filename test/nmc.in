@@ -5,4 +5,4 @@
 # Use the shipped files, not those installed.
 NMC_PKGDATADIR='@abs_top_srcdir@/data'
 export NMC_PKGDATADIR
-exec $PRENMC '@abs_top_builddir@/src/bison' ${1+"$@"}
+exec $PRENMC '@abs_top_builddir@/src/nmc' ${1+"$@"}
