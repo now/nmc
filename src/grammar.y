@@ -4,6 +4,7 @@
 #include <libxml/tree.h>
 
 #include "grammar.h"
+#include "nmc.h"
 #include "parser.h"
 }
 
@@ -15,7 +16,7 @@
 %token <string> TITLE;
 
 %union {
-        const char *string;
+        const xmlChar *string;
 }
 
 %code
@@ -26,8 +27,8 @@ nmc_grammar_lex(YYSTYPE *value, struct nmc_parser *parser)
         return nmc_parser_lex(parser, value);
 }
 
-void
-nmc_grammar_error(const struct nmc_parser *parser, const char *message)
+static void
+nmc_grammar_error(UNUSED(const struct nmc_parser *parser), const char *message)
 {
         fputs(message, stderr);
 }
@@ -35,11 +36,11 @@ nmc_grammar_error(const struct nmc_parser *parser, const char *message)
 static xmlNodePtr
 node(const char *name)
 {
-        return xmlNewNode(NULL, name);
+        return xmlNewNode(NULL, BAD_CAST name);
 }
 
 static xmlNodePtr
-text(const char *name, const char *content)
+text(const char *name, const xmlChar *content)
 {
         xmlNodePtr text = node(name);
         xmlNodeAddContent(text, content);

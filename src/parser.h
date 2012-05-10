@@ -8,8 +8,7 @@ struct nmc_parser
         xmlDocPtr doc;
 };
 
-xmlDocPtr nmc_parse(const char *input);
+xmlDocPtr nmc_parse(const xmlChar *input);
 int nmc_parser_lex(struct nmc_parser *parser, YYSTYPE *value);
-xmlNodePtr nmc_parser_create_title(struct nmc_parser *parser, const char *title);
 
 #endif

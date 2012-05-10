@@ -8,22 +8,16 @@
 int nmc_grammar_parse(struct nmc_parser *parser);
 
 xmlDocPtr
-nmc_parser_parse(const char *input)
+nmc_parse(const xmlChar *input)
 {
         struct nmc_parser parser;
         parser.input = input;
         parser.p = parser.input;
-        parser.doc = xmlNewDoc("1.0");
+        parser.doc = xmlNewDoc(BAD_CAST "1.0");
 
         nmc_grammar_parse(&parser);
 
         return parser.doc;
-}
-
-xmlDocPtr
-nmc_parse(const char *input)
-{
-        return nmc_parser_parse(input);
 }
 
 int
@@ -36,12 +30,3 @@ nmc_parser_lex(struct nmc_parser *parser, YYSTYPE *value)
         parser->p += xmlStrlen(parser->input);
         return TITLE;
 }
-
-xmlNodePtr
-nmc_parser_create_title(struct nmc_parser *parser, const char *title)
-{
-        xmlNodePtr root = xmlNewNode(NULL, "nml");
-        xmlDocSetRootElement(parser->doc, root);
-        return xmlNewChild(root, NULL, "title", title);
-}
-

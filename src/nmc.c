@@ -4,16 +4,17 @@
 #include <unistd.h>
 
 #include "grammar.h"
+#include "nmc.h"
 #include "parser.h"
 
 int
-main(int argc, char **argv)
+main(UNUSED(int argc), UNUSED(char **argv))
 {
         char buffer[4096];
         ssize_t bytes = read(STDIN_FILENO, buffer, sizeof(buffer));
         buffer[bytes - 1] = '\0';
 
-        xmlDocPtr doc = nmc_parse(buffer);
+        xmlDocPtr doc = nmc_parse(BAD_CAST buffer);
         xmlSaveFormatFileEnc("-", doc, "UTF-8", 1);
         xmlFreeDoc(doc);
         xmlCleanupParser();
