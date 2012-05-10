@@ -1,9 +1,16 @@
 AM_CPPFLAGS = $(XML_CFLAGS)
 
+AM_YFLAGS = -d
+
+BUILT_SOURCES = \
+	src/grammar.h
+
 bin_PROGRAMS = src/nmc
 
 src_nmc_SOURCES = \
-	src/nmc.c
+	src/parser.c \
+	src/nmc.c \
+	src/grammar.y
 
 src_nmc_LDADD = $(XML_LIBS)
 

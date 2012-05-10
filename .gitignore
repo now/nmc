@@ -11,6 +11,8 @@ configure
 src/.deps/
 src/.dirstamp
 src/nmc
+src/grammar.c
+src/grammar.h
 stamp-h1
 test/atconfig
 test/atlocal
