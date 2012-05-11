@@ -13,10 +13,17 @@
 %lex-param {struct nmc_parser *parser}
 %name-prefix "nmc_grammar_"
 
-%token <string> TITLE;
+%token <substring> WORD;
+
+%type <buffer> title;
 
 %union {
         const xmlChar *string;
+        struct {
+                const xmlChar *string;
+                int length;
+        } substring;
+        xmlBufferPtr buffer;
 }
 
 %code
@@ -48,6 +55,14 @@ text(const char *name, const xmlChar *content)
 }
 
 static xmlNodePtr
+buffer(const char *name, xmlBufferPtr buffer)
+{
+        xmlNodePtr result = text(name, xmlBufferContent(buffer));
+        xmlBufferFree(buffer);
+        return result;
+}
+
+static xmlNodePtr
 child(xmlNodePtr parent, xmlNodePtr child)
 {
         xmlAddChild(parent, child);
@@ -57,4 +72,7 @@ child(xmlNodePtr parent, xmlNodePtr child)
 
 %%
 
-nmc: TITLE { xmlDocSetRootElement(parser->doc, child(node("nml"), text("title", $1))); }
+nmc: title { xmlDocSetRootElement(parser->doc, child(node("nml"), buffer("title", $1))); };
+
+title: WORD { $$ = xmlBufferCreate(); xmlBufferAdd($$, $1.string, $1.length); }
+| title WORD { $$ = $1; if ($$){ xmlBufferCCat($$, " "); xmlBufferAdd($$, $2.string, $2.length); } };

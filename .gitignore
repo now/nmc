@@ -19,4 +19,5 @@ test/atlocal
 test/nmc
 test/package.m4
 test/testsuite
+test/testsuite.dir
 testsuite.log

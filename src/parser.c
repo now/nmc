@@ -23,10 +23,22 @@ nmc_parse(const xmlChar *input)
 int
 nmc_parser_lex(struct nmc_parser *parser, YYSTYPE *value)
 {
-        if (parser->p != parser->input)
+        const xmlChar *begin = parser->p;
+
+        while (*begin == ' ')
+                begin++;
+
+        const xmlChar *end = begin;
+
+        while (*end != '\0' && *end != ' ')
+                end++;
+
+        if (begin == end)
                 return 0;
 
-        value->string = parser->input;
-        parser->p += xmlStrlen(parser->input);
-        return TITLE;
+        parser->p = end;
+
+        value->substring.string = begin;
+        value->substring.length = end - begin;
+        return WORD;
 }
