@@ -75,4 +75,4 @@ child(xmlNodePtr parent, xmlNodePtr child)
 nmc: title { xmlDocSetRootElement(parser->doc, child(node("nml"), buffer("title", $1))); };
 
 title: WORD { $$ = xmlBufferCreate(); xmlBufferAdd($$, $1.string, $1.length); }
-| title WORD { $$ = $1; if ($$){ xmlBufferCCat($$, " "); xmlBufferAdd($$, $2.string, $2.length); } };
+| title WORD { $$ = $1; if ($$) { xmlBufferCCat($$, " "); xmlBufferAdd($$, $2.string, $2.length); } };
