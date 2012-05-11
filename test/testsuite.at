@@ -12,3 +12,14 @@ AT_NMC_CHECK([title],
 [[  <title>Title</title>]])
 
 AT_CLEANUP
+
+AT_SETUP([Document only consisting of a title with multiple words])
+
+AT_DATA([title],
+[[  Word1   Word2
+]])
+
+AT_NMC_CHECK([title],
+[[  <title>Word1 Word2</title>]])
+
+AT_CLEANUP
