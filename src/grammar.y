@@ -14,11 +14,12 @@
 %name-prefix "nmc_grammar_"
 
 %token END 0 "end of file"
-%token <substring> WORD;
-%token <substring> BLANKLINE;
+%token <substring> WORD
+%token <substring> BLANKLINE
+%token PARAGRAPH
 
-%type <buffer> words blanklines;
-%type <node> title blocks block paragraph;
+%type <buffer> words blanklines paragraphline
+%type <node> title blocks block paragraph
 
 %union {
         const xmlChar *string;
@@ -74,6 +75,15 @@ child(xmlNodePtr parent, xmlNodePtr child)
         xmlAddChild(parent, child);
         return parent;
 }
+
+static xmlNodePtr
+buffer_append(xmlNodePtr parent, xmlBufferPtr buffer)
+{
+        xmlAddChild(parent, xmlNewText(BAD_CAST " "));
+        xmlAddChild(parent, xmlNewText(xmlBufferContent(buffer)));
+        xmlBufferFree(buffer);
+        return parent;
+}
 }
 
 %%
@@ -94,4 +104,7 @@ blanklines: BLANKLINE { $$ = xmlBufferCreate(); xmlBufferAdd($$, $1.string, $1.l
 
 block: paragraph;
 
-paragraph: words { $$ = buffer("p", $1); };
+paragraph: paragraphline { $$ = buffer("p", $1); }
+| paragraph paragraphline { $$ = buffer_append($1, $2); };
+
+paragraphline: PARAGRAPH words { $$ = $2; };
