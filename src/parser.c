@@ -20,25 +20,40 @@ nmc_parse(const xmlChar *input)
         return parser.doc;
 }
 
+static int
+substring(struct nmc_parser *parser, YYSTYPE *value, const xmlChar *end, int type)
+{
+        value->substring.string = parser->p;
+        value->substring.length = end - parser->p;
+        parser->p = end;
+        return type;
+}
+
 int
 nmc_parser_lex(struct nmc_parser *parser, YYSTYPE *value)
 {
-        const xmlChar *begin = parser->p;
+        while (*parser->p == ' ')
+                parser->p++;
 
-        while (*begin == ' ')
-                begin++;
+        const xmlChar *end = parser->p;
 
-        const xmlChar *end = begin;
-
-        while (*end != '\0' && *end != ' ')
+        switch (*end) {
+        case '\n':
                 end++;
+                while (*end == ' ')
+                        end++;
+                if (*end == '\n') {
+                        end++;
+                        return substring(parser, value, end, BLANKLINE);
+                }
+        default:
+                break;
+        }
 
-        if (begin == end)
-                return 0;
+        while (*end != '\0' && *end != ' ' && *end != '\n')
+                end++;
+        if (parser->p == end)
+                return END;
 
-        parser->p = end;
-
-        value->substring.string = begin;
-        value->substring.length = end - begin;
-        return WORD;
+        return substring(parser, value, end, WORD);
 }

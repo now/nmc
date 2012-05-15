@@ -13,9 +13,12 @@
 %lex-param {struct nmc_parser *parser}
 %name-prefix "nmc_grammar_"
 
+%token END 0 "end of file"
 %token <substring> WORD;
+%token <substring> BLANKLINE;
 
-%type <buffer> title;
+%type <buffer> words blanklines;
+%type <node> title blocks block paragraph;
 
 %union {
         const xmlChar *string;
@@ -24,6 +27,7 @@
                 int length;
         } substring;
         xmlBufferPtr buffer;
+        xmlNodePtr node;
 }
 
 %code
@@ -65,6 +69,8 @@ buffer(const char *name, xmlBufferPtr buffer)
 static xmlNodePtr
 child(xmlNodePtr parent, xmlNodePtr child)
 {
+        if (child == NULL)
+                return parent;
         xmlAddChild(parent, child);
         return parent;
 }
@@ -72,7 +78,20 @@ child(xmlNodePtr parent, xmlNodePtr child)
 
 %%
 
-nmc: title { xmlDocSetRootElement(parser->doc, child(node("nml"), buffer("title", $1))); };
+nmc: title blocks { xmlDocSetRootElement(parser->doc, child(child(node("nml"), $1), $2)); };
 
-title: WORD { $$ = xmlBufferCreate(); xmlBufferAdd($$, $1.string, $1.length); }
-| title WORD { $$ = $1; if ($$) { xmlBufferCCat($$, " "); xmlBufferAdd($$, $2.string, $2.length); } };
+title: words { $$ = buffer("title", $1); }
+
+words: WORD { $$ = xmlBufferCreate(); xmlBufferAdd($$, $1.string, $1.length); }
+| words WORD { $$ = $1; if ($$) { xmlBufferCCat($$, " "); xmlBufferAdd($$, $2.string, $2.length); } };
+
+blocks: /* empty */ { $$ = NULL; }
+| blanklines block { $$ = $2; }
+| blocks blanklines block { $$ = $1; xmlAddSibling($$, $3); };
+
+blanklines: BLANKLINE { $$ = xmlBufferCreate(); xmlBufferAdd($$, $1.string, $1.length); }
+| blanklines BLANKLINE { $$ = $1; if ($$) { xmlBufferCCat($$, " "); xmlBufferAdd($$, $2.string, $2.length); } };
+
+block: paragraph;
+
+paragraph: words { $$ = buffer("p", $1); };

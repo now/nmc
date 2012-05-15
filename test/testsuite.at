@@ -23,3 +23,17 @@ AT_NMC_CHECK([title],
 [[  <title>Word1 Word2</title>]])
 
 AT_CLEANUP
+
+AT_SETUP([Document consisting of a title followed by a paragraph])
+
+AT_DATA([title],
+[[Title
+
+  Paragraph
+]])
+
+AT_NMC_CHECK([title],
+[[  <title>Title</title>
+  <p>Paragraph</p>]])
+
+AT_CLEANUP
