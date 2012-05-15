@@ -17,9 +17,10 @@
 %token <substring> WORD
 %token <substring> BLANKLINE
 %token PARAGRAPH
+%token SECTION
 
 %type <buffer> words blanklines paragraphline
-%type <node> title blocks block paragraph
+%type <node> title blocks block paragraph section
 
 %union {
         const xmlChar *string;
@@ -102,9 +103,12 @@ blocks: /* empty */ { $$ = NULL; }
 blanklines: BLANKLINE { $$ = xmlBufferCreate(); xmlBufferAdd($$, $1.string, $1.length); }
 | blanklines BLANKLINE { $$ = $1; if ($$) { xmlBufferCCat($$, " "); xmlBufferAdd($$, $2.string, $2.length); } };
 
-block: paragraph;
+block: paragraph
+| section;
 
 paragraph: paragraphline { $$ = buffer("p", $1); }
 | paragraph paragraphline { $$ = buffer_append($1, $2); };
 
 paragraphline: PARAGRAPH words { $$ = $2; };
+
+section: SECTION title blocks { $$ = child(child(node("section"), $2), $3); };

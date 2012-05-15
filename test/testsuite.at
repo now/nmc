@@ -52,3 +52,22 @@ AT_NMC_CHECK([title],
   <p>Line1 Line2</p>]])
 
 AT_CLEANUP
+
+AT_SETUP([Document consisting of a title followed by a section containing a paragraph])
+
+AT_DATA([title],
+[[Title
+
+§ Section Title
+
+    Paragraph
+]])
+
+AT_NMC_CHECK([title],
+[[  <title>Title</title>
+  <section>
+    <title>Section Title</title>
+    <p>Paragraph</p>
+  </section>]])
+
+AT_CLEANUP

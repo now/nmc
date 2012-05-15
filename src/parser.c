@@ -46,12 +46,21 @@ nmc_parser_lex(struct nmc_parser *parser, YYSTYPE *value)
         switch (*end) {
         case '\n':
                 end++;
-                while (*end == ' ')
-                        end++;
-                if (*end == '\n')
-                        return substring(parser, value, end, BLANKLINE);
-                else
-                        return token(parser, end, PARAGRAPH);
+                switch (*end) {
+                case ' ':
+                        while (*end == ' ')
+                                end++;
+                case '\n':
+                        if (*end == '\n')
+                                return substring(parser, value, end, BLANKLINE);
+                        else
+                                return token(parser, end, PARAGRAPH);
+                default:
+                        break;
+                }
+                if (xmlStrncmp(end, BAD_CAST "§ ", xmlUTF8Size(BAD_CAST "§ ")) == 0) {
+                        return token(parser, end + xmlUTF8Size(BAD_CAST "§ "), SECTION);
+                }
         default:
                 break;
         }
