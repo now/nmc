@@ -13,6 +13,7 @@
 %parse-param {struct nmc_parser *parser}
 %lex-param {struct nmc_parser *parser}
 %name-prefix "nmc_grammar_"
+%error-verbose
 
 %token END 0 "end of file"
 %token ERROR

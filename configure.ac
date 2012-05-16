@@ -56,7 +56,6 @@ if test "${enableval}" = yes; then
   nmc_WARN_ADD([-Wsuggest-attribute=const])
   nmc_WARN_ADD([-Wsuggest-attribute=noreturn])
   nmc_WARN_ADD([-Wsuggest-attribute=pure])
-  nmc_WARN_ADD([-Wswitch-default])
   nmc_WARN_ADD([-Wswitch-enum])
   nmc_WARN_ADD([-Wundef])
   nmc_WARN_ADD([-Wwrite-strings])
