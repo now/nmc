@@ -13,6 +13,7 @@ src/.dirstamp
 src/nmc
 src/grammar.c
 src/grammar.h
+src/grammar.output
 stamp-h1
 test/atconfig
 test/atlocal

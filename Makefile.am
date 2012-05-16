@@ -1,6 +1,6 @@
 AM_CFLAGS = $(WARN_CFLAGS) $(WERROR_CFLAGS) $(XML_CFLAGS)
 
-AM_YFLAGS = -d
+AM_YFLAGS = -d -v
 
 BUILT_SOURCES = \
 	src/grammar.h
