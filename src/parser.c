@@ -71,11 +71,8 @@ bol:
                         parser->p = end - 2;
                         return INDENT;
                 } else if (spaces < parser->indent && spaces % 2 == 0) {
-                        /* TODO: Calculate this. */
-                        while (parser->indent != spaces) {
-                                parser->indent -= 2;
-                                parser->dedents++;
-                        }
+                        parser->dedents = (parser->indent - spaces) / 2;
+                        parser->indent -= 2 * parser->dedents;
                         parser->p = end;
                 } else if (end != parser->p)
                         return token(parser, end, ERROR);
