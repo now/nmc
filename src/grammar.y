@@ -13,6 +13,7 @@
 %parse-param {struct nmc_parser *parser}
 %lex-param {struct nmc_parser *parser}
 %name-prefix "nmc_grammar_"
+%debug
 %error-verbose
 
 %token END 0 "end of file"
@@ -20,11 +21,12 @@
 %token <substring> WORD
 %token <substring> BLANKLINE
 %token PARAGRAPH
+%token CONTINUATION
 %token SECTION
 %token INDENT
 %token DEDENT
 
-%type <buffer> words blanklines paragraphline oblanklines
+%type <buffer> words blanklines oblanklines
 %type <node> title oblockssections blocks block paragraph sections section
 
 %union {
@@ -82,6 +84,7 @@ child(xmlNodePtr parent, xmlNodePtr child)
         return parent;
 }
 
+/*
 static xmlNodePtr
 buffer_append(xmlNodePtr parent, xmlBufferPtr buffer)
 {
@@ -89,6 +92,15 @@ buffer_append(xmlNodePtr parent, xmlBufferPtr buffer)
         xmlAddChild(parent, xmlNewText(xmlBufferContent(buffer)));
         xmlBufferFree(buffer);
         return parent;
+}
+*/
+
+#define YYPRINT(file, type, value) print_token_value(file, type, value)
+static void
+print_token_value(FILE *file, int type, YYSTYPE value)
+{
+        if (type == WORD)
+                fprintf(file, "%.*s", value.substring.length, value.substring.string);
 }
 }
 
@@ -100,6 +112,7 @@ title: words { $$ = buffer("title", $1); }
 
 words: WORD { $$ = xmlBufferCreate(); xmlBufferAdd($$, $1.string, $1.length); }
 | words WORD { $$ = $1; if ($$) { xmlBufferCCat($$, " "); xmlBufferAdd($$, $2.string, $2.length); } };
+| words CONTINUATION WORD { $$ = $1; if ($$) { xmlBufferCCat($$, " "); xmlBufferAdd($$, $3.string, $3.length); } };
 
 oblockssections: /* empty */ { $$ = NULL; }
 | blanklines blocks { $$ = $2; };
@@ -114,10 +127,7 @@ blanklines: BLANKLINE { $$ = xmlBufferCreate(); xmlBufferAdd($$, $1.string, $1.l
 
 block: paragraph;
 
-paragraph: paragraphline { $$ = buffer("p", $1); }
-| paragraph paragraphline { $$ = buffer_append($1, $2); };
-
-paragraphline: PARAGRAPH words { $$ = $2; };
+paragraph: PARAGRAPH words { $$ = buffer("p", $2); };
 
 sections: section
 | sections section { $$ = $1; xmlAddSibling($$, $2); };

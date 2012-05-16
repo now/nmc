@@ -68,25 +68,27 @@ bol:
                         /* paragraph */
                 } else if (spaces == parser->indent + 4) {
                         parser->indent += 2;
-                        parser->p = end - 2;
-                        return INDENT;
+                        return token(parser, end - 2, INDENT);
                 } else if (spaces < parser->indent && spaces % 2 == 0) {
                         parser->dedents = (parser->indent - spaces) / 2;
                         parser->indent -= 2 * parser->dedents;
-                        parser->p = end;
                 } else if (end != parser->p)
                         return token(parser, end, ERROR);
         }
 
         if (parser->dedents > 0) {
                 parser->dedents--;
-                return DEDENT;
+                return token(parser, end, DEDENT);
         }
 
         if (parser->state == AFTER_INDENT) {
                 parser->state = OTHER;
                 if (xmlStrncmp(end, BAD_CAST "  ", 2) == 0)
-                        return token(parser, end + 2, PARAGRAPH);
+                        return token(parser, end + 2,
+                                     end - 2 >= parser->input &&
+                                     *(end - 1) == '\n' &&
+                                     *(end - 2) != '\n' &&
+                                     *(end - 2) != ' ' ? CONTINUATION : PARAGRAPH);
                 else if (xmlStrncmp(end, BAD_CAST "§ ", xmlUTF8Size(BAD_CAST "§ ")) == 0)
                         return token(parser, end + xmlUTF8Size(BAD_CAST "§ "), SECTION);
                 else if (parser->p == end)

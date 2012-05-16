@@ -2,11 +2,14 @@
 
 #include <libxml/tree.h>
 #include <stdbool.h>
+#include <stdlib.h>
 #include <unistd.h>
 
 #include "grammar.h"
 #include "nmc.h"
 #include "parser.h"
+
+extern int nmc_grammar_debug;
 
 int
 main(UNUSED(int argc), UNUSED(char **argv))
@@ -15,6 +18,8 @@ main(UNUSED(int argc), UNUSED(char **argv))
         ssize_t bytes = read(STDIN_FILENO, buffer, sizeof(buffer));
         buffer[bytes] = '\0';
 
+        if (getenv("NMC_DEBUG"))
+                nmc_grammar_debug = 1;
         xmlDocPtr doc = nmc_parse(BAD_CAST buffer);
         xmlSaveFormatFileEnc("-", doc, "UTF-8", 1);
         xmlFreeDoc(doc);
