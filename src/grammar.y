@@ -61,17 +61,10 @@ node(const char *name)
 }
 
 static xmlNodePtr
-text(const char *name, const xmlChar *content)
+content(const char *name, xmlBufferPtr buffer)
 {
-        xmlNodePtr text = node(name);
-        xmlNodeAddContent(text, content);
-        return text;
-}
-
-static xmlNodePtr
-buffer(const char *name, xmlBufferPtr buffer)
-{
-        xmlNodePtr result = text(name, xmlBufferContent(buffer));
+        xmlNodePtr result = node(name);
+        xmlNodeAddContent(result, xmlBufferContent(buffer));
         xmlBufferFree(buffer);
         return result;
 }
@@ -94,6 +87,22 @@ sibling(xmlNodePtr first, xmlNodePtr last)
         return first;
 }
 
+static xmlBufferPtr
+buffer(const xmlChar *string, int length)
+{
+        xmlBufferPtr buffer = xmlBufferCreate();
+        xmlBufferAdd(buffer, string, length);
+        return buffer;
+}
+
+static xmlBufferPtr
+append(xmlBufferPtr buffer, const xmlChar *string, int length)
+{
+        xmlBufferCCat(buffer, " ");
+        xmlBufferAdd(buffer, string, length);
+        return buffer;
+}
+
 #define YYPRINT(file, type, value) print_token_value(file, type, value)
 static void
 print_token_value(FILE *file, int type, YYSTYPE value)
@@ -107,11 +116,11 @@ print_token_value(FILE *file, int type, YYSTYPE value)
 
 nmc: title oblockssections0 { xmlDocSetRootElement(parser->doc, child(child(node("nml"), $1), $2)); };
 
-title: words { $$ = buffer("title", $1); }
+title: words { $$ = content("title", $1); }
 
-words: WORD { $$ = xmlBufferCreate(); xmlBufferAdd($$, $1.string, $1.length); }
-| words WORD { $$ = $1; xmlBufferCCat($$, " "); xmlBufferAdd($$, $2.string, $2.length); };
-| words CONTINUATION WORD { $$ = $1; xmlBufferCCat($$, " "); xmlBufferAdd($$, $3.string, $3.length); };
+words: WORD { $$ = buffer($1.string, $1.length); }
+| words WORD { $$ = append($1, $2.string, $2.length); }
+| words CONTINUATION WORD { $$ = append($1, $3.string, $3.length); };
 
 oblockssections0: /* empty */ { $$ = NULL; }
 | BLOCKSEPARATOR blockssections { $$ = $2; };
@@ -129,12 +138,12 @@ blocks: block
 block: paragraph
 | enumeration;
 
-paragraph: PARAGRAPH words { $$ = buffer("p", $2); };
+paragraph: PARAGRAPH words { $$ = content("p", $2); };
 
 enumeration: enumerationitem { $$ = child(node("enumeration"), $1); }
 | enumeration enumerationitem { $$ = child($1, $2); }
 
-enumerationitem: ENUMERATION { parser->want = INDENT; } words oblocks { $$ = child(child(node("item"), buffer("p", $3)), $4); };
+enumerationitem: ENUMERATION { parser->want = INDENT; } words oblocks { $$ = child(child(node("item"), content("p", $3)), $4); };
 
 oblocks: /* empty */ { $$ = NULL; }
 | INDENT blocks DEDENT { $$ = $2; };
