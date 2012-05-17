@@ -23,7 +23,8 @@ nmc_parse(const xmlChar *input)
         parser.p = parser.input;
         parser.dedents = 0;
         parser.indent = 0;
-        parser.state = OTHER;
+        parser.bol = false;
+        parser.previous = ERROR;
         parser.doc = xmlNewDoc(BAD_CAST "1.0");
 
         skip(&parser, ' ');
@@ -37,6 +38,7 @@ static int
 token(struct nmc_parser *parser, const xmlChar *end, int type)
 {
         parser->p = end;
+        parser->previous = type;
         return type;
 }
 
@@ -51,47 +53,23 @@ substring(struct nmc_parser *parser, YYSTYPE *value, const xmlChar *end, int typ
 int
 nmc_parser_lex(struct nmc_parser *parser, YYSTYPE *value)
 {
-        const xmlChar *end;
+        const xmlChar *end = parser->p;
 
-bol:
-        end = parser->p;
-
-        if (parser->state == BEGINNING_OF_LINE) {
-                while (*end == ' ')
-                        end++;
-                if (*end == '\n')
-                        return substring(parser, value, end + 1, BLANKLINE);
-                parser->state = AFTER_INDENT;
-                int spaces = end - parser->p;
-                if (spaces == parser->indent + 2) {
-                        end -= 2;
-                        /* paragraph */
-                } else if (spaces == parser->indent + 4) {
-                        parser->indent += 2;
-                        return token(parser, end - 2, INDENT);
-                } else if (spaces < parser->indent && spaces % 2 == 0) {
-                        parser->dedents = (parser->indent - spaces) / 2;
-                        parser->indent -= 2 * parser->dedents;
-                } else if (end != parser->p)
-                        return token(parser, end, ERROR);
-        }
-
+dedents:
         if (parser->dedents > 0) {
                 parser->dedents--;
                 return token(parser, end, DEDENT);
         }
 
-        if (parser->state == AFTER_INDENT) {
-                parser->state = OTHER;
+        if (parser->bol) {
+                parser->bol = false;
                 if (xmlStrncmp(end, BAD_CAST "  ", 2) == 0)
-                        return token(parser, end + 2,
-                                     end - 2 >= parser->input &&
-                                     *(end - 1) == '\n' &&
-                                     *(end - 2) != '\n' &&
-                                     *(end - 2) != ' ' ? CONTINUATION : PARAGRAPH);
+                        return token(parser, end + 2, PARAGRAPH);
                 else if (xmlStrncmp(end, BAD_CAST "§ ", xmlUTF8Size(BAD_CAST "§ ")) == 0)
                         return token(parser, end + xmlUTF8Size(BAD_CAST "§ "), SECTION);
-                else if (parser->p == end)
+                else if (xmlStrncmp(end, BAD_CAST "• ", xmlUTF8Size(BAD_CAST "• ")) == 0)
+                        return token(parser, end + xmlUTF8Size(BAD_CAST "• "), ENUMERATION);
+                else if (*end == '\0')
                         return END;
                 else
                         return token(parser, end, ERROR);
@@ -101,9 +79,45 @@ bol:
         end = parser->p;
 
         if (*end == '\n') {
-                parser->p = end + 1;
-                parser->state = BEGINNING_OF_LINE;
-                goto bol;
+                end++;
+                parser->p = end;
+                while (*end == ' ')
+                        end++;
+                if (*end == '\n') {
+                        parser->bol = true;
+                        end++;
+                        parser->p = end;
+                        while (*end == ' ' || *end == '\n') {
+                                if (*end == '\n')
+                                        parser->p = end + 1;
+                                end++;
+                        }
+                        int spaces = end - parser->p;
+                        if (parser->want == INDENT && spaces > parser->indent + 2) {
+                                parser->want = ERROR;
+                                parser->indent += 2;
+                                return token(parser, parser->p + parser->indent, INDENT);
+                        } else if (spaces < parser->indent && spaces % 2 == 0) {
+                                parser->want = ERROR;
+                                parser->dedents = (parser->indent - spaces) / 2;
+                                parser->indent -= 2 * parser->dedents;
+                                goto dedents;
+                        } else {
+                                parser->want = ERROR;
+                                return token(parser, parser->p, BLOCKSEPARATOR);
+                        }
+                } else {
+                        if (end != parser->p)
+                                return token(parser, end, CONTINUATION);
+                        else if (parser->indent > 0) {
+                                /* TODO: Not quite sure about this test.  We
+                                 * might want to check if end == '\0' &&
+                                 * parser->indent > 0 instead. */
+                                parser->dedents = parser->indent / 2;
+                                parser->indent = 0;
+                                goto dedents;
+                        }
+                }
         }
 
         while (*end != '\0' && *end != ' ' && *end != '\n')

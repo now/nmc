@@ -19,15 +19,16 @@
 %token END 0 "end of file"
 %token ERROR
 %token <substring> WORD
-%token <substring> BLANKLINE
 %token PARAGRAPH
 %token CONTINUATION
+%token BLOCKSEPARATOR
+%token ENUMERATION
 %token SECTION
 %token INDENT
 %token DEDENT
 
-%type <buffer> words blanklines oblanklines
-%type <node> title oblockssections blocks block paragraph sections section
+%type <buffer> words
+%type <node> title oblockssections0 oblockssections blockssections blocks block paragraph sections section oblocks enumeration enumerationitem
 
 %union {
         const xmlChar *string;
@@ -50,7 +51,7 @@ nmc_grammar_lex(YYSTYPE *value, struct nmc_parser *parser)
 static void
 nmc_grammar_error(UNUSED(const struct nmc_parser *parser), const char *message)
 {
-        fprintf(stderr, "%s (%d): %s\n", (const char *)parser->p, parser->state, message);
+        fprintf(stderr, "%s: %s\n", (const char *)parser->p, message);
 }
 
 static xmlNodePtr
@@ -84,16 +85,14 @@ child(xmlNodePtr parent, xmlNodePtr child)
         return parent;
 }
 
-/*
 static xmlNodePtr
-buffer_append(xmlNodePtr parent, xmlBufferPtr buffer)
+sibling(xmlNodePtr first, xmlNodePtr last)
 {
-        xmlAddChild(parent, xmlNewText(BAD_CAST " "));
-        xmlAddChild(parent, xmlNewText(xmlBufferContent(buffer)));
-        xmlBufferFree(buffer);
-        return parent;
+        if (last == NULL)
+                return last;
+        xmlAddSibling(first, last);
+        return first;
 }
-*/
 
 #define YYPRINT(file, type, value) print_token_value(file, type, value)
 static void
@@ -106,33 +105,41 @@ print_token_value(FILE *file, int type, YYSTYPE value)
 
 %%
 
-nmc: title oblockssections { xmlDocSetRootElement(parser->doc, child(child(node("nml"), $1), $2)); };
+nmc: title oblockssections0 { xmlDocSetRootElement(parser->doc, child(child(node("nml"), $1), $2)); };
 
 title: words { $$ = buffer("title", $1); }
 
 words: WORD { $$ = xmlBufferCreate(); xmlBufferAdd($$, $1.string, $1.length); }
-| words WORD { $$ = $1; if ($$) { xmlBufferCCat($$, " "); xmlBufferAdd($$, $2.string, $2.length); } };
-| words CONTINUATION WORD { $$ = $1; if ($$) { xmlBufferCCat($$, " "); xmlBufferAdd($$, $3.string, $3.length); } };
+| words WORD { $$ = $1; xmlBufferCCat($$, " "); xmlBufferAdd($$, $2.string, $2.length); };
+| words CONTINUATION WORD { $$ = $1; xmlBufferCCat($$, " "); xmlBufferAdd($$, $3.string, $3.length); };
+
+oblockssections0: /* empty */ { $$ = NULL; }
+| BLOCKSEPARATOR blockssections { $$ = $2; };
 
 oblockssections: /* empty */ { $$ = NULL; }
-| blanklines blocks { $$ = $2; };
-| blanklines blocks blanklines sections { $$ = $2; xmlAddSibling($$, $4); };
-| blanklines sections { $$ = $2; };
+| INDENT blockssections DEDENT { $$ = $2; };
+
+blockssections: blocks
+| blocks BLOCKSEPARATOR sections { $$ = sibling($1, $3); }
+| sections;
 
 blocks: block
-| blocks blanklines block { $$ = $1; xmlAddSibling($$, $3); };
+| blocks BLOCKSEPARATOR block { $$ = sibling($1, $3); };
 
-blanklines: BLANKLINE { $$ = xmlBufferCreate(); xmlBufferAdd($$, $1.string, $1.length); }
-| blanklines BLANKLINE { $$ = $1; if ($$) { xmlBufferCCat($$, " "); xmlBufferAdd($$, $2.string, $2.length); } };
-
-block: paragraph;
+block: paragraph
+| enumeration;
 
 paragraph: PARAGRAPH words { $$ = buffer("p", $2); };
 
+enumeration: enumerationitem { $$ = child(node("enumeration"), $1); }
+| enumeration enumerationitem { $$ = child($1, $2); }
+
+enumerationitem: ENUMERATION { parser->want = INDENT; } words oblocks { $$ = child(child(node("item"), buffer("p", $3)), $4); };
+
+oblocks: /* empty */ { $$ = NULL; }
+| INDENT blocks DEDENT { $$ = $2; };
+
 sections: section
-| sections section { $$ = $1; xmlAddSibling($$, $2); };
+| sections section { $$ = sibling($1, $2); };
 
-section: SECTION title blanklines INDENT blocks oblanklines DEDENT { $$ = child(child(node("section"), $2), $5); };
-
-oblanklines: /* empty */ { $$ = NULL; }
-| blanklines;
+section: SECTION { parser->want = INDENT; } title oblockssections { $$ = child(child(node("section"), $3), $4); };

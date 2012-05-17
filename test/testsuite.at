@@ -128,3 +128,27 @@ AT_NMC_CHECK([title],
   </section>]])
 
 AT_CLEANUP
+
+AT_SETUP([Document consisting of a title followed by a paragraph, an enumeration, and a paragraph])
+
+AT_DATA([title],
+[[Title
+
+  Paragraph1
+
+• Item1
+
+  Paragraph2
+]])
+
+AT_NMC_CHECK([title],
+[[  <title>Title</title>
+  <p>Paragraph1</p>
+  <enumeration>
+    <item>
+      <p>Item1</p>
+    </item>
+  </enumeration>
+  <p>Paragraph2</p>]])
+
+AT_CLEANUP
