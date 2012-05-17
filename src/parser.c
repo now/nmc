@@ -24,7 +24,6 @@ nmc_parse(const xmlChar *input)
         parser.dedents = 0;
         parser.indent = 0;
         parser.bol = false;
-        parser.previous = ERROR;
         parser.doc = xmlNewDoc(BAD_CAST "1.0");
 
         skip(&parser, ' ');
@@ -38,7 +37,6 @@ static int
 token(struct nmc_parser *parser, const xmlChar *end, int type)
 {
         parser->p = end;
-        parser->previous = type;
         return type;
 }
 

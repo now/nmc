@@ -8,7 +8,6 @@ struct nmc_parser
         int indent;
         int dedents;
         bool bol;
-        int previous;
         int want;
         xmlDocPtr doc;
 };
