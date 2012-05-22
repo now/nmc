@@ -102,6 +102,48 @@ AT_NMC_CHECK([title],
 
 AT_CLEANUP
 
+AT_SETUP([Document consisting of a title followed by a section containing two paragraphs])
+
+AT_DATA([title],
+[[Title
+
+§ Section
+
+    Paragraph1
+
+    Paragraph2
+]])
+
+AT_NMC_CHECK([title],
+[[  <title>Title</title>
+  <section>
+    <title>Section</title>
+    <p>Paragraph1</p>
+    <p>Paragraph2</p>
+  </section>]])
+
+AT_CLEANUP
+
+AT_SETUP([Document consisting of a title followed by a section containing a multi-line paragraph])
+
+AT_DATA([title],
+[[Title
+
+§ Section
+
+    Line1
+    Line2
+]])
+
+AT_NMC_CHECK([title],
+[[  <title>Title</title>
+  <section>
+    <title>Section</title>
+    <p>Line1 Line2</p>
+  </section>]])
+
+AT_CLEANUP
+
 AT_SETUP([Document consisting of a title followed by two sections])
 
 AT_DATA([title],
@@ -150,5 +192,53 @@ AT_NMC_CHECK([title],
     </item>
   </enumeration>
   <p>Paragraph2</p>]])
+
+AT_CLEANUP
+
+AT_SETUP([Document consisting of a title followed by a two-item enumeration])
+
+AT_DATA([title],
+[[Title
+
+• Item1
+• Item2
+]])
+
+AT_NMC_CHECK([title],
+[[  <title>Title</title>
+  <enumeration>
+    <item>
+      <p>Item1</p>
+    </item>
+    <item>
+      <p>Item2</p>
+    </item>
+  </enumeration>]])
+
+AT_CLEANUP
+
+AT_SETUP([Document consisting of a title followed by a two-item enumeration, the first containing two paragraphs])
+
+AT_DATA([title],
+[[Title
+
+•   Line1
+    Line2
+
+    Paragraph2
+•   Item2
+]])
+
+AT_NMC_CHECK([title],
+[[  <title>Title</title>
+  <enumeration>
+    <item>
+      <p>Line1 Line2</p>
+      <p>Paragraph2</p>
+    </item>
+    <item>
+      <p>Item2</p>
+    </item>
+  </enumeration>]])
 
 AT_CLEANUP

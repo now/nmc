@@ -48,18 +48,34 @@ substring(struct nmc_parser *parser, YYSTYPE *value, const xmlChar *end, int typ
         return token(parser, end, type);
 }
 
+static int
+dedent(struct nmc_parser *parser, const xmlChar *end)
+{
+        /* TODO: assert(parser->dedents > 0); */
+        parser->dedents--;
+        return token(parser, end, DEDENT);
+}
+
+static int
+dedents(struct nmc_parser *parser, const xmlChar *end, int spaces)
+{
+        parser->dedents = (parser->indent - spaces) / 2;
+        parser->indent -= 2 * parser->dedents;
+        /* TODO: assert(parser->indent >= 0); */
+        return dedent(parser, end);
+}
+
 int
 nmc_parser_lex(struct nmc_parser *parser, YYSTYPE *value)
 {
         const xmlChar *end = parser->p;
 
-dedents:
-        if (parser->dedents > 0) {
-                parser->dedents--;
-                return token(parser, end, DEDENT);
-        }
+        if (parser->dedents > 0)
+                return dedent(parser, end);
 
+bol:
         if (parser->bol) {
+                /* TODO Make this into a function */
                 parser->bol = false;
                 if (xmlStrncmp(end, BAD_CAST "  ", 2) == 0)
                         return token(parser, end + 2, PARAGRAPH);
@@ -67,6 +83,7 @@ dedents:
                         return token(parser, end + xmlUTF8Size(BAD_CAST "§ "), SECTION);
                 else if (xmlStrncmp(end, BAD_CAST "• ", xmlUTF8Size(BAD_CAST "• ")) == 0)
                         return token(parser, end + xmlUTF8Size(BAD_CAST "• "), ENUMERATION);
+                */
                 else if (*end == '\0')
                         return END;
                 else
@@ -97,23 +114,24 @@ dedents:
                                 return token(parser, parser->p + parser->indent, INDENT);
                         } else if (spaces < parser->indent && spaces % 2 == 0) {
                                 parser->want = ERROR;
-                                parser->dedents = (parser->indent - spaces) / 2;
-                                parser->indent -= 2 * parser->dedents;
-                                goto dedents;
+                                return dedents(parser, end, spaces);
                         } else {
                                 parser->want = ERROR;
                                 return token(parser, parser->p, BLOCKSEPARATOR);
                         }
                 } else {
-                        if (end != parser->p)
+                        int spaces = end - parser->p;
+                        if (spaces > parser->indent) {
                                 return token(parser, end, CONTINUATION);
-                        else if (parser->indent > 0) {
-                                /* TODO: Not quite sure about this test.  We
-                                 * might want to check if end == '\0' &&
-                                 * parser->indent > 0 instead. */
-                                parser->dedents = parser->indent / 2;
-                                parser->indent = 0;
-                                goto dedents;
+                        } else if (spaces < parser->indent) {
+                                if (spaces % 2 != 0)
+                                        return token(parser, end, CONTINUATION);
+                                parser->bol = true;
+                                return dedents(parser, end, spaces);
+                        } else {
+                                parser->bol = true;
+                                parser->p = end;
+                                goto bol;
                         }
                 }
         }
