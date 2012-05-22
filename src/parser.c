@@ -83,7 +83,6 @@ bol:
                         return token(parser, end + xmlUTF8Size(BAD_CAST "§ "), SECTION);
                 else if (xmlStrncmp(end, BAD_CAST "• ", xmlUTF8Size(BAD_CAST "• ")) == 0)
                         return token(parser, end + xmlUTF8Size(BAD_CAST "• "), ENUMERATION);
-                */
                 else if (*end == '\0')
                         return END;
                 else
