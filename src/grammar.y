@@ -23,12 +23,15 @@
 %token CONTINUATION
 %token BLOCKSEPARATOR
 %token ENUMERATION
+%token FOOTNOTE
 %token SECTION
 %token INDENT
 %token DEDENT
 
 %type <buffer> words
 %type <node> title oblockssections0 oblockssections blockssections blocks block paragraph sections section oblocks enumeration enumerationitem
+%type <node> blockfootnotes
+%type <node> blockfootnote
 
 %union {
         const xmlChar *string;
@@ -103,6 +106,20 @@ append(xmlBufferPtr buffer, const xmlChar *string, int length)
         return buffer;
 }
 
+static xmlNodePtr
+footnote(xmlNodePtr footnotes, xmlNodePtr blocks)
+{
+        xmlNodePtr last = xmlGetLastChild(blocks);
+        if (!xmlStrEqual(last->name, BAD_CAST "footnotes")) {
+                xmlUnlinkNode(last);
+                return sibling(blocks, child(footnotes, last));
+        }
+        xmlAddChildList(last, footnotes->children);
+        footnotes->children = NULL;
+        xmlFreeNode(footnotes);
+        return blocks;
+}
+
 #define YYPRINT(file, type, value) print_token_value(file, type, value)
 static void
 print_token_value(FILE *file, int type, YYSTYPE value)
@@ -133,10 +150,16 @@ blockssections: blocks
 | sections;
 
 blocks: block
-| blocks BLOCKSEPARATOR block { $$ = sibling($1, $3); };
+| blocks BLOCKSEPARATOR block { $$ = sibling($1, $3); }
+| blocks BLOCKSEPARATOR blockfootnotes { $$ = footnote($3, $1); };
 
 block: paragraph
 | enumeration;
+
+blockfootnotes: blockfootnote { $$ = child(node("footnotes"), $1); }
+| blockfootnotes blockfootnote { $$ = child($1, $2); };
+
+blockfootnote: FOOTNOTE words { $$ = content("footnote", $2); };
 
 paragraph: PARAGRAPH words { $$ = content("p", $2); };
 
