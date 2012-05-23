@@ -15,6 +15,7 @@
 %name-prefix "nmc_grammar_"
 %debug
 %error-verbose
+%expect 0
 
 %token END 0 "end of file"
 %token ERROR
