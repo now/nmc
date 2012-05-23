@@ -48,6 +48,7 @@ substring(struct nmc_parser *parser, YYSTYPE *value, const xmlChar *end, int typ
         return token(parser, end, type);
 }
 
+/* TODO Remove end */
 static int
 dedent(struct nmc_parser *parser, const xmlChar *end)
 {
@@ -65,76 +66,83 @@ dedents(struct nmc_parser *parser, const xmlChar *end, int spaces)
         return dedent(parser, end);
 }
 
+static int
+bol(struct nmc_parser *parser)
+{
+        parser->bol = false;
+
+        if (xmlStrncmp(parser->p, BAD_CAST "  ", 2) == 0)
+                return token(parser, parser->p + 2, PARAGRAPH);
+        else if (xmlStrncmp(parser->p, BAD_CAST "§ ", xmlUTF8Size(BAD_CAST "§ ")) == 0)
+                return token(parser, parser->p + xmlUTF8Size(BAD_CAST "§ "), SECTION);
+        else if (xmlStrncmp(parser->p, BAD_CAST "• ", xmlUTF8Size(BAD_CAST "• ")) == 0)
+                return token(parser, parser->p + xmlUTF8Size(BAD_CAST "• "), ENUMERATION);
+        else if (*parser->p == '\0')
+                return END;
+        else
+                return token(parser, parser->p, ERROR);
+}
+
+static int
+eol(struct nmc_parser *parser)
+{
+        const xmlChar *end = parser->p;
+        end++;
+        parser->p = end;
+        while (*end == ' ')
+                end++;
+        if (*end == '\n') {
+                parser->bol = true;
+                end++;
+                parser->p = end;
+                while (*end == ' ' || *end == '\n') {
+                        if (*end == '\n')
+                                parser->p = end + 1;
+                        end++;
+                }
+                int spaces = end - parser->p;
+                if (parser->want == INDENT && spaces > parser->indent + 2) {
+                        parser->want = ERROR;
+                        parser->indent += 2;
+                        return token(parser, parser->p + parser->indent, INDENT);
+                } else if (spaces < parser->indent && spaces % 2 == 0) {
+                        parser->want = ERROR;
+                        return dedents(parser, end, spaces);
+                } else {
+                        parser->want = ERROR;
+                        return token(parser, parser->p, BLOCKSEPARATOR);
+                }
+        } else {
+                int spaces = end - parser->p;
+                if (spaces > parser->indent) {
+                        return token(parser, end, CONTINUATION);
+                } else if (spaces < parser->indent) {
+                        if (spaces % 2 != 0)
+                                return token(parser, end, CONTINUATION);
+                        parser->bol = true;
+                        return dedents(parser, end, spaces);
+                } else {
+                        parser->p = end;
+                        return bol(parser);
+                }
+        }
+}
+
 int
 nmc_parser_lex(struct nmc_parser *parser, YYSTYPE *value)
 {
-        const xmlChar *end = parser->p;
-
         if (parser->dedents > 0)
-                return dedent(parser, end);
+                return dedent(parser, parser->p);
 
-bol:
-        if (parser->bol) {
-                /* TODO Make this into a function */
-                parser->bol = false;
-                if (xmlStrncmp(end, BAD_CAST "  ", 2) == 0)
-                        return token(parser, end + 2, PARAGRAPH);
-                else if (xmlStrncmp(end, BAD_CAST "§ ", xmlUTF8Size(BAD_CAST "§ ")) == 0)
-                        return token(parser, end + xmlUTF8Size(BAD_CAST "§ "), SECTION);
-                else if (xmlStrncmp(end, BAD_CAST "• ", xmlUTF8Size(BAD_CAST "• ")) == 0)
-                        return token(parser, end + xmlUTF8Size(BAD_CAST "• "), ENUMERATION);
-                else if (*end == '\0')
-                        return END;
-                else
-                        return token(parser, end, ERROR);
-        }
+        if (parser->bol)
+                return bol(parser);
 
         skip(parser, ' ');
-        end = parser->p;
 
-        if (*end == '\n') {
-                end++;
-                parser->p = end;
-                while (*end == ' ')
-                        end++;
-                if (*end == '\n') {
-                        parser->bol = true;
-                        end++;
-                        parser->p = end;
-                        while (*end == ' ' || *end == '\n') {
-                                if (*end == '\n')
-                                        parser->p = end + 1;
-                                end++;
-                        }
-                        int spaces = end - parser->p;
-                        if (parser->want == INDENT && spaces > parser->indent + 2) {
-                                parser->want = ERROR;
-                                parser->indent += 2;
-                                return token(parser, parser->p + parser->indent, INDENT);
-                        } else if (spaces < parser->indent && spaces % 2 == 0) {
-                                parser->want = ERROR;
-                                return dedents(parser, end, spaces);
-                        } else {
-                                parser->want = ERROR;
-                                return token(parser, parser->p, BLOCKSEPARATOR);
-                        }
-                } else {
-                        int spaces = end - parser->p;
-                        if (spaces > parser->indent) {
-                                return token(parser, end, CONTINUATION);
-                        } else if (spaces < parser->indent) {
-                                if (spaces % 2 != 0)
-                                        return token(parser, end, CONTINUATION);
-                                parser->bol = true;
-                                return dedents(parser, end, spaces);
-                        } else {
-                                parser->bol = true;
-                                parser->p = end;
-                                goto bol;
-                        }
-                }
-        }
+        if (*parser->p == '\n')
+                return eol(parser);
 
+        const xmlChar *end = parser->p;
         while (*end != '\0' && *end != ' ' && *end != '\n')
                 end++;
         if (parser->p == end)
