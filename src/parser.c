@@ -48,6 +48,14 @@ substring(struct nmc_parser *parser, YYSTYPE *value, const xmlChar *end, int typ
         return token(parser, end, type);
 }
 
+static int
+short_substring(struct nmc_parser *parser, YYSTYPE *value, const xmlChar *end, int type)
+{
+        value->substring.string = parser->p;
+        value->substring.length = end - parser->p - 1;
+        return token(parser, end, type);
+}
+
 /* TODO Remove end */
 static int
 dedent(struct nmc_parser *parser, const xmlChar *end)
@@ -67,9 +75,34 @@ dedents(struct nmc_parser *parser, const xmlChar *end, int spaces)
 }
 
 static int
-bol(struct nmc_parser *parser)
+superscript(struct nmc_parser *parser)
+{
+        switch (*parser->p) {
+        case 0xc2:
+                switch (*(parser->p + 1)) {
+                case 0xb9: /* ¹ */
+                case 0xb2: /* ² */
+                case 0xb3: /* ³ */
+                        return 2;
+                default:
+                        return 0;
+                }
+        case 0xe2:
+                if (*(parser->p + 1) == 0x81 &&
+                    (*(parser->p + 2) == 0xb0 || /* ⁰ */
+                     (0xb4 <= *(parser->p + 2) && *(parser->p + 2) <= 0xb9))) /* ⁴⁻⁹ */
+                        return 3;
+        default:
+                return 0;
+        }
+}
+
+static int
+bol(struct nmc_parser *parser, YYSTYPE *value)
 {
         parser->bol = false;
+
+        int length;
 
         if (xmlStrncmp(parser->p, BAD_CAST "  ", 2) == 0)
                 return token(parser, parser->p + 2, PARAGRAPH);
@@ -77,6 +110,8 @@ bol(struct nmc_parser *parser)
                 return token(parser, parser->p + xmlUTF8Size(BAD_CAST "§ "), SECTION);
         else if (xmlStrncmp(parser->p, BAD_CAST "• ", xmlUTF8Size(BAD_CAST "• ")) == 0)
                 return token(parser, parser->p + xmlUTF8Size(BAD_CAST "• "), ENUMERATION);
+        else if ((length = superscript(parser)) > 0 && *(parser->p + length) == ' ')
+                return short_substring(parser, value, parser->p + length + 1, FOOTNOTE);
         else if (*parser->p == '\0')
                 return END;
         else
@@ -84,7 +119,7 @@ bol(struct nmc_parser *parser)
 }
 
 static int
-eol(struct nmc_parser *parser)
+eol(struct nmc_parser *parser, YYSTYPE *value)
 {
         const xmlChar *end = parser->p;
         end++;
@@ -110,7 +145,7 @@ eol(struct nmc_parser *parser)
                         return dedents(parser, end, spaces);
                 } else {
                         parser->want = ERROR;
-                        return token(parser, parser->p, BLOCKSEPARATOR);
+                        return token(parser, parser->p + parser->indent, BLOCKSEPARATOR);
                 }
         } else {
                 int spaces = end - parser->p;
@@ -123,7 +158,7 @@ eol(struct nmc_parser *parser)
                         return dedents(parser, end, spaces);
                 } else {
                         parser->p = end;
-                        return bol(parser);
+                        return bol(parser, value);
                 }
         }
 }
@@ -135,12 +170,12 @@ nmc_parser_lex(struct nmc_parser *parser, YYSTYPE *value)
                 return dedent(parser, parser->p);
 
         if (parser->bol)
-                return bol(parser);
+                return bol(parser, value);
 
         skip(parser, ' ');
 
         if (*parser->p == '\n')
-                return eol(parser);
+                return eol(parser, value);
 
         const xmlChar *end = parser->p;
         while (*end != '\0' && *end != ' ' && *end != '\n')

@@ -242,3 +242,104 @@ AT_NMC_CHECK([title],
   </enumeration>]])
 
 AT_CLEANUP
+
+AT_SETUP([Document consisting of a title followed by a paragraph with footnotes])
+
+AT_DATA([title],
+[[Title
+
+  Paragraph
+
+¹ Footnote1
+² Footnote2
+]])
+
+AT_NMC_CHECK([title],
+[[  <title>Title</title>
+  <footnoted>
+    <p>Paragraph</p>
+    <footnotes>
+      <footnote id="¹">Footnote1</footnote>
+      <footnote id="²">Footnote2</footnote>
+    </footnotes>
+  </footnoted>]])
+
+AT_CLEANUP
+
+AT_SETUP([Document consisting of a title followed by two paragraphs, the last having footnotes])
+
+AT_DATA([title],
+[[Title
+
+  Paragraph1
+
+  Paragraph2
+
+¹ Footnote1
+² Footnote2
+]])
+
+AT_NMC_CHECK([title],
+[[  <title>Title</title>
+  <p>Paragraph1</p>
+  <footnoted>
+    <p>Paragraph2</p>
+    <footnotes>
+      <footnote id="¹">Footnote1</footnote>
+      <footnote id="²">Footnote2</footnote>
+    </footnotes>
+  </footnoted>]])
+
+AT_CLEANUP
+
+AT_SETUP([Document consisting of a title followed by a section containing a paragraph with footnotes])
+
+AT_DATA([title],
+[[Title
+
+§ Section
+
+    Paragraph
+
+  ¹ Footnote
+]])
+
+AT_NMC_CHECK([title],
+[[  <title>Title</title>
+  <section>
+    <title>Section</title>
+    <footnoted>
+      <p>Paragraph</p>
+      <footnotes>
+        <footnote id="¹">Footnote</footnote>
+      </footnotes>
+    </footnoted>
+  </section>]])
+
+AT_CLEANUP
+
+AT_SETUP([Document consisting of a title followed by a section with footnotes])
+
+AT_DATA([title],
+[[Title
+
+§ Section
+
+    Paragraph
+
+¹ Footnote
+]])
+
+AT_NMC_CHECK([title],
+[[  <title>Title</title>
+  <footnoted>
+    <section>
+      <title>Section</title>
+      <p>Paragraph</p>
+    </section>
+    <footnotes>
+      <footnote id="¹">Footnote</footnote>
+    </footnotes>
+  </footnoted>]])
+
+AT_CLEANUP

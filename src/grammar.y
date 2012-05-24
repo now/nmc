@@ -24,7 +24,7 @@
 %token CONTINUATION
 %token BLOCKSEPARATOR
 %token ENUMERATION
-%token FOOTNOTE
+%token <substring> FOOTNOTE
 %token SECTION
 %token INDENT
 %token DEDENT
@@ -33,6 +33,7 @@
 %type <node> title oblockssections0 oblockssections blockssections blocks block paragraph sections section oblocks enumeration enumerationitem
 %type <node> blockfootnotes
 %type <node> blockfootnote
+%type <node> footnotedsection
 
 %union {
         const xmlChar *string;
@@ -108,17 +109,31 @@ append(xmlBufferPtr buffer, const xmlChar *string, int length)
 }
 
 static xmlNodePtr
-footnote(xmlNodePtr footnotes, xmlNodePtr blocks)
+footnote(xmlNodePtr blocks, xmlNodePtr footnotes)
 {
-        xmlNodePtr last = xmlGetLastChild(blocks);
-        if (!xmlStrEqual(last->name, BAD_CAST "footnotes")) {
-                xmlUnlinkNode(last);
-                return sibling(blocks, child(footnotes, last));
+        xmlNodePtr last = blocks;
+        while (last->next != NULL)
+                last = last->next;
+
+        if (xmlStrEqual(last->name, BAD_CAST "footnoted")) {
+                xmlAddChildList(xmlGetLastChild(last), footnotes->children);
+                footnotes->children = NULL;
+                xmlFreeNode(footnotes);
+                return blocks;
         }
-        xmlAddChildList(last, footnotes->children);
-        footnotes->children = NULL;
-        xmlFreeNode(footnotes);
-        return blocks;
+
+        xmlUnlinkNode(last);
+        xmlNodePtr footnoted = child(child(node("footnoted"), last), footnotes);
+        return last == blocks ? footnoted : sibling(blocks, footnoted);
+}
+
+static xmlNodePtr
+prop(xmlNodePtr node, const char *name, const xmlChar *string, int length)
+{
+        xmlChar *value = xmlStrndup(string, length);
+        xmlNewProp(node, BAD_CAST name, value);
+        xmlFree(value);
+        return node;
 }
 
 #define YYPRINT(file, type, value) print_token_value(file, type, value)
@@ -152,7 +167,7 @@ blockssections: blocks
 
 blocks: block
 | blocks BLOCKSEPARATOR block { $$ = sibling($1, $3); }
-| blocks BLOCKSEPARATOR blockfootnotes { $$ = footnote($3, $1); };
+| blocks BLOCKSEPARATOR blockfootnotes { $$ = footnote($1, $3); };
 
 block: paragraph
 | enumeration;
@@ -160,7 +175,7 @@ block: paragraph
 blockfootnotes: blockfootnote { $$ = child(node("footnotes"), $1); }
 | blockfootnotes blockfootnote { $$ = child($1, $2); };
 
-blockfootnote: FOOTNOTE words { $$ = content("footnote", $2); };
+blockfootnote: FOOTNOTE words { $$ = prop(content("footnote", $2), "id", $1.string, $1.length); };
 
 paragraph: PARAGRAPH words { $$ = content("p", $2); };
 
@@ -172,7 +187,10 @@ enumerationitem: ENUMERATION { parser->want = INDENT; } words oblocks { $$ = chi
 oblocks: /* empty */ { $$ = NULL; }
 | INDENT blocks DEDENT { $$ = $2; };
 
-sections: section
-| sections section { $$ = sibling($1, $2); };
+sections: footnotedsection
+| sections footnotedsection { $$ = sibling($1, $2); };
+
+footnotedsection: section
+| section blockfootnotes { $$ = footnote($1, $2); };
 
 section: SECTION { parser->want = INDENT; } title oblockssections { $$ = child(child(node("section"), $3), $4); };
