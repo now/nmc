@@ -107,18 +107,40 @@ superscript(struct nmc_parser *parser)
 }
 
 static int
+length_of_subscript(const xmlChar *input)
+{
+        if (*input == 0xe2 && *(input + 1) == 0x82 &&
+            (0x80 <= *(input + 2) && *(input + 2) <= 0x89))
+                return 3;
+        return 0;
+}
+
+static int
+subscript(struct nmc_parser *parser)
+{
+        int total = 0, length;
+        while ((length = length_of_subscript(parser->p + total)) > 0)
+                total += 3;
+        return total;
+}
+
+static int
 bol(struct nmc_parser *parser, YYSTYPE *value)
 {
         parser->bol = false;
 
         int length;
 
+        /* TODO Turn this into a state machine instead, so that we never
+         * examine a byte more than once. */
         if (xmlStrncmp(parser->p, BAD_CAST "  ", 2) == 0)
                 return token(parser, parser->p + 2, PARAGRAPH);
         else if (xmlStrncmp(parser->p, BAD_CAST "§ ", xmlUTF8Size(BAD_CAST "§ ")) == 0)
                 return token(parser, parser->p + xmlUTF8Size(BAD_CAST "§ "), SECTION);
         else if (xmlStrncmp(parser->p, BAD_CAST "• ", xmlUTF8Size(BAD_CAST "• ")) == 0)
                 return token(parser, parser->p + xmlUTF8Size(BAD_CAST "• "), ITEMIZATION);
+        else if ((length = subscript(parser)) > 0 && *(parser->p + length) == ' ')
+                return short_substring(parser, value, parser->p + length + 1, ENUMERATION);
         else if ((length = superscript(parser)) > 0 && *(parser->p + length) == ' ')
                 return short_substring(parser, value, parser->p + length + 1, FOOTNOTE);
         else if (*parser->p == '\0')

@@ -243,6 +243,28 @@ AT_NMC_CHECK([title],
 
 AT_CLEANUP
 
+AT_SETUP([Document consisting of a title followed by a two-item enumeration])
+
+AT_DATA([title],
+[[Title
+
+₁ Item1
+₂ Item2
+]])
+
+AT_NMC_CHECK([title],
+[[  <title>Title</title>
+  <enumeration>
+    <item>
+      <p>Item1</p>
+    </item>
+    <item>
+      <p>Item2</p>
+    </item>
+  </enumeration>]])
+
+AT_CLEANUP
+
 AT_SETUP([Document consisting of a title followed by a paragraph with footnotes])
 
 AT_DATA([title],
