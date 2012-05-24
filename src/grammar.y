@@ -23,14 +23,14 @@
 %token PARAGRAPH
 %token CONTINUATION
 %token BLOCKSEPARATOR
-%token ENUMERATION
+%token ITEMIZATION
 %token <substring> FOOTNOTE
 %token SECTION
 %token INDENT
 %token DEDENT
 
 %type <buffer> words
-%type <node> title oblockssections0 oblockssections blockssections blocks block paragraph sections section oblocks enumeration enumerationitem
+%type <node> title oblockssections0 oblockssections blockssections blocks block paragraph sections section oblocks itemization itemizationitem
 %type <node> blockfootnotes
 %type <node> blockfootnote
 %type <node> footnotedsection
@@ -170,7 +170,7 @@ blocks: block
 | blocks BLOCKSEPARATOR blockfootnotes { $$ = footnote($1, $3); };
 
 block: paragraph
-| enumeration;
+| itemization;
 
 blockfootnotes: blockfootnote { $$ = child(node("footnotes"), $1); }
 | blockfootnotes blockfootnote { $$ = child($1, $2); };
@@ -179,10 +179,10 @@ blockfootnote: FOOTNOTE words { $$ = prop(content("footnote", $2), "id", $1.stri
 
 paragraph: PARAGRAPH words { $$ = content("p", $2); };
 
-enumeration: enumerationitem { $$ = child(node("enumeration"), $1); }
-| enumeration enumerationitem { $$ = child($1, $2); }
+itemization: itemizationitem { $$ = child(node("itemization"), $1); }
+| itemization itemizationitem { $$ = child($1, $2); }
 
-enumerationitem: ENUMERATION { parser->want = INDENT; } words oblocks { $$ = child(child(node("item"), content("p", $3)), $4); };
+itemizationitem: ITEMIZATION { parser->want = INDENT; } words oblocks { $$ = child(child(node("item"), content("p", $3)), $4); };
 
 oblocks: /* empty */ { $$ = NULL; }
 | INDENT blocks DEDENT { $$ = $2; };

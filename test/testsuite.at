@@ -171,7 +171,7 @@ AT_NMC_CHECK([title],
 
 AT_CLEANUP
 
-AT_SETUP([Document consisting of a title followed by a paragraph, an enumeration, and a paragraph])
+AT_SETUP([Document consisting of a title followed by a paragraph, an itemization, and a paragraph])
 
 AT_DATA([title],
 [[Title
@@ -186,16 +186,16 @@ AT_DATA([title],
 AT_NMC_CHECK([title],
 [[  <title>Title</title>
   <p>Paragraph1</p>
-  <enumeration>
+  <itemization>
     <item>
       <p>Item1</p>
     </item>
-  </enumeration>
+  </itemization>
   <p>Paragraph2</p>]])
 
 AT_CLEANUP
 
-AT_SETUP([Document consisting of a title followed by a two-item enumeration])
+AT_SETUP([Document consisting of a title followed by a two-item itemization])
 
 AT_DATA([title],
 [[Title
@@ -206,18 +206,18 @@ AT_DATA([title],
 
 AT_NMC_CHECK([title],
 [[  <title>Title</title>
-  <enumeration>
+  <itemization>
     <item>
       <p>Item1</p>
     </item>
     <item>
       <p>Item2</p>
     </item>
-  </enumeration>]])
+  </itemization>]])
 
 AT_CLEANUP
 
-AT_SETUP([Document consisting of a title followed by a two-item enumeration, the first containing two paragraphs])
+AT_SETUP([Document consisting of a title followed by a two-item itemization, the first containing two paragraphs])
 
 AT_DATA([title],
 [[Title
@@ -231,7 +231,7 @@ AT_DATA([title],
 
 AT_NMC_CHECK([title],
 [[  <title>Title</title>
-  <enumeration>
+  <itemization>
     <item>
       <p>Line1 Line2</p>
       <p>Paragraph2</p>
@@ -239,7 +239,7 @@ AT_NMC_CHECK([title],
     <item>
       <p>Item2</p>
     </item>
-  </enumeration>]])
+  </itemization>]])
 
 AT_CLEANUP
 

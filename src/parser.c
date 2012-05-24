@@ -118,7 +118,7 @@ bol(struct nmc_parser *parser, YYSTYPE *value)
         else if (xmlStrncmp(parser->p, BAD_CAST "§ ", xmlUTF8Size(BAD_CAST "§ ")) == 0)
                 return token(parser, parser->p + xmlUTF8Size(BAD_CAST "§ "), SECTION);
         else if (xmlStrncmp(parser->p, BAD_CAST "• ", xmlUTF8Size(BAD_CAST "• ")) == 0)
-                return token(parser, parser->p + xmlUTF8Size(BAD_CAST "• "), ENUMERATION);
+                return token(parser, parser->p + xmlUTF8Size(BAD_CAST "• "), ITEMIZATION);
         else if ((length = superscript(parser)) > 0 && *(parser->p + length) == ' ')
                 return short_substring(parser, value, parser->p + length + 1, FOOTNOTE);
         else if (*parser->p == '\0')
