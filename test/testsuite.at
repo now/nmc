@@ -277,6 +277,7 @@ AT_DATA([title],
 
 ¹ Footnote1
 ² Footnote2
+³³ Footnote33
 ]])
 
 AT_NMC_CHECK([title],
@@ -287,6 +288,7 @@ AT_NMC_CHECK([title],
     <footnotes>
       <footnote id="¹">Footnote1</footnote>
       <footnote id="²">Footnote2</footnote>
+      <footnote id="³³">Footnote33</footnote>
     </footnotes>
   </footnoted>]])
 

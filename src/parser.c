@@ -75,11 +75,11 @@ dedents(struct nmc_parser *parser, const xmlChar *end, int spaces)
 }
 
 static int
-superscript(struct nmc_parser *parser)
+length_of_superscript(const xmlChar *input)
 {
-        switch (*parser->p) {
+        switch (*input) {
         case 0xc2:
-                switch (*(parser->p + 1)) {
+                switch (*(input + 1)) {
                 case 0xb9: /* ¹ */
                 case 0xb2: /* ² */
                 case 0xb3: /* ³ */
@@ -88,13 +88,22 @@ superscript(struct nmc_parser *parser)
                         return 0;
                 }
         case 0xe2:
-                if (*(parser->p + 1) == 0x81 &&
-                    (*(parser->p + 2) == 0xb0 || /* ⁰ */
-                     (0xb4 <= *(parser->p + 2) && *(parser->p + 2) <= 0xb9))) /* ⁴⁻⁹ */
+                if (*(input + 1) == 0x81 &&
+                    (*(input + 2) == 0xb0 || /* ⁰ */
+                     (0xb4 <= *(input + 2) && *(input + 2) <= 0xb9))) /* ⁴⁻⁹ */
                         return 3;
         default:
                 return 0;
         }
+}
+
+static int
+superscript(struct nmc_parser *parser)
+{
+        int total = 0, length;
+        while ((length = length_of_superscript(parser->p + total)) > 0)
+                total += length;
+        return total;
 }
 
 static int
