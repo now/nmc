@@ -30,8 +30,11 @@
 %token SECTION
 %token INDENT
 %token DEDENT
+%token <substring> CODE
 
 %type <buffer> words
+%type <node> inlines
+%type <node> inline
 %type <node> title oblockssections0 oblockssections blockssections blocks block paragraph sections section oblocks
 %type <node> itemization itemizationitem item
 %type <node> enumeration enumerationitem
@@ -99,14 +102,16 @@ static xmlBufferPtr
 buffer(const xmlChar *string, int length)
 {
         xmlBufferPtr buffer = xmlBufferCreate();
-        xmlBufferAdd(buffer, string, length);
+        const xmlChar *p = string;
+        while (*p == ' ')
+                p++;
+        xmlBufferAdd(buffer, p, length - (p - string));
         return buffer;
 }
 
 static xmlBufferPtr
 append(xmlBufferPtr buffer, const xmlChar *string, int length)
 {
-        xmlBufferCCat(buffer, " ");
         xmlBufferAdd(buffer, string, length);
         return buffer;
 }
@@ -170,6 +175,30 @@ codeblock(struct nmc_parser *parser, const xmlChar *string, int length)
         return content("code", buffer);
 }
 
+static xmlNodePtr
+text(const xmlChar *string, int length)
+{
+        const xmlChar *p = string;
+        while (*p == ' ')
+                p++;
+        return xmlNewTextLen(p, length - (p - string));
+}
+
+static xmlNodePtr
+tappend(xmlNodePtr inlines, const xmlChar *string, int length)
+{
+        xmlNodePtr last = inlines;
+        while (last->next != NULL)
+                last = last->next;
+
+        if (xmlNodeIsText(last))
+                xmlNodeAddContentLen(last, string, length);
+        else
+                sibling(inlines, xmlNewTextLen(string, length));
+
+        return inlines;
+}
+
 #define YYPRINT(file, type, value) print_token_value(file, type, value)
 static void
 print_token_value(FILE *file, int type, YYSTYPE value)
@@ -187,7 +216,16 @@ title: words { $$ = content("title", $1); }
 
 words: WORD { $$ = buffer($1.string, $1.length); }
 | words WORD { $$ = append($1, $2.string, $2.length); }
-| words CONTINUATION WORD { $$ = append($1, $3.string, $3.length); };
+| words CONTINUATION WORD { $$ = append(append($1, BAD_CAST " ", 1), $3.string, $3.length); };
+
+inlines: WORD { $$ = text($1.string, $1.length); }
+| inline
+| inlines WORD { $$ = tappend($1, $2.string, $2.length); }
+| inlines inline { $$ = sibling($1, $2); }
+| inlines CONTINUATION WORD { $$ = tappend(tappend($1, BAD_CAST " ", 1), $3.string, $3.length); };
+| inlines CONTINUATION inline { $$ = sibling(tappend($1, BAD_CAST " ", 1), $3); };
+
+inline: CODE { $$ = node("code"); xmlNodeAddContentLen($$, $1.string, $1.length); };
 
 oblockssections0: /* empty */ { $$ = NULL; }
 | BLOCKSEPARATOR blockssections { $$ = $2; };
@@ -213,7 +251,7 @@ blockfootnotes: blockfootnote { $$ = child(node("footnotes"), $1); }
 
 blockfootnote: FOOTNOTE words { $$ = prop(content("footnote", $2), "id", $1.string, $1.length); };
 
-paragraph: PARAGRAPH words { $$ = content("p", $2); };
+paragraph: PARAGRAPH inlines { $$ = child(node("p"), $2); };
 
 itemization: itemizationitem { $$ = child(node("itemization"), $1); }
 | itemization itemizationitem { $$ = child($1, $2); };

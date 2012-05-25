@@ -49,10 +49,10 @@ substring(struct nmc_parser *parser, YYSTYPE *value, const xmlChar *end, int typ
 }
 
 static int
-short_substring(struct nmc_parser *parser, YYSTYPE *value, const xmlChar *end, int type)
+short_substring(struct nmc_parser *parser, YYSTYPE *value, const xmlChar *end, int shorten, int type)
 {
         value->substring.string = parser->p;
-        value->substring.length = end - parser->p - 1;
+        value->substring.length = end - parser->p - shorten;
         return token(parser, end, type);
 }
 
@@ -169,9 +169,9 @@ bol(struct nmc_parser *parser, YYSTYPE *value)
         else if (xmlStrncmp(parser->p, BAD_CAST "• ", xmlUTF8Size(BAD_CAST "• ")) == 0)
                 return token(parser, parser->p + xmlUTF8Size(BAD_CAST "• "), ITEMIZATION);
         else if ((length = subscript(parser)) > 0 && *(parser->p + length) == ' ')
-                return short_substring(parser, value, parser->p + length + 1, ENUMERATION);
+                return short_substring(parser, value, parser->p + length + 1, 1, ENUMERATION);
         else if ((length = superscript(parser)) > 0 && *(parser->p + length) == ' ')
-                return short_substring(parser, value, parser->p + length + 1, FOOTNOTE);
+                return short_substring(parser, value, parser->p + length + 1, 1, FOOTNOTE);
         else if (*parser->p == '\0')
                 return END;
         else
@@ -223,6 +223,22 @@ eol(struct nmc_parser *parser, YYSTYPE *value)
         }
 }
 
+static int
+code(struct nmc_parser *parser, YYSTYPE *value)
+{
+        parser->p += 3;
+        const xmlChar *end = parser->p;
+        while (*end != '\0' &&
+               !(*end == 0xe2 && *(end + 1) == 0x80 && *(end + 2) == 0xba) &&
+               *end != '\n')
+                end++;
+        if (*end == '\0' || *end == '\n')
+                return token(parser, parser->p - 3, ERROR);
+        while (*end == 0xe2 && *(end + 1) == 0x80 && *(end + 2) == 0xba)
+                end += 3;
+        return short_substring(parser, value, end, 3, CODE);
+}
+
 int
 nmc_parser_lex(struct nmc_parser *parser, YYSTYPE *value)
 {
@@ -232,15 +248,25 @@ nmc_parser_lex(struct nmc_parser *parser, YYSTYPE *value)
         if (parser->bol)
                 return bol(parser, value);
 
-        skip(parser, ' ');
-
-        if (*parser->p == '\n')
-                return eol(parser, value);
-
         const xmlChar *end = parser->p;
+        while (*end == ' ')
+                end++;
+
+        if (*end == '\n') {
+                parser->p = end;
+                return eol(parser, value);
+        } else if (end != parser->p) {
+                while (*(parser->p + 1) == ' ')
+                        parser->p++;
+                return substring(parser, value, end, WORD);
+        } else if (*end == 0xe2 && *(end + 1) == 0x80 && *(end + 2) == 0xb9) {
+                parser->p = end;
+                return code(parser, value);
+        }
+
         while (*end != '\0' && *end != ' ' && *end != '\n')
                 end++;
-        if (parser->p == end)
+        if (end == parser->p)
                 return END;
 
         return substring(parser, value, end, WORD);

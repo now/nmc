@@ -440,3 +440,31 @@ Code3</code>
   <p>Paragraph</p>]])
 
 AT_CLEANUP
+
+AT_SETUP([Document consisting of a title followed by a paragraph containing a code inline])
+
+AT_DATA([title],
+[[Title
+
+  Word1 ‹Code› Word2
+]])
+
+AT_NMC_CHECK([title],
+[[  <title>Title</title>
+  <p>Word1 <code>Code</code> Word2</p>]])
+
+AT_CLEANUP
+
+AT_SETUP([Document consisting of a title followed by a paragraph containing a code inline that is immediately followed by text])
+
+AT_DATA([title],
+[[Title
+
+  Word1 ‹Code›s Word2
+]])
+
+AT_NMC_CHECK([title],
+[[  <title>Title</title>
+  <p>Word1 <code>Code</code>s Word2</p>]])
+
+AT_CLEANUP
