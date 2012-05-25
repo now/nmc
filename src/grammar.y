@@ -25,6 +25,7 @@
 %token BLOCKSEPARATOR
 %token ITEMIZATION
 %token ENUMERATION
+%token <substring> CODEBLOCK
 %token <substring> FOOTNOTE
 %token SECTION
 %token INDENT
@@ -138,6 +139,37 @@ prop(xmlNodePtr node, const char *name, const xmlChar *string, int length)
         return node;
 }
 
+static xmlNodePtr
+codeblock(struct nmc_parser *parser, const xmlChar *string, int length)
+{
+        const xmlChar *begin = string;
+        const xmlChar *p = begin;
+        const xmlChar *end = string + length;
+        xmlBufferPtr buffer = xmlBufferCreate();
+
+        while (p < end) {
+                if (*p == '\n') {
+                        xmlBufferAdd(buffer, begin, p - begin + 1);
+                        p++;
+                        begin = p;
+                        for (int i = 0; i < parser->indent + 4; i++, p++) {
+                                if (p >= end)
+                                        break;
+                                if (*p != ' ') {
+                                        xmlBufferAdd(buffer, begin, p - begin + 1);
+                                        begin = p + 1;
+                                        i = -1;
+                                }
+                        }
+                        begin = p;
+                }
+                p++;
+        }
+        xmlBufferAdd(buffer, begin, p - begin);
+
+        return content("code", buffer);
+}
+
 #define YYPRINT(file, type, value) print_token_value(file, type, value)
 static void
 print_token_value(FILE *file, int type, YYSTYPE value)
@@ -174,6 +206,7 @@ blocks: block
 block: paragraph
 | itemization;
 | enumeration;
+| CODEBLOCK { $$ = codeblock(parser, $1.string, $1.length); };
 
 blockfootnotes: blockfootnote { $$ = child(node("footnotes"), $1); }
 | blockfootnotes blockfootnote { $$ = child($1, $2); };

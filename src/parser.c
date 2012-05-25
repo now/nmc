@@ -125,6 +125,33 @@ subscript(struct nmc_parser *parser)
 }
 
 static int
+codeblock(struct nmc_parser *parser, YYSTYPE *value)
+{
+        parser->p += 4;
+        const xmlChar *end = parser->p;
+
+again:
+        while (*end != '\n' && *end != '\0')
+                end++;
+        if (*end == '\n') {
+                const xmlChar *bss = end + 1;
+                const xmlChar *bse = bss;
+                while (*bse == ' ' || *bse == '\n') {
+                        if (*bse == '\n')
+                                bss = bse + 1;
+                        bse++;
+                }
+                int spaces = bse - bss;
+                if (spaces >= parser->indent + 4) {
+                        end = bss + parser->indent + 4;
+                        goto again;
+                }
+        }
+
+        return substring(parser, value, end, CODEBLOCK);
+}
+
+static int
 bol(struct nmc_parser *parser, YYSTYPE *value)
 {
         parser->bol = false;
@@ -133,7 +160,9 @@ bol(struct nmc_parser *parser, YYSTYPE *value)
 
         /* TODO Turn this into a state machine instead, so that we never
          * examine a byte more than once. */
-        if (xmlStrncmp(parser->p, BAD_CAST "  ", 2) == 0)
+        if (xmlStrncmp(parser->p, BAD_CAST "    ", 4) == 0)
+                return codeblock(parser, value);
+        else if (xmlStrncmp(parser->p, BAD_CAST "  ", 2) == 0)
                 return token(parser, parser->p + 2, PARAGRAPH);
         else if (xmlStrncmp(parser->p, BAD_CAST "§ ", xmlUTF8Size(BAD_CAST "§ ")) == 0)
                 return token(parser, parser->p + xmlUTF8Size(BAD_CAST "§ "), SECTION);
