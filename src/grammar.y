@@ -93,6 +93,12 @@ child(xmlNodePtr parent, xmlNodePtr child)
 }
 
 static xmlNodePtr
+wrap(const char *name, xmlNodePtr kid)
+{
+        return child(node(name), kid);
+}
+
+static xmlNodePtr
 sibling(xmlNodePtr first, xmlNodePtr last)
 {
         if (last == NULL)
@@ -213,7 +219,7 @@ print_token_value(FILE *file, int type, YYSTYPE value)
 
 %%
 
-nmc: title oblockssections0 { xmlDocSetRootElement(parser->doc, child(child(node("nml"), $1), $2)); };
+nmc: title oblockssections0 { xmlDocSetRootElement(parser->doc, child(wrap("nml", $1), $2)); };
 
 title: words { $$ = content("title", $1); }
 
@@ -250,32 +256,32 @@ block: paragraph
 | quote
 | CODEBLOCK { $$ = codeblock(parser, $1.string, $1.length); };
 
-blockfootnotes: blockfootnote { $$ = child(node("footnotes"), $1); }
+blockfootnotes: blockfootnote { $$ = wrap("footnotes", $1); }
 | blockfootnotes blockfootnote { $$ = child($1, $2); };
 
 blockfootnote: FOOTNOTE words { $$ = prop(content("footnote", $2), "id", $1.string, $1.length); };
 
-paragraph: PARAGRAPH inlines { $$ = child(node("p"), $2); };
+paragraph: PARAGRAPH inlines { $$ = wrap("p", $2); };
 
-itemization: itemizationitem { $$ = child(node("itemization"), $1); }
+itemization: itemizationitem { $$ = wrap("itemization", $1); }
 | itemization itemizationitem { $$ = child($1, $2); };
 
 itemizationitem: ITEMIZATION item { $$ = $2; };
 
-item: { parser->want = INDENT; } inlines oblocks { $$ = child(child(node("item"), child(node("p"), $2)), $3); };
+item: { parser->want = INDENT; } inlines oblocks { $$ = child(wrap("item", wrap("p", $2)), $3); };
 
-enumeration: enumerationitem { $$ = child(node("enumeration"), $1); }
+enumeration: enumerationitem { $$ = wrap("enumeration", $1); }
 | enumeration enumerationitem { $$ = child($1, $2); };
 
 enumerationitem: ENUMERATION item { $$ = $2; };
 
-quote: line { $$ = child(node("quote"), $1); }
+quote: line { $$ = wrap("quote", $1); }
 | quote line { $$ = child($1, $2); }
 | quote attribution { $$ = child($1, $2); };
 
-line: QUOTE inlines { $$ = child(node("line"), $2); };
+line: QUOTE inlines { $$ = wrap("line", $2); };
 
-attribution: ATTRIBUTION inlines { $$ = child(node("attribution"), $2); };
+attribution: ATTRIBUTION inlines { $$ = wrap("attribution", $2); };
 
 oblocks: /* empty */ { $$ = NULL; }
 | INDENT blocks DEDENT { $$ = $2; };
@@ -286,4 +292,4 @@ sections: footnotedsection
 footnotedsection: section
 | section blockfootnotes { $$ = footnote($1, $2); };
 
-section: SECTION { parser->want = INDENT; } title oblockssections { $$ = child(child(node("section"), $3), $4); };
+section: SECTION { parser->want = INDENT; } title oblockssections { $$ = child(wrap("section", $3), $4); };
