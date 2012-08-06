@@ -172,6 +172,10 @@ bol(struct nmc_parser *parser, YYSTYPE *value)
                 return short_substring(parser, value, parser->p + length + 1, 1, ENUMERATION);
         else if ((length = superscript(parser)) > 0 && *(parser->p + length) == ' ')
                 return short_substring(parser, value, parser->p + length + 1, 1, FOOTNOTE);
+        else if (xmlStrncmp(parser->p, BAD_CAST "> ", xmlUTF8Size(BAD_CAST "> ")) == 0)
+                return token(parser, parser->p + xmlUTF8Size(BAD_CAST "> "), QUOTE);
+        else if (xmlStrncmp(parser->p, BAD_CAST "— ", xmlUTF8Size(BAD_CAST "— ")) == 0)
+                return token(parser, parser->p + xmlUTF8Size(BAD_CAST "— "), ATTRIBUTION);
         else if (*parser->p == '\0')
                 return END;
         else

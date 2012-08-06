@@ -25,6 +25,8 @@
 %token BLOCKSEPARATOR
 %token ITEMIZATION
 %token ENUMERATION
+%token QUOTE
+%token ATTRIBUTION
 %token <substring> CODEBLOCK
 %token <substring> FOOTNOTE
 %token SECTION
@@ -38,6 +40,7 @@
 %type <node> title oblockssections0 oblockssections blockssections blocks block paragraph sections section oblocks
 %type <node> itemization itemizationitem item
 %type <node> enumeration enumerationitem
+%type <node> quote line attribution
 %type <node> blockfootnotes blockfootnote
 %type <node> footnotedsection
 
@@ -242,8 +245,9 @@ blocks: block
 | blocks BLOCKSEPARATOR blockfootnotes { $$ = footnote($1, $3); };
 
 block: paragraph
-| itemization;
-| enumeration;
+| itemization
+| enumeration
+| quote
 | CODEBLOCK { $$ = codeblock(parser, $1.string, $1.length); };
 
 blockfootnotes: blockfootnote { $$ = child(node("footnotes"), $1); }
@@ -264,6 +268,14 @@ enumeration: enumerationitem { $$ = child(node("enumeration"), $1); }
 | enumeration enumerationitem { $$ = child($1, $2); };
 
 enumerationitem: ENUMERATION item { $$ = $2; };
+
+quote: line { $$ = child(node("quote"), $1); }
+| quote line { $$ = child($1, $2); }
+| quote attribution { $$ = child($1, $2); };
+
+line: QUOTE inlines { $$ = child(node("line"), $2); };
+
+attribution: ATTRIBUTION inlines { $$ = child(node("attribution"), $2); };
 
 oblocks: /* empty */ { $$ = NULL; }
 | INDENT blocks DEDENT { $$ = $2; };
