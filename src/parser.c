@@ -2,6 +2,7 @@
 
 #include <libxml/tree.h>
 #include <stdbool.h>
+#include <string.h>
 
 #include "grammar.h"
 #include "parser.h"
@@ -164,19 +165,26 @@ bol(struct nmc_parser *parser, YYSTYPE *value)
                 return codeblock(parser, value);
         else if (xmlStrncmp(parser->p, BAD_CAST "  ", 2) == 0)
                 return token(parser, parser->p + 2, PARAGRAPH);
-        else if (xmlStrncmp(parser->p, BAD_CAST "§ ", xmlUTF8Size(BAD_CAST "§ ")) == 0)
-                return token(parser, parser->p + xmlUTF8Size(BAD_CAST "§ "), SECTION);
-        else if (xmlStrncmp(parser->p, BAD_CAST "• ", xmlUTF8Size(BAD_CAST "• ")) == 0)
-                return token(parser, parser->p + xmlUTF8Size(BAD_CAST "• "), ITEMIZATION);
+        else if (xmlStrncmp(parser->p, BAD_CAST "§ ", strlen("§ ")) == 0)
+                return token(parser, parser->p + strlen("§ "), SECTION);
+        else if (xmlStrncmp(parser->p, BAD_CAST "• ", strlen("• ")) == 0)
+                return token(parser, parser->p + strlen("• "), ITEMIZATION);
         else if ((length = subscript(parser)) > 0 && *(parser->p + length) == ' ')
                 return short_substring(parser, value, parser->p + length + 1, 1, ENUMERATION);
         else if ((length = superscript(parser)) > 0 && *(parser->p + length) == ' ')
                 return short_substring(parser, value, parser->p + length + 1, 1, FOOTNOTE);
-        else if (xmlStrncmp(parser->p, BAD_CAST "> ", xmlUTF8Size(BAD_CAST "> ")) == 0)
-                return token(parser, parser->p + xmlUTF8Size(BAD_CAST "> "), QUOTE);
-        else if (xmlStrncmp(parser->p, BAD_CAST "— ", xmlUTF8Size(BAD_CAST "— ")) == 0)
-                return token(parser, parser->p + xmlUTF8Size(BAD_CAST "— "), ATTRIBUTION);
-        else if (*parser->p == '\0')
+        else if (xmlStrncmp(parser->p, BAD_CAST "> ", strlen("> ")) == 0)
+                return token(parser, parser->p + strlen("> "), QUOTE);
+        else if (xmlStrncmp(parser->p, BAD_CAST "— ", strlen("— ")) == 0)
+                return token(parser, parser->p + strlen("— "), ATTRIBUTION);
+        else if (xmlStrncmp(parser->p, BAD_CAST "| ", strlen("| ")) == 0)
+                return token(parser, parser->p + strlen("| "), ROW);
+        else if (xmlStrncmp(parser->p, BAD_CAST "|-", strlen("|-")) == 0) {
+                const xmlChar *end = parser->p + strlen("|-");
+                while (*end != '\n' && *end != '\0')
+                        end++;
+                return token(parser, end, SEPARATOR);
+        } else if (*parser->p == '\0')
                 return END;
         else
                 return token(parser, parser->p, ERROR);
@@ -266,6 +274,8 @@ nmc_parser_lex(struct nmc_parser *parser, YYSTYPE *value)
         } else if (*end == 0xe2 && *(end + 1) == 0x80 && *(end + 2) == 0xb9) {
                 parser->p = end;
                 return code(parser, value);
+        } else if (*end == '|') {
+                return token(parser, parser->p + 1, ENTRY);
         }
 
         while (*end != '\0' && *end != ' ' && *end != '\n')

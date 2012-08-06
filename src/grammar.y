@@ -27,6 +27,9 @@
 %token ENUMERATION
 %token QUOTE
 %token ATTRIBUTION
+%token SEPARATOR
+%token ROW
+%token ENTRY
 %token <substring> CODEBLOCK
 %token <substring> FOOTNOTE
 %token SECTION
@@ -41,6 +44,7 @@
 %type <node> itemization itemizationitem item
 %type <node> enumeration enumerationitem
 %type <node> quote line attribution
+%type <node> table tablecontent body row entries entry
 %type <node> blockfootnotes blockfootnote
 %type <node> footnotedsection
 
@@ -254,6 +258,7 @@ block: paragraph
 | itemization
 | enumeration
 | quote
+| table
 | CODEBLOCK { $$ = codeblock(parser, $1.string, $1.length); };
 
 blockfootnotes: blockfootnote { $$ = wrap("footnotes", $1); }
@@ -282,6 +287,22 @@ quote: line { $$ = wrap("quote", $1); }
 line: QUOTE inlines { $$ = wrap("line", $2); };
 
 attribution: ATTRIBUTION inlines { $$ = wrap("attribution", $2); };
+
+table: tablecontent { $$ = wrap("table", $1); }
+
+tablecontent: row { $$ = wrap("body", $1); }
+| row SEPARATOR body { $$ = sibling(wrap("head", $1), wrap("body", $3)); }
+| row body { $$ = wrap("body", sibling($1, $2)); };
+
+body: row
+| body row { $$ = sibling($1, $2); };
+
+row: ROW entries ENTRY { $$ = $2; };
+
+entries: entry { $$ = wrap("row", $1); }
+| entries ENTRY entry { $$ = child($1, $3); };
+
+entry: inlines { $$ = wrap("entry", $1); };
 
 oblocks: /* empty */ { $$ = NULL; }
 | INDENT blocks DEDENT { $$ = $2; };
