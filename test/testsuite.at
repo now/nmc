@@ -217,6 +217,24 @@ AT_NMC_CHECK([title],
 
 AT_CLEANUP
 
+AT_SETUP([Document consisting of a title followed by an itemization with an inline])
+
+AT_DATA([title],
+[[Title
+
+• ‹Item1›
+]])
+
+AT_NMC_CHECK([title],
+[[  <title>Title</title>
+  <itemization>
+    <item>
+      <p><code>Item1</code></p>
+    </item>
+  </itemization>]])
+
+AT_CLEANUP
+
 AT_SETUP([Document consisting of a title followed by a two-item itemization, the first containing two paragraphs])
 
 AT_DATA([title],

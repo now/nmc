@@ -262,7 +262,7 @@ itemization: itemizationitem { $$ = child(node("itemization"), $1); }
 
 itemizationitem: ITEMIZATION item { $$ = $2; };
 
-item: { parser->want = INDENT; } words oblocks { $$ = child(child(node("item"), content("p", $2)), $3); };
+item: { parser->want = INDENT; } inlines oblocks { $$ = child(child(node("item"), child(node("p"), $2)), $3); };
 
 enumeration: enumerationitem { $$ = child(node("enumeration"), $1); }
 | enumeration enumerationitem { $$ = child($1, $2); };
