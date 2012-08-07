@@ -150,6 +150,31 @@ again:
 }
 
 static int
+definition(struct nmc_parser *parser, YYSTYPE *value)
+{
+        parser->p += 2;
+        const xmlChar *end = parser->p;
+
+        while (!is_end(end)) {
+                if (*end == '.') {
+                        const xmlChar *send = end;
+                        end++;
+                        while (*end == ' ')
+                                end++;
+                        if (*end == '/')
+                                return short_substring(parser,
+                                                       value,
+                                                       end + 1,
+                                                       end - send + 1,
+                                                       DEFINITION);
+                }
+                end++;
+        }
+
+        return token(parser, parser->p, ERROR);
+}
+
+static int
 bol(struct nmc_parser *parser, YYSTYPE *value)
 {
         parser->bol = false;
@@ -166,6 +191,8 @@ bol(struct nmc_parser *parser, YYSTYPE *value)
                 return token(parser, parser->p + strlen("§ "), SECTION);
         else if (xmlStrncmp(parser->p, BAD_CAST "• ", strlen("• ")) == 0)
                 return token(parser, parser->p + strlen("• "), ITEMIZATION);
+        else if (xmlStrncmp(parser->p, BAD_CAST "/ ", strlen("/ ")) == 0)
+                return definition(parser, value);
         else if ((length = subscript(parser)) > 0 && *(parser->p + length) == ' ')
                 return short_substring(parser, value, parser->p + length + 1, 1, ENUMERATION);
         else if ((length = superscript(parser)) > 0 && *(parser->p + length) == ' ')

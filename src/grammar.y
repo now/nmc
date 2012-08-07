@@ -26,6 +26,7 @@
 %token BLOCKSEPARATOR
 %token ITEMIZATION
 %token ENUMERATION
+%token <substring> DEFINITION
 %token QUOTE
 %token ATTRIBUTION
 %token SEPARATOR
@@ -47,6 +48,7 @@
 %type <node> title oblockssections0 oblockssections blockssections blocks block paragraph sections section oblocks
 %type <node> itemization itemizationitem item
 %type <node> enumeration enumerationitem
+%type <node> definitions definition
 %type <node> quote line attribution
 %type <node> table tablecontent body row entries entry
 %type <node> blockfootnotes blockfootnote
@@ -88,6 +90,14 @@ content(const char *name, xmlBufferPtr buffer)
         xmlNodePtr result = node(name);
         xmlNodeAddContent(result, xmlBufferContent(buffer));
         xmlBufferFree(buffer);
+        return result;
+}
+
+static xmlNodePtr
+scontent(const char *name, const xmlChar *string, int length)
+{
+        xmlNodePtr result = node(name);
+        xmlNodeAddContentLen(result, string, length);
         return result;
 }
 
@@ -192,6 +202,18 @@ codeblock(struct nmc_parser *parser, const xmlChar *string, int length)
 }
 
 static xmlNodePtr
+definition(const xmlChar *string, int length, xmlNodePtr item)
+{
+        xmlNodePtr definition = node("definition");
+        xmlAddChildList(definition, item->children);
+        item->children = NULL;
+        xmlAddChild(item, scontent("term", string, length));
+        xmlAddChild(item, definition);
+
+        return item;
+}
+
+static xmlNodePtr
 wappend(xmlNodePtr inlines, const xmlChar *string, int length)
 {
         xmlNodePtr last = inlines;
@@ -227,14 +249,6 @@ iappend(xmlNodePtr inlines, xmlNodePtr node)
 {
         sibling(sappend(inlines), node);
         return inlines;
-}
-
-static xmlNodePtr
-nline(const char *name, const xmlChar *string, int length)
-{
-        xmlNodePtr nline = node(name);
-        xmlNodeAddContentLen(nline, string, length);
-        return nline;
 }
 
 #define YYPRINT(file, type, value) print_token_value(file, type, value)
@@ -282,8 +296,8 @@ sinlines: WORD { $$ = xmlNewTextLen($1.string, $1.length); }
 | sinlines CONTINUATION WORD { $$ = tappend($1, $3.string, $3.length); };
 | sinlines CONTINUATION inline { $$ = iappend($1, $3); };
 
-inline: CODE { $$ = nline("code", $1.string, $1.length); }
-| EMPHASIS { $$ = nline("emphasis", $1.string, $1.length); }
+inline: CODE { $$ = scontent("code", $1.string, $1.length); }
+| EMPHASIS { $$ = scontent("emphasis", $1.string, $1.length); }
 | BEGINGROUP sinlines ENDGROUP { $$ = $2; };
 
 oblockssections0: /* empty */ { $$ = NULL; }
@@ -303,6 +317,7 @@ blocks: block
 block: paragraph
 | itemization
 | enumeration
+| definitions
 | quote
 | table
 | CODEBLOCK { $$ = codeblock(parser, $1.string, $1.length); };
@@ -325,6 +340,11 @@ enumeration: enumerationitem { $$ = wrap("enumeration", $1); }
 | enumeration enumerationitem { $$ = child($1, $2); };
 
 enumerationitem: ENUMERATION item { $$ = $2; };
+
+definitions: definition { $$ = wrap("definitions", $1); }
+| definitions definition { $$ = child($1, $2); };
+
+definition: DEFINITION item { $$ = definition($1.string, $1.length, $2); };
 
 quote: line { $$ = wrap("quote", $1); }
 | quote line { $$ = child($1, $2); }
