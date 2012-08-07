@@ -116,6 +116,12 @@ subscript(struct nmc_parser *parser)
         return total;
 }
 
+static inline bool
+is_end(const xmlChar *end)
+{
+        return *end == '\0' || *end == '\n';
+}
+
 static int
 codeblock(struct nmc_parser *parser, YYSTYPE *value)
 {
@@ -123,7 +129,7 @@ codeblock(struct nmc_parser *parser, YYSTYPE *value)
         const xmlChar *end = parser->p;
 
 again:
-        while (*end != '\n' && *end != '\0')
+        while (!is_end(end))
                 end++;
         if (*end == '\n') {
                 const xmlChar *bss = end + 1;
@@ -226,16 +232,23 @@ eol(struct nmc_parser *parser, YYSTYPE *value)
         }
 }
 
+static bool
+is_inline_end(const xmlChar *end)
+{
+        return is_end(end) ||
+                *end == ' ' ||
+                (*end == '}' && is_inline_end(end + 1));
+}
+
 static int
 code(struct nmc_parser *parser, YYSTYPE *value)
 {
         parser->p += 3;
         const xmlChar *end = parser->p;
-        while (*end != '\0' &&
-               *end != '\n' &&
+        while (!is_end(end) &&
                !(*end == 0xe2 && *(end + 1) == 0x80 && *(end + 2) == 0xba))
                 end++;
-        if (*end == '\0' || *end == '\n')
+        if (is_end(end))
                 return token(parser, parser->p - 3, ERROR);
         while (*end == 0xe2 && *(end + 1) == 0x80 && *(end + 2) == 0xba)
                 end += 3;
@@ -247,14 +260,10 @@ emphasis(struct nmc_parser *parser, YYSTYPE *value)
 {
         parser->p++;
         const xmlChar *end = parser->p;
-        while (*end != '\0' &&
-               *end != '\n' &&
-               (*end != '/' ||
-                (*(end + 1) != '\0' &&
-                 *(end + 1) != '\n' &&
-                 *(end + 1) != ' ')))
+        while (!is_end(end) &&
+               (*end != '/' || !is_inline_end(end + 1)))
                 end++;
-        if (*end == '\0' || *end == '\n')
+        if (is_end(end))
                 return token(parser, parser->p - 1, ERROR);
         end++;
         return short_substring(parser, value, end, 1, EMPHASIS);
@@ -286,9 +295,13 @@ nmc_parser_lex(struct nmc_parser *parser, YYSTYPE *value)
                 return token(parser, parser->p + 1, ENTRY);
         } else if  (*end == '/') {
                 return emphasis(parser, value);
+        } else if (*end == '{') {
+                return token(parser, parser->p + 1, BEGINGROUP);
+        } else if (*end == '}') {
+                return token(parser, parser->p + 1, ENDGROUP);
         }
 
-        while (*end != '\0' && *end != ' ' && *end != '\n')
+        while (!is_inline_end(end))
                 end++;
         if (end == parser->p)
                 return END;

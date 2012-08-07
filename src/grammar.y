@@ -38,6 +38,8 @@
 %token DEDENT
 %token <substring> CODE
 %token <substring> EMPHASIS
+%token BEGINGROUP
+%token ENDGROUP
 
 %type <buffer> words swords
 %type <string> ospace
@@ -281,7 +283,8 @@ sinlines: WORD { $$ = xmlNewTextLen($1.string, $1.length); }
 | sinlines CONTINUATION inline { $$ = iappend($1, $3); };
 
 inline: CODE { $$ = nline("code", $1.string, $1.length); }
-| EMPHASIS { $$ = nline("emphasis", $1.string, $1.length); };
+| EMPHASIS { $$ = nline("emphasis", $1.string, $1.length); }
+| BEGINGROUP sinlines ENDGROUP { $$ = $2; };
 
 oblockssections0: /* empty */ { $$ = NULL; }
 | BLOCKSEPARATOR blockssections { $$ = $2; };
