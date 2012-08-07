@@ -487,6 +487,34 @@ AT_NMC_CHECK([title],
 
 AT_CLEANUP
 
+AT_SETUP([Document consisting of a title followed by a paragraph containing an emphasis inline])
+
+AT_DATA([title],
+[[Title
+
+  Word1 /Emphasis/ Word2
+]])
+
+AT_NMC_CHECK([title],
+[[  <title>Title</title>
+  <p>Word1 <emphasis>Emphasis</emphasis> Word2</p>]])
+
+AT_CLEANUP
+
+AT_SETUP([Document consisting of a title followed by a paragraph containing an emphasis inline containing a solidus])
+
+AT_DATA([title],
+[[Title
+
+  Word1 /True/False/ Word2
+]])
+
+AT_NMC_CHECK([title],
+[[  <title>Title</title>
+  <p>Word1 <emphasis>True/False</emphasis> Word2</p>]])
+
+AT_CLEANUP
+
 AT_SETUP([Document consisting of a title followed by a quote])
 
 AT_DATA([title],

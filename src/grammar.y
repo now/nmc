@@ -37,6 +37,7 @@
 %token INDENT
 %token DEDENT
 %token <substring> CODE
+%token <substring> EMPHASIS
 
 %type <buffer> words swords
 %type <string> ospace
@@ -241,6 +242,7 @@ print_token_value(FILE *file, int type, YYSTYPE value)
         switch (type) {
         case WORD:
         case CODE:
+        case EMPHASIS:
                 fprintf(file, "%.*s", value.substring.length, value.substring.string);
                 break;
         case SPACE:
@@ -278,7 +280,8 @@ sinlines: WORD { $$ = xmlNewTextLen($1.string, $1.length); }
 | sinlines CONTINUATION WORD { $$ = tappend($1, $3.string, $3.length); };
 | sinlines CONTINUATION inline { $$ = iappend($1, $3); };
 
-inline: CODE { $$ = nline("code", $1.string, $1.length); };
+inline: CODE { $$ = nline("code", $1.string, $1.length); }
+| EMPHASIS { $$ = nline("emphasis", $1.string, $1.length); };
 
 oblockssections0: /* empty */ { $$ = NULL; }
 | BLOCKSEPARATOR blockssections { $$ = $2; };

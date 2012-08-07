@@ -232,14 +232,32 @@ code(struct nmc_parser *parser, YYSTYPE *value)
         parser->p += 3;
         const xmlChar *end = parser->p;
         while (*end != '\0' &&
-               !(*end == 0xe2 && *(end + 1) == 0x80 && *(end + 2) == 0xba) &&
-               *end != '\n')
+               *end != '\n' &&
+               !(*end == 0xe2 && *(end + 1) == 0x80 && *(end + 2) == 0xba))
                 end++;
         if (*end == '\0' || *end == '\n')
                 return token(parser, parser->p - 3, ERROR);
         while (*end == 0xe2 && *(end + 1) == 0x80 && *(end + 2) == 0xba)
                 end += 3;
         return short_substring(parser, value, end, 3, CODE);
+}
+
+static int
+emphasis(struct nmc_parser *parser, YYSTYPE *value)
+{
+        parser->p++;
+        const xmlChar *end = parser->p;
+        while (*end != '\0' &&
+               *end != '\n' &&
+               (*end != '/' ||
+                (*(end + 1) != '\0' &&
+                 *(end + 1) != '\n' &&
+                 *(end + 1) != ' ')))
+                end++;
+        if (*end == '\0' || *end == '\n')
+                return token(parser, parser->p - 1, ERROR);
+        end++;
+        return short_substring(parser, value, end, 1, EMPHASIS);
 }
 
 int
@@ -266,6 +284,8 @@ nmc_parser_lex(struct nmc_parser *parser, YYSTYPE *value)
                 return code(parser, value);
         } else if (*end == '|') {
                 return token(parser, parser->p + 1, ENTRY);
+        } else if  (*end == '/') {
+                return emphasis(parser, value);
         }
 
         while (*end != '\0' && *end != ' ' && *end != '\n')
