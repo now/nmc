@@ -9,13 +9,6 @@
 
 int nmc_grammar_parse(struct nmc_parser *parser);
 
-static void
-skip(struct nmc_parser *parser, xmlChar c)
-{
-        while (*parser->p == c)
-                parser->p++;
-}
-
 xmlDocPtr
 nmc_parse(const xmlChar *input)
 {
@@ -26,8 +19,6 @@ nmc_parse(const xmlChar *input)
         parser.indent = 0;
         parser.bol = false;
         parser.doc = xmlNewDoc(BAD_CAST "1.0");
-
-        skip(&parser, ' ');
 
         nmc_grammar_parse(&parser);
 
@@ -261,16 +252,15 @@ nmc_parser_lex(struct nmc_parser *parser, YYSTYPE *value)
                 return bol(parser, value);
 
         const xmlChar *end = parser->p;
-        while (*end == ' ')
-                end++;
 
-        if (*end == '\n') {
+        if (*end == ' ') {
+                do {
+                        end++;
+                } while (*end == ' ');
+                return token(parser, end, SPACE);
+        } else if (*end == '\n') {
                 parser->p = end;
                 return eol(parser, value);
-        } else if (end != parser->p) {
-                while (*(parser->p + 1) == ' ')
-                        parser->p++;
-                return substring(parser, value, end, WORD);
         } else if (*end == 0xe2 && *(end + 1) == 0x80 && *(end + 2) == 0xb9) {
                 parser->p = end;
                 return code(parser, value);

@@ -21,6 +21,7 @@
 %token ERROR
 %token <substring> WORD
 %token PARAGRAPH
+%token SPACE
 %token CONTINUATION
 %token BLOCKSEPARATOR
 %token ITEMIZATION
@@ -37,9 +38,9 @@
 %token DEDENT
 %token <substring> CODE
 
-%type <buffer> words
-%type <node> inlines
-%type <node> inline
+%type <buffer> words swords
+%type <string> ospace
+%type <node> inlines sinlines inline
 %type <node> title oblockssections0 oblockssections blockssections blocks block paragraph sections section oblocks
 %type <node> itemization itemizationitem item
 %type <node> enumeration enumerationitem
@@ -106,7 +107,7 @@ static xmlNodePtr
 sibling(xmlNodePtr first, xmlNodePtr last)
 {
         if (last == NULL)
-                return last;
+                return first;
         xmlAddSibling(first, last);
         return first;
 }
@@ -114,17 +115,16 @@ sibling(xmlNodePtr first, xmlNodePtr last)
 static xmlBufferPtr
 buffer(const xmlChar *string, int length)
 {
+        /* TODO May be able to use xmlBufferCreateStatic() */
         xmlBufferPtr buffer = xmlBufferCreate();
-        const xmlChar *p = string;
-        while (*p == ' ')
-                p++;
-        xmlBufferAdd(buffer, p, length - (p - string));
+        xmlBufferAdd(buffer, string, length);
         return buffer;
 }
 
 static xmlBufferPtr
 append(xmlBufferPtr buffer, const xmlChar *string, int length)
 {
+        xmlBufferAdd(buffer, BAD_CAST " ", 1);
         xmlBufferAdd(buffer, string, length);
         return buffer;
 }
@@ -189,35 +189,66 @@ codeblock(struct nmc_parser *parser, const xmlChar *string, int length)
 }
 
 static xmlNodePtr
-text(const xmlChar *string, int length)
-{
-        const xmlChar *p = string;
-        while (*p == ' ')
-                p++;
-        return xmlNewTextLen(p, length - (p - string));
-}
-
-static xmlNodePtr
-tappend(xmlNodePtr inlines, const xmlChar *string, int length)
+wappend(xmlNodePtr inlines, const xmlChar *string, int length)
 {
         xmlNodePtr last = inlines;
         while (last->next != NULL)
                 last = last->next;
 
-        if (xmlNodeIsText(last))
+        if (xmlNodeIsText(last)) {
                 xmlNodeAddContentLen(last, string, length);
-        else
-                sibling(inlines, xmlNewTextLen(string, length));
+                return last;
+        }
 
+        xmlNodePtr text = xmlNewTextLen(string, length);
+        sibling(last, text);
+        return text;
+}
+
+static xmlNodePtr
+sappend(xmlNodePtr inlines)
+{
+        return wappend(inlines, BAD_CAST " ", 1);
+}
+
+
+static xmlNodePtr
+tappend(xmlNodePtr inlines, const xmlChar *string, int length)
+{
+        xmlNodeAddContentLen(sappend(inlines), string, length);
         return inlines;
+}
+
+static xmlNodePtr
+iappend(xmlNodePtr inlines, xmlNodePtr node)
+{
+        sibling(sappend(inlines), node);
+        return inlines;
+}
+
+static xmlNodePtr
+nline(const char *name, const xmlChar *string, int length)
+{
+        xmlNodePtr nline = node(name);
+        xmlNodeAddContentLen(nline, string, length);
+        return nline;
 }
 
 #define YYPRINT(file, type, value) print_token_value(file, type, value)
 static void
 print_token_value(FILE *file, int type, YYSTYPE value)
 {
-        if (type == WORD)
+        switch (type) {
+        case WORD:
+        case CODE:
                 fprintf(file, "%.*s", value.substring.length, value.substring.string);
+                break;
+        case SPACE:
+                fputs(" ", file);
+                break;
+        default:
+                break;
+        }
 }
 }
 
@@ -227,18 +258,27 @@ nmc: title oblockssections0 { xmlDocSetRootElement(parser->doc, child(wrap("nml"
 
 title: words { $$ = content("title", $1); }
 
-words: WORD { $$ = buffer($1.string, $1.length); }
-| words WORD { $$ = append($1, $2.string, $2.length); }
-| words CONTINUATION WORD { $$ = append(append($1, BAD_CAST " ", 1), $3.string, $3.length); };
+words: ospace swords ospace { $$ = $2; };
 
-inlines: WORD { $$ = text($1.string, $1.length); }
+ospace: /* empty */ { $$ = BAD_CAST ""; }
+| SPACE { $$ = BAD_CAST " "; };
+
+swords: WORD { $$ = buffer($1.string, $1.length); }
+| swords SPACE WORD { $$ = append($1, $3.string, $3.length); }
+| swords CONTINUATION WORD { $$ = append($1, $3.string, $3.length); };
+
+inlines: ospace sinlines ospace { $$ = $2; };
+
+sinlines: WORD { $$ = xmlNewTextLen($1.string, $1.length); }
 | inline
-| inlines WORD { $$ = tappend($1, $2.string, $2.length); }
-| inlines inline { $$ = sibling($1, $2); }
-| inlines CONTINUATION WORD { $$ = tappend(tappend($1, BAD_CAST " ", 1), $3.string, $3.length); };
-| inlines CONTINUATION inline { $$ = sibling(tappend($1, BAD_CAST " ", 1), $3); };
+| sinlines WORD { $$ = $1; wappend($1, $2.string, $2.length); }
+| sinlines inline { $$ = sibling($1, $2); }
+| sinlines SPACE WORD { $$ = tappend($1, $3.string, $3.length); }
+| sinlines SPACE inline { $$ = iappend($1, $3); }
+| sinlines CONTINUATION WORD { $$ = tappend($1, $3.string, $3.length); };
+| sinlines CONTINUATION inline { $$ = iappend($1, $3); };
 
-inline: CODE { $$ = node("code"); xmlNodeAddContentLen($$, $1.string, $1.length); };
+inline: CODE { $$ = nline("code", $1.string, $1.length); };
 
 oblockssections0: /* empty */ { $$ = NULL; }
 | BLOCKSEPARATOR blockssections { $$ = $2; };

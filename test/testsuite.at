@@ -543,7 +543,7 @@ AT_NMC_CHECK([title],
   <table>
     <body>
       <row>
-        <entry>Entry </entry>
+        <entry>Entry</entry>
       </row>
     </body>
   </table>]])
@@ -563,8 +563,8 @@ AT_NMC_CHECK([title],
   <table>
     <body>
       <row>
-        <entry>One </entry>
-        <entry>Two </entry>
+        <entry>One</entry>
+        <entry>Two</entry>
       </row>
     </body>
   </table>]])
@@ -585,12 +585,12 @@ AT_NMC_CHECK([title],
   <table>
     <body>
       <row>
-        <entry>One </entry>
-        <entry>Two </entry>
+        <entry>One</entry>
+        <entry>Two</entry>
       </row>
       <row>
-        <entry>Three </entry>
-        <entry>Four </entry>
+        <entry>Three</entry>
+        <entry>Four</entry>
       </row>
     </body>
   </table>]])
@@ -612,14 +612,14 @@ AT_NMC_CHECK([title],
   <table>
     <head>
       <row>
-        <entry>One </entry>
-        <entry>Two </entry>
+        <entry>One</entry>
+        <entry>Two</entry>
       </row>
     </head>
     <body>
       <row>
-        <entry>Three </entry>
-        <entry>Four </entry>
+        <entry>Three</entry>
+        <entry>Four</entry>
       </row>
     </body>
   </table>]])
