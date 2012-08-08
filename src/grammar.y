@@ -39,12 +39,14 @@
 %token DEDENT
 %token <substring> CODE
 %token <substring> EMPHASIS
+%token <substring> REFERENCE
+%token REFERENCESEPARATOR
 %token BEGINGROUP
 %token ENDGROUP
 
 %type <buffer> words swords
 %type <string> ospace
-%type <node> inlines sinlines inline
+%type <node> inlines sinlines inline atom references reference
 %type <node> title oblockssections0 oblockssections blockssections blocks block paragraph sections section oblocks
 %type <node> itemization itemizationitem item
 %type <node> enumeration enumerationitem
@@ -119,6 +121,8 @@ wrap(const char *name, xmlNodePtr kid)
 static xmlNodePtr
 sibling(xmlNodePtr first, xmlNodePtr last)
 {
+        if (first == NULL)
+                return last;
         if (last == NULL)
                 return first;
         xmlAddSibling(first, last);
@@ -214,7 +218,30 @@ definition(const xmlChar *string, int length, xmlNodePtr item)
 }
 
 static xmlNodePtr
-wappend(xmlNodePtr inlines, const xmlChar *string, int length)
+anchor(xmlNodePtr atom, xmlNodePtr references)
+{
+        if (references == NULL)
+                return atom;
+
+        xmlNodePtr reference = references;
+        xmlAddChild(reference, atom);
+        while (reference->next != NULL) {
+                xmlNodePtr next = reference->next;
+                xmlUnlinkNode(reference);
+                xmlAddChild(next, reference);
+                reference = next;
+        }
+        return reference;
+}
+
+static xmlNodePtr
+word(const xmlChar *string, int length, xmlNodePtr references)
+{
+        return anchor(xmlNewTextLen(string, length), references);
+}
+
+static xmlNodePtr
+append_text(xmlNodePtr inlines, const xmlChar *string, int length)
 {
         xmlNodePtr last = inlines;
         while (last->next != NULL)
@@ -231,23 +258,35 @@ wappend(xmlNodePtr inlines, const xmlChar *string, int length)
 }
 
 static xmlNodePtr
-sappend(xmlNodePtr inlines)
+append_space(xmlNodePtr inlines)
 {
-        return wappend(inlines, BAD_CAST " ", 1);
+        return append_text(inlines, BAD_CAST " ", 1);
 }
 
-
 static xmlNodePtr
-tappend(xmlNodePtr inlines, const xmlChar *string, int length)
+append_inline(xmlNodePtr inlines, xmlNodePtr node)
 {
-        xmlNodeAddContentLen(sappend(inlines), string, length);
+        sibling(append_space(inlines), node);
         return inlines;
 }
 
 static xmlNodePtr
-iappend(xmlNodePtr inlines, xmlNodePtr node)
+append_word(xmlNodePtr inlines, const xmlChar *string, int length, xmlNodePtr references)
 {
-        sibling(sappend(inlines), node);
+        if (references != NULL)
+                return sibling(inlines, word(string, length, references));
+
+        append_text(inlines, string, length);
+        return inlines;
+}
+
+static xmlNodePtr
+append_spaced_word(xmlNodePtr inlines, const xmlChar *string, int length, xmlNodePtr references)
+{
+        if (references != NULL)
+                return append_inline(inlines, word(string, length, references));
+
+        xmlNodeAddContentLen(append_space(inlines), string, length);
         return inlines;
 }
 
@@ -289,16 +328,24 @@ spacecontinuation: SPACE
 
 inlines: ospace sinlines ospace { $$ = $2; };
 
-sinlines: WORD { $$ = xmlNewTextLen($1.string, $1.length); }
+sinlines: WORD references { $$ = word($1.string, $1.length, $2); }
 | inline
-| sinlines WORD { $$ = $1; wappend($1, $2.string, $2.length); }
+| sinlines WORD references { $$ = append_word($1, $2.string, $2.length, $3); }
 | sinlines inline { $$ = sibling($1, $2); }
-| sinlines spacecontinuation WORD { $$ = tappend($1, $3.string, $3.length); }
-| sinlines spacecontinuation inline { $$ = iappend($1, $3); };
+| sinlines spacecontinuation WORD references { $$ = append_spaced_word($1, $3.string, $3.length, $4); }
+| sinlines spacecontinuation inline { $$ = append_inline($1, $3); };
 
-inline: CODE { $$ = scontent("code", $1.string, $1.length); }
+inline: atom references { $$ = anchor($1, $2); };
+
+atom: CODE { $$ = scontent("code", $1.string, $1.length); }
 | EMPHASIS { $$ = scontent("emphasis", $1.string, $1.length); }
 | BEGINGROUP sinlines ENDGROUP { $$ = $2; };
+
+references: /* empty */ { $$ = NULL; }
+| reference
+| references REFERENCESEPARATOR reference { $$ = sibling($1, $3); };
+
+reference: REFERENCE { $$ = prop(node("reference"), "id", $1.string, $1.length); };
 
 oblockssections0: /* empty */ { $$ = NULL; }
 | BLOCKSEPARATOR blockssections { $$ = $2; };

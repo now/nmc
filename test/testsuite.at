@@ -323,32 +323,7 @@ AT_SETUP([Document consisting of a title followed by a paragraph with footnotes]
 AT_DATA([title],
 [[Title
 
-  Paragraph
-
-¹ Footnote1
-² Footnote2
-]])
-
-AT_NMC_CHECK([title],
-[[  <title>Title</title>
-  <footnoted>
-    <p>Paragraph</p>
-    <footnotes>
-      <footnote id="¹">Footnote1</footnote>
-      <footnote id="²">Footnote2</footnote>
-    </footnotes>
-  </footnoted>]])
-
-AT_CLEANUP
-
-AT_SETUP([Document consisting of a title followed by two paragraphs, the last having footnotes])
-
-AT_DATA([title],
-[[Title
-
-  Paragraph1
-
-  Paragraph2
+  Word1¹⁺² Word2 Word3³³
 
 ¹ Footnote1
 ² Footnote2
@@ -357,9 +332,8 @@ AT_DATA([title],
 
 AT_NMC_CHECK([title],
 [[  <title>Title</title>
-  <p>Paragraph1</p>
   <footnoted>
-    <p>Paragraph2</p>
+    <p><reference id="²"><reference id="¹">Word1</reference></reference> Word2 <reference id="³³">Word3</reference></p>
     <footnotes>
       <footnote id="¹">Footnote1</footnote>
       <footnote id="²">Footnote2</footnote>
@@ -549,7 +523,6 @@ AT_NMC_CHECK([title],
   <p>Word1 <emphasis>True/False</emphasis> Word2</p>]])
 
 AT_CLEANUP
-
 
 AT_SETUP([Document consisting of a title followed by a paragraph containing a group])
 

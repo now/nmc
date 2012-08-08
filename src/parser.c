@@ -266,13 +266,19 @@ eol(struct nmc_parser *parser, YYSTYPE *value)
 }
 
 static bool
+is_reference_or_space_or_end(const xmlChar *end)
+{
+        return is_space_or_end(end) || length_of_superscript(end) > 0;
+}
+
+static bool
 is_group_end(const xmlChar *end)
 {
         if (*end == '}') {
                 do {
                         end++;
                 } while (*end == '}');
-                return is_space_or_end(end);
+                return is_reference_or_space_or_end(end);
         }
 
         return false;
@@ -281,7 +287,7 @@ is_group_end(const xmlChar *end)
 static bool
 is_inline_end(const xmlChar *end)
 {
-        return is_space_or_end(end) ||
+        return is_reference_or_space_or_end(end) ||
                 is_group_end(end);
 }
 
@@ -323,6 +329,7 @@ nmc_parser_lex(struct nmc_parser *parser, YYSTYPE *value)
         if (parser->bol)
                 return bol(parser, value);
 
+        int length;
         const xmlChar *end = parser->p;
 
         if (*end == ' ') {
@@ -344,6 +351,12 @@ nmc_parser_lex(struct nmc_parser *parser, YYSTYPE *value)
                 return token(parser, parser->p + 1, BEGINGROUP);
         } else if (is_group_end(end)) {
                 return token(parser, parser->p + 1, ENDGROUP);
+        } else if ((length = superscript(parser)) > 0) {
+                // TODO Only catch this if followed by is_inline_end().
+                return substring(parser, value, parser->p + length, REFERENCE);
+        } else if (*end == 0xe2 && *(end + 1) == 0x81 && *(end + 2) == 0xba) {
+                // TODO Only catch this if followed by is_inline_end().
+                return token(parser, parser->p + 3, REFERENCESEPARATOR);
         }
 
         while (!is_inline_end(end))
