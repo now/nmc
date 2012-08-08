@@ -282,8 +282,10 @@ ospace: /* empty */ { $$ = BAD_CAST ""; }
 | SPACE { $$ = BAD_CAST " "; };
 
 swords: WORD { $$ = buffer($1.string, $1.length); }
-| swords SPACE WORD { $$ = append($1, $3.string, $3.length); }
-| swords CONTINUATION WORD { $$ = append($1, $3.string, $3.length); };
+| swords spacecontinuation WORD { $$ = append($1, $3.string, $3.length); };
+
+spacecontinuation: SPACE
+| CONTINUATION;
 
 inlines: ospace sinlines ospace { $$ = $2; };
 
@@ -291,10 +293,8 @@ sinlines: WORD { $$ = xmlNewTextLen($1.string, $1.length); }
 | inline
 | sinlines WORD { $$ = $1; wappend($1, $2.string, $2.length); }
 | sinlines inline { $$ = sibling($1, $2); }
-| sinlines SPACE WORD { $$ = tappend($1, $3.string, $3.length); }
-| sinlines SPACE inline { $$ = iappend($1, $3); }
-| sinlines CONTINUATION WORD { $$ = tappend($1, $3.string, $3.length); };
-| sinlines CONTINUATION inline { $$ = iappend($1, $3); };
+| sinlines spacecontinuation WORD { $$ = tappend($1, $3.string, $3.length); }
+| sinlines spacecontinuation inline { $$ = iappend($1, $3); };
 
 inline: CODE { $$ = scontent("code", $1.string, $1.length); }
 | EMPHASIS { $$ = scontent("emphasis", $1.string, $1.length); }
