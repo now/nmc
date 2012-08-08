@@ -335,9 +335,9 @@ AT_NMC_CHECK([title],
   <footnoted>
     <p><reference id="²"><reference id="¹">Word1</reference></reference> Word2 <reference id="³³">Word3</reference></p>
     <footnotes>
-      <footnote id="¹">Footnote1</footnote>
-      <footnote id="²">Footnote2</footnote>
-      <footnote id="³³">Footnote33</footnote>
+      <footnote id="¹" referenced="true">Footnote1</footnote>
+      <footnote id="²" referenced="true">Footnote2</footnote>
+      <footnote id="³³" referenced="true">Footnote33</footnote>
     </footnotes>
   </footnoted>]])
 
@@ -350,7 +350,7 @@ AT_DATA([title],
 
 § Section
 
-    Paragraph
+    Word1 Word2¹ Word3
 
   ¹ Footnote
 ]])
@@ -360,9 +360,9 @@ AT_NMC_CHECK([title],
   <section>
     <title>Section</title>
     <footnoted>
-      <p>Paragraph</p>
+      <p>Word1 <reference id="¹">Word2</reference> Word3</p>
       <footnotes>
-        <footnote id="¹">Footnote</footnote>
+        <footnote id="¹" referenced="true">Footnote</footnote>
       </footnotes>
     </footnoted>
   </section>]])
@@ -376,7 +376,7 @@ AT_DATA([title],
 
 § Section
 
-    Paragraph
+    Word1 Word2¹ Word3
 
 ¹ Footnote
 ]])
@@ -386,10 +386,10 @@ AT_NMC_CHECK([title],
   <footnoted>
     <section>
       <title>Section</title>
-      <p>Paragraph</p>
+      <p>Word1 <reference id="¹">Word2</reference> Word3</p>
     </section>
     <footnotes>
-      <footnote id="¹">Footnote</footnote>
+      <footnote id="¹" referenced="true">Footnote</footnote>
     </footnotes>
   </footnoted>]])
 

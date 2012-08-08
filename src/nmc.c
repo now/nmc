@@ -8,8 +8,16 @@
 #include "grammar.h"
 #include "nmc.h"
 #include "parser.h"
+#include "validator.h"
 
 extern int nmc_grammar_debug;
+
+static int
+report_error(const char *error)
+{
+        fputs(error, stderr);
+        return 1;
+}
 
 int
 main(UNUSED(int argc), UNUSED(char **argv))
@@ -21,6 +29,9 @@ main(UNUSED(int argc), UNUSED(char **argv))
         if (getenv("NMC_DEBUG"))
                 nmc_grammar_debug = 1;
         xmlDocPtr doc = nmc_parse(BAD_CAST buffer);
+        xmlListPtr errors = nmc_validate(doc);
+        xmlListWalk(errors, (xmlListWalker)report_error, NULL);
+        xmlListDelete(errors);
         xmlSaveFormatFileEnc("-", doc, "UTF-8", 1);
         xmlFreeDoc(doc);
         xmlCleanupParser();
