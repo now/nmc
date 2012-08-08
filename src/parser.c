@@ -266,10 +266,23 @@ eol(struct nmc_parser *parser, YYSTYPE *value)
 }
 
 static bool
+is_group_end(const xmlChar *end)
+{
+        if (*end == '}') {
+                do {
+                        end++;
+                } while (*end == '}');
+                return is_space_or_end(end);
+        }
+
+        return false;
+}
+
+static bool
 is_inline_end(const xmlChar *end)
 {
         return is_space_or_end(end) ||
-                (*end == '}' && is_inline_end(end + 1));
+                is_group_end(end);
 }
 
 static int
@@ -329,7 +342,7 @@ nmc_parser_lex(struct nmc_parser *parser, YYSTYPE *value)
                 return emphasis(parser, value);
         } else if (*end == '{') {
                 return token(parser, parser->p + 1, BEGINGROUP);
-        } else if (*end == '}') {
+        } else if (is_group_end(end)) {
                 return token(parser, parser->p + 1, ENDGROUP);
         }
 
