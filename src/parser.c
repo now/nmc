@@ -122,6 +122,12 @@ is_end(const xmlChar *end)
         return *end == '\0' || *end == '\n';
 }
 
+static inline bool
+is_space_or_end(const xmlChar *end)
+{
+        return is_end(end) || *end == ' ';
+}
+
 static int
 codeblock(struct nmc_parser *parser, YYSTYPE *value)
 {
@@ -161,7 +167,7 @@ definition(struct nmc_parser *parser, YYSTYPE *value)
                         end++;
                         while (*end == ' ')
                                 end++;
-                        if (*end == '/')
+                        if (*end == '/' && is_space_or_end(end + 1))
                                 return short_substring(parser,
                                                        value,
                                                        end + 1,
@@ -262,8 +268,7 @@ eol(struct nmc_parser *parser, YYSTYPE *value)
 static bool
 is_inline_end(const xmlChar *end)
 {
-        return is_end(end) ||
-                *end == ' ' ||
+        return is_space_or_end(end) ||
                 (*end == '}' && is_inline_end(end + 1));
 }
 
