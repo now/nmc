@@ -29,7 +29,7 @@
 %token <substring> DEFINITION
 %token QUOTE
 %token ATTRIBUTION
-%token SEPARATOR
+%token TABLESEPARATOR
 %token ROW
 %token ENTRY
 %token <substring> CODEBLOCK
@@ -404,7 +404,7 @@ attribution: ATTRIBUTION inlines { $$ = wrap("attribution", $2); };
 table: tablecontent { $$ = wrap("table", $1); }
 
 tablecontent: row { $$ = wrap("body", $1); }
-| row SEPARATOR body { $$ = sibling(wrap("head", $1), wrap("body", $3)); }
+| row TABLESEPARATOR body { $$ = sibling(wrap("head", $1), wrap("body", $3)); }
 | row body { $$ = wrap("body", sibling($1, $2)); };
 
 body: row

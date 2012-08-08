@@ -213,7 +213,7 @@ bol(struct nmc_parser *parser, YYSTYPE *value)
                 const xmlChar *end = parser->p + strlen("|-");
                 while (*end != '\n' && *end != '\0')
                         end++;
-                return token(parser, end, SEPARATOR);
+                return token(parser, end, TABLESEPARATOR);
         } else if (*parser->p == '\0')
                 return END;
         else
