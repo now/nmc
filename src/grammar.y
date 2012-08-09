@@ -59,8 +59,7 @@
 %type <buffer> words swords
 %type <string> ospace
 %type <node> inlines sinlines referencedinline inline references reference
-%type <node> oblocks
-%type <node> item
+%type <node> item oblocks
 
 %union {
         const xmlChar *string;
