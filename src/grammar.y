@@ -46,7 +46,7 @@
 
 %type <buffer> words swords
 %type <string> ospace
-%type <node> inlines sinlines inline atom references reference
+%type <node> inlines sinlines referencedinline inline references reference
 %type <node> title oblockssections0 oblockssections blockssections blocks block paragraph sections section oblocks
 %type <node> itemization itemizationitem item
 %type <node> enumeration enumerationitem
@@ -328,15 +328,15 @@ spacecontinuation: SPACE
 inlines: ospace sinlines ospace { $$ = $2; };
 
 sinlines: WORD references { $$ = word($1.string, $1.length, $2); }
-| inline
+| referencedinline
 | sinlines WORD references { $$ = append_word($1, $2.string, $2.length, $3); }
-| sinlines inline { $$ = sibling($1, $2); }
+| sinlines referencedinline { $$ = sibling($1, $2); }
 | sinlines spacecontinuation WORD references { $$ = append_spaced_word($1, $3.string, $3.length, $4); }
-| sinlines spacecontinuation inline { $$ = append_inline($1, $3); };
+| sinlines spacecontinuation referencedinline { $$ = append_inline($1, $3); };
 
-inline: atom references { $$ = anchor($1, $2); };
+referencedinline: inline references { $$ = anchor($1, $2); };
 
-atom: CODE { $$ = scontent("code", $1.string, $1.length); }
+inline: CODE { $$ = scontent("code", $1.string, $1.length); }
 | EMPHASIS { $$ = scontent("emphasis", $1.string, $1.length); }
 | BEGINGROUP sinlines ENDGROUP { $$ = $2; };
 
