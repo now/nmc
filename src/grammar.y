@@ -52,7 +52,7 @@
 %type <node> enumeration enumerationitem
 %type <node> definitions definition
 %type <node> quote line attribution
-%type <node> table tablecontent body row entries entry
+%type <node> table headbody body row entries entry
 %type <node> footnotes footnote footnotedsection
 
 %union {
@@ -400,9 +400,9 @@ line: QUOTE inlines { $$ = wrap("line", $2); };
 
 attribution: ATTRIBUTION inlines { $$ = wrap("attribution", $2); };
 
-table: tablecontent { $$ = wrap("table", $1); }
+table: headbody { $$ = wrap("table", $1); }
 
-tablecontent: row { $$ = wrap("body", $1); }
+headbody: row { $$ = wrap("body", $1); }
 | row TABLESEPARATOR body { $$ = sibling(wrap("head", $1), wrap("body", $3)); }
 | row body { $$ = wrap("body", sibling($1, $2)); };
 
