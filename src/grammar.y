@@ -54,12 +54,12 @@
 %type <node> itemization itemizationitem
 %type <node> enumeration enumerationitem
 %type <node> definitions definition
+%type <node> quote line attribution
 %type <buffer> words swords
 %type <string> ospace
 %type <node> inlines sinlines referencedinline inline references reference
 %type <node> oblocks
 %type <node> item
-%type <node> quote line attribution
 %type <node> table headbody body row entries entry
 
 %union {
@@ -373,6 +373,14 @@ definitions: definition { $$ = wrap("definitions", $1); }
 
 definition: DEFINITION item { $$ = definition($1.string, $1.length, $2); };
 
+quote: line { $$ = wrap("quote", $1); }
+| quote line { $$ = child($1, $2); }
+| quote attribution { $$ = child($1, $2); };
+
+line: QUOTE inlines { $$ = wrap("line", $2); };
+
+attribution: ATTRIBUTION inlines { $$ = wrap("attribution", $2); };
+
 words: ospace swords ospace { $$ = $2; };
 
 ospace: /* empty */ { $$ = BAD_CAST ""; }
@@ -406,14 +414,6 @@ references: /* empty */ { $$ = NULL; }
 reference: REFERENCE { $$ = prop(node("reference"), "id", $1.string, $1.length); };
 
 item: { parser->want = INDENT; } inlines oblocks { $$ = child(wrap("item", wrap("p", $2)), $3); };
-
-quote: line { $$ = wrap("quote", $1); }
-| quote line { $$ = child($1, $2); }
-| quote attribution { $$ = child($1, $2); };
-
-line: QUOTE inlines { $$ = wrap("line", $2); };
-
-attribution: ATTRIBUTION inlines { $$ = wrap("attribution", $2); };
 
 table: headbody { $$ = wrap("table", $1); }
 
