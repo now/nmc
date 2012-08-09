@@ -52,12 +52,12 @@
 %type <node> footnotes footnote
 %type <node> paragraph
 %type <node> itemization itemizationitem
+%type <node> enumeration enumerationitem
 %type <buffer> words swords
 %type <string> ospace
 %type <node> inlines sinlines referencedinline inline references reference
 %type <node> oblocks
 %type <node> item
-%type <node> enumeration enumerationitem
 %type <node> definitions definition
 %type <node> quote line attribution
 %type <node> table headbody body row entries entry
@@ -363,6 +363,11 @@ itemization: itemizationitem { $$ = wrap("itemization", $1); }
 
 itemizationitem: ITEMIZATION item { $$ = $2; };
 
+enumeration: enumerationitem { $$ = wrap("enumeration", $1); }
+| enumeration enumerationitem { $$ = child($1, $2); };
+
+enumerationitem: ENUMERATION item { $$ = $2; };
+
 words: ospace swords ospace { $$ = $2; };
 
 ospace: /* empty */ { $$ = BAD_CAST ""; }
@@ -396,11 +401,6 @@ references: /* empty */ { $$ = NULL; }
 reference: REFERENCE { $$ = prop(node("reference"), "id", $1.string, $1.length); };
 
 item: { parser->want = INDENT; } inlines oblocks { $$ = child(wrap("item", wrap("p", $2)), $3); };
-
-enumeration: enumerationitem { $$ = wrap("enumeration", $1); }
-| enumeration enumerationitem { $$ = child($1, $2); };
-
-enumerationitem: ENUMERATION item { $$ = $2; };
 
 definitions: definition { $$ = wrap("definitions", $1); }
 | definitions definition { $$ = child($1, $2); };
