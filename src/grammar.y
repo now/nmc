@@ -45,16 +45,20 @@
 %token ENDGROUP
 
 %type <node> title oblockssections0
+%type <node> blockssections
+%type <node> blocks block
+%type <node> sections footnotedsection section
+%type <node> oblockssections
+%type <node> footnotes footnote
 %type <buffer> words swords
 %type <string> ospace
 %type <node> inlines sinlines referencedinline inline references reference
-%type <node> oblockssections blockssections blocks block paragraph sections section oblocks
+%type <node> paragraph oblocks
 %type <node> itemization itemizationitem item
 %type <node> enumeration enumerationitem
 %type <node> definitions definition
 %type <node> quote line attribution
 %type <node> table headbody body row entries entry
-%type <node> footnotes footnote footnotedsection
 
 %union {
         const xmlChar *string;
@@ -318,6 +322,38 @@ title: words { $$ = content("title", $1); }
 oblockssections0: /* empty */ { $$ = NULL; }
 | BLOCKSEPARATOR blockssections { $$ = $2; };
 
+blockssections: blocks
+| blocks BLOCKSEPARATOR sections { $$ = sibling($1, $3); }
+| sections;
+
+blocks: block
+| blocks BLOCKSEPARATOR block { $$ = sibling($1, $3); }
+| blocks BLOCKSEPARATOR footnotes { $$ = footnote($1, $3); };
+
+block: paragraph
+| itemization
+| enumeration
+| definitions
+| quote
+| table
+| CODEBLOCK { $$ = codeblock(parser, $1.string, $1.length); };
+
+sections: footnotedsection
+| sections footnotedsection { $$ = sibling($1, $2); };
+
+footnotedsection: section
+| section footnotes { $$ = footnote($1, $2); };
+
+section: SECTION { parser->want = INDENT; } title oblockssections { $$ = child(wrap("section", $3), $4); };
+
+oblockssections: /* empty */ { $$ = NULL; }
+| INDENT blockssections DEDENT { $$ = $2; };
+
+footnotes: footnote { $$ = wrap("footnotes", $1); }
+| footnotes footnote { $$ = child($1, $2); };
+
+footnote: FOOTNOTE words { $$ = prop(content("footnote", $2), "id", $1.string, $1.length); };
+
 words: ospace swords ospace { $$ = $2; };
 
 ospace: /* empty */ { $$ = BAD_CAST ""; }
@@ -349,30 +385,6 @@ references: /* empty */ { $$ = NULL; }
 | references REFERENCESEPARATOR reference { $$ = sibling($1, $3); };
 
 reference: REFERENCE { $$ = prop(node("reference"), "id", $1.string, $1.length); };
-
-oblockssections: /* empty */ { $$ = NULL; }
-| INDENT blockssections DEDENT { $$ = $2; };
-
-blockssections: blocks
-| blocks BLOCKSEPARATOR sections { $$ = sibling($1, $3); }
-| sections;
-
-blocks: block
-| blocks BLOCKSEPARATOR block { $$ = sibling($1, $3); }
-| blocks BLOCKSEPARATOR footnotes { $$ = footnote($1, $3); };
-
-block: paragraph
-| itemization
-| enumeration
-| definitions
-| quote
-| table
-| CODEBLOCK { $$ = codeblock(parser, $1.string, $1.length); };
-
-footnotes: footnote { $$ = wrap("footnotes", $1); }
-| footnotes footnote { $$ = child($1, $2); };
-
-footnote: FOOTNOTE words { $$ = prop(content("footnote", $2), "id", $1.string, $1.length); };
 
 paragraph: PARAGRAPH inlines { $$ = wrap("p", $2); };
 
@@ -419,11 +431,3 @@ entry: inlines { $$ = wrap("entry", $1); };
 
 oblocks: /* empty */ { $$ = NULL; }
 | INDENT blocks DEDENT { $$ = $2; };
-
-sections: footnotedsection
-| sections footnotedsection { $$ = sibling($1, $2); };
-
-footnotedsection: section
-| section footnotes { $$ = footnote($1, $2); };
-
-section: SECTION { parser->want = INDENT; } title oblockssections { $$ = child(wrap("section", $3), $4); };
