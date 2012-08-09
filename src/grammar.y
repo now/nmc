@@ -53,8 +53,7 @@
 %type <node> definitions definition
 %type <node> quote line attribution
 %type <node> table tablecontent body row entries entry
-%type <node> blockfootnotes blockfootnote
-%type <node> footnotedsection
+%type <node> footnotes footnote footnotedsection
 
 %union {
         const xmlChar *string;
@@ -359,7 +358,7 @@ blockssections: blocks
 
 blocks: block
 | blocks BLOCKSEPARATOR block { $$ = sibling($1, $3); }
-| blocks BLOCKSEPARATOR blockfootnotes { $$ = footnote($1, $3); };
+| blocks BLOCKSEPARATOR footnotes { $$ = footnote($1, $3); };
 
 block: paragraph
 | itemization
@@ -369,10 +368,10 @@ block: paragraph
 | table
 | CODEBLOCK { $$ = codeblock(parser, $1.string, $1.length); };
 
-blockfootnotes: blockfootnote { $$ = wrap("footnotes", $1); }
-| blockfootnotes blockfootnote { $$ = child($1, $2); };
+footnotes: footnote { $$ = wrap("footnotes", $1); }
+| footnotes footnote { $$ = child($1, $2); };
 
-blockfootnote: FOOTNOTE words { $$ = prop(content("footnote", $2), "id", $1.string, $1.length); };
+footnote: FOOTNOTE words { $$ = prop(content("footnote", $2), "id", $1.string, $1.length); };
 
 paragraph: PARAGRAPH inlines { $$ = wrap("p", $2); };
 
@@ -424,6 +423,6 @@ sections: footnotedsection
 | sections footnotedsection { $$ = sibling($1, $2); };
 
 footnotedsection: section
-| section blockfootnotes { $$ = footnote($1, $2); };
+| section footnotes { $$ = footnote($1, $2); };
 
 section: SECTION { parser->want = INDENT; } title oblockssections { $$ = child(wrap("section", $3), $4); };
