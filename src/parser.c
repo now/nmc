@@ -18,6 +18,8 @@ nmc_parse(const xmlChar *input)
         parser.dedents = 0;
         parser.indent = 0;
         parser.bol = false;
+        parser.want = ERROR;
+        parser.words = false;
         parser.doc = xmlNewDoc(BAD_CAST "1.0");
 
         nmc_grammar_parse(&parser);
@@ -340,6 +342,8 @@ nmc_parser_lex(struct nmc_parser *parser, YYSTYPE *value)
         } else if (*end == '\n') {
                 parser->p = end;
                 return eol(parser, value);
+        } else if (parser->want == WORD) {
+                /* Fall through. */
         } else if (*end == 0xe2 && *(end + 1) == 0x80 && *(end + 2) == 0xb9) {
                 parser->p = end;
                 return code(parser, value);

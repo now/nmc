@@ -396,7 +396,7 @@ entries: entry { $$ = wrap("row", $1); }
 
 entry: inlines { $$ = wrap("entry", $1); };
 
-words: ospace swords ospace { $$ = $2; };
+words: { parser->words = true; } ospace swords ospace { parser->words = false; } { $$ = $3; };
 
 ospace: /* empty */ { $$ = BAD_CAST ""; }
 | SPACE { $$ = BAD_CAST " "; };

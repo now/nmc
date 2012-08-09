@@ -9,6 +9,7 @@ struct nmc_parser
         int dedents;
         bool bol;
         int want;
+        bool words;
         xmlDocPtr doc;
 };
 
