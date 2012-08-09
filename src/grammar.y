@@ -44,10 +44,11 @@
 %token BEGINGROUP
 %token ENDGROUP
 
+%type <node> title oblockssections0
 %type <buffer> words swords
 %type <string> ospace
 %type <node> inlines sinlines referencedinline inline references reference
-%type <node> title oblockssections0 oblockssections blockssections blocks block paragraph sections section oblocks
+%type <node> oblockssections blockssections blocks block paragraph sections section oblocks
 %type <node> itemization itemizationitem item
 %type <node> enumeration enumerationitem
 %type <node> definitions definition
@@ -314,6 +315,9 @@ nmc: title oblockssections0 { xmlDocSetRootElement(parser->doc, child(wrap("nml"
 
 title: words { $$ = content("title", $1); }
 
+oblockssections0: /* empty */ { $$ = NULL; }
+| BLOCKSEPARATOR blockssections { $$ = $2; };
+
 words: ospace swords ospace { $$ = $2; };
 
 ospace: /* empty */ { $$ = BAD_CAST ""; }
@@ -345,9 +349,6 @@ references: /* empty */ { $$ = NULL; }
 | references REFERENCESEPARATOR reference { $$ = sibling($1, $3); };
 
 reference: REFERENCE { $$ = prop(node("reference"), "id", $1.string, $1.length); };
-
-oblockssections0: /* empty */ { $$ = NULL; }
-| BLOCKSEPARATOR blockssections { $$ = $2; };
 
 oblockssections: /* empty */ { $$ = NULL; }
 | INDENT blockssections DEDENT { $$ = $2; };
