@@ -55,12 +55,12 @@
 %type <node> enumeration enumerationitem
 %type <node> definitions definition
 %type <node> quote line attribution
+%type <node> table headbody body row entries entry
 %type <buffer> words swords
 %type <string> ospace
 %type <node> inlines sinlines referencedinline inline references reference
 %type <node> oblocks
 %type <node> item
-%type <node> table headbody body row entries entry
 
 %union {
         const xmlChar *string;
@@ -381,6 +381,22 @@ line: QUOTE inlines { $$ = wrap("line", $2); };
 
 attribution: ATTRIBUTION inlines { $$ = wrap("attribution", $2); };
 
+table: headbody { $$ = wrap("table", $1); }
+
+headbody: row { $$ = wrap("body", $1); }
+| row TABLESEPARATOR body { $$ = sibling(wrap("head", $1), wrap("body", $3)); }
+| row body { $$ = wrap("body", sibling($1, $2)); };
+
+body: row
+| body row { $$ = sibling($1, $2); };
+
+row: ROW entries ENTRY { $$ = $2; };
+
+entries: entry { $$ = wrap("row", $1); }
+| entries ENTRY entry { $$ = child($1, $3); };
+
+entry: inlines { $$ = wrap("entry", $1); };
+
 words: ospace swords ospace { $$ = $2; };
 
 ospace: /* empty */ { $$ = BAD_CAST ""; }
@@ -414,22 +430,6 @@ references: /* empty */ { $$ = NULL; }
 reference: REFERENCE { $$ = prop(node("reference"), "id", $1.string, $1.length); };
 
 item: { parser->want = INDENT; } inlines oblocks { $$ = child(wrap("item", wrap("p", $2)), $3); };
-
-table: headbody { $$ = wrap("table", $1); }
-
-headbody: row { $$ = wrap("body", $1); }
-| row TABLESEPARATOR body { $$ = sibling(wrap("head", $1), wrap("body", $3)); }
-| row body { $$ = wrap("body", sibling($1, $2)); };
-
-body: row
-| body row { $$ = sibling($1, $2); };
-
-row: ROW entries ENTRY { $$ = $2; };
-
-entries: entry { $$ = wrap("row", $1); }
-| entries ENTRY entry { $$ = child($1, $3); };
-
-entry: inlines { $$ = wrap("entry", $1); };
 
 oblocks: /* empty */ { $$ = NULL; }
 | INDENT blocks DEDENT { $$ = $2; };
