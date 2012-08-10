@@ -74,6 +74,9 @@
 %printer { fprintf(yyoutput, "%.*s", $$.length, $$.string); } <substring>
 %printer { fputs(" ", yyoutput); } SPACE
 
+%destructor { xmlBufferFree($$); } <buffer>
+%destructor { xmlFreeNode($$); } <node>
+
 %code
 {
 static int
