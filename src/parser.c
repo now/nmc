@@ -36,19 +36,17 @@ token(struct nmc_parser *parser, const xmlChar *end, int type)
 }
 
 static int
-substring(struct nmc_parser *parser, YYSTYPE *value, const xmlChar *end, int type)
-{
-        value->substring.string = parser->p;
-        value->substring.length = end - parser->p;
-        return token(parser, end, type);
-}
-
-static int
 short_substring(struct nmc_parser *parser, YYSTYPE *value, const xmlChar *end, int shorten, int type)
 {
         value->substring.string = parser->p;
         value->substring.length = end - parser->p - shorten;
         return token(parser, end, type);
+}
+
+static int
+substring(struct nmc_parser *parser, YYSTYPE *value, const xmlChar *end, int type)
+{
+        return short_substring(parser, value, end, 0, type);
 }
 
 /* TODO Remove end */
