@@ -71,6 +71,9 @@
         xmlNodePtr node;
 }
 
+%printer { fprintf(yyoutput, "%.*s", $$.length, $$.string); } <substring>
+%printer { fputs(" ", yyoutput); } SPACE
+
 %code
 {
 static int
@@ -293,24 +296,6 @@ append_spaced_word(xmlNodePtr inlines, const xmlChar *string, int length, xmlNod
 
         xmlNodeAddContentLen(append_space(inlines), string, length);
         return inlines;
-}
-
-#define YYPRINT(file, type, value) print_token_value(file, type, value)
-static void
-print_token_value(FILE *file, int type, YYSTYPE value)
-{
-        switch (type) {
-        case WORD:
-        case CODE:
-        case EMPHASIS:
-                fprintf(file, "%.*s", value.substring.length, value.substring.string);
-                break;
-        case SPACE:
-                fputs(" ", file);
-                break;
-        default:
-                break;
-        }
 }
 }
 
