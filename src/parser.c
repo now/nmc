@@ -130,33 +130,6 @@ is_space_or_end(const xmlChar *end)
 }
 
 static int
-codeblock(struct nmc_parser *parser, YYSTYPE *value)
-{
-        parser->p += 4;
-        const xmlChar *end = parser->p;
-
-again:
-        while (!is_end(end))
-                end++;
-        if (*end == '\n') {
-                const xmlChar *bss = end + 1;
-                const xmlChar *bse = bss;
-                while (*bse == ' ' || *bse == '\n') {
-                        if (*bse == '\n')
-                                bss = bse + 1;
-                        bse++;
-                }
-                int spaces = bse - bss;
-                if (spaces >= parser->indent + 4) {
-                        end = bss + parser->indent + 4;
-                        goto again;
-                }
-        }
-
-        return substring(parser, value, end, CODEBLOCK);
-}
-
-static int
 definition(struct nmc_parser *parser, YYSTYPE *value)
 {
         parser->p += 2;
@@ -191,7 +164,7 @@ bol(struct nmc_parser *parser, YYSTYPE *value)
         /* TODO Turn this into a state machine instead, so that we never
          * examine a byte more than once. */
         if (xmlStrncmp(parser->p, BAD_CAST "    ", 4) == 0)
-                return codeblock(parser, value);
+                return token(parser, parser->p + 4, CODEBLOCK);
         else if (xmlStrncmp(parser->p, BAD_CAST "  ", 2) == 0)
                 return token(parser, parser->p + 2, PARAGRAPH);
         else if (xmlStrncmp(parser->p, BAD_CAST "§ ", strlen("§ ")) == 0)
@@ -226,40 +199,42 @@ eol(struct nmc_parser *parser, YYSTYPE *value)
 {
         const xmlChar *end = parser->p;
         end++;
-        parser->p = end;
+        const xmlChar *begin = end;
         while (*end == ' ')
                 end++;
         if (*end == '\n') {
                 parser->bol = true;
                 end++;
-                parser->p = end;
+                begin = end;
                 while (*end == ' ' || *end == '\n') {
                         if (*end == '\n')
-                                parser->p = end + 1;
+                                begin = end + 1;
                         end++;
                 }
-                int spaces = end - parser->p;
+                int spaces = end - begin;
                 if (parser->want == INDENT && spaces > parser->indent + 2) {
                         parser->want = ERROR;
                         parser->indent += 2;
-                        return token(parser, parser->p + parser->indent, INDENT);
+                        return token(parser, begin + parser->indent, INDENT);
                 } else if (spaces < parser->indent && spaces % 2 == 0) {
                         parser->want = ERROR;
                         return dedents(parser, end, spaces);
                 } else {
                         parser->want = ERROR;
-                        return token(parser, parser->p + parser->indent, BLOCKSEPARATOR);
+                        return substring(parser, value, begin + parser->indent, BLOCKSEPARATOR);
                 }
         } else {
-                int spaces = end - parser->p;
+                int spaces = end - begin;
                 if (spaces > parser->indent) {
-                        return token(parser, end, CONTINUATION);
+                        return token(parser, begin + parser->indent, CONTINUATION);
                 } else if (spaces < parser->indent) {
+                        /* TODO Why’s this a continuation? */
                         if (spaces % 2 != 0)
                                 return token(parser, end, CONTINUATION);
                         parser->bol = true;
                         return dedents(parser, end, spaces);
                 } else {
+                        /* TODO This needs to be checked when doing location calculations. */
                         parser->p = end;
                         return bol(parser, value);
                 }
@@ -337,9 +312,8 @@ nmc_parser_lex(struct nmc_parser *parser, YYSTYPE *value, UNUSED(YYLTYPE *locati
                 do {
                         end++;
                 } while (*end == ' ');
-                return token(parser, end, SPACE);
+                return substring(parser, value, end, SPACE);
         } else if (*end == '\n') {
-                parser->p = end;
                 return eol(parser, value);
         } else if (parser->want == WORD) {
                 /* Fall through. */
