@@ -102,7 +102,8 @@ nmc_validate(xmlDocPtr doc)
         validator.footnotes = xmlListCreate(NULL, NULL);
         validator.errors = xmlListCreate(error_free, NULL);
 
-        validate_node(&validator, xmlDocGetRootElement(doc));
+        if (xmlDocGetRootElement(doc) != NULL)
+                validate_node(&validator, xmlDocGetRootElement(doc));
 
         return validator.errors;
 }

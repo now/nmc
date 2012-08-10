@@ -5,6 +5,7 @@
 #include <string.h>
 
 #include "grammar.h"
+#include "nmc.h"
 #include "parser.h"
 
 int nmc_grammar_parse(struct nmc_parser *parser);
@@ -323,7 +324,7 @@ emphasis(struct nmc_parser *parser, YYSTYPE *value)
 }
 
 int
-nmc_parser_lex(struct nmc_parser *parser, YYSTYPE *value)
+nmc_parser_lex(struct nmc_parser *parser, YYSTYPE *value, UNUSED(YYLTYPE *location))
 {
         if (parser->dedents > 0)
                 return dedent(parser, parser->p);

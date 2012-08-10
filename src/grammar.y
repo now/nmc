@@ -16,6 +16,7 @@
 %debug
 %error-verbose
 %expect 0
+%locations
 
 %token END 0 "end of file"
 %token ERROR
@@ -80,15 +81,33 @@
 %code
 {
 static int
-nmc_grammar_lex(YYSTYPE *value, struct nmc_parser *parser)
+nmc_grammar_lex(YYSTYPE *value, YYLTYPE *location, struct nmc_parser *parser)
 {
-        return nmc_parser_lex(parser, value);
+        return nmc_parser_lex(parser, value, location);
 }
 
 static void
-nmc_grammar_error(UNUSED(const struct nmc_parser *parser), const char *message)
+nmc_grammar_error(YYLTYPE *location,
+                  const struct nmc_parser *parser,
+                  const char *message)
 {
-        fprintf(stderr, "%s: %s\n", (const char *)parser->p, message);
+        if (location->first_line == location->last_line) {
+                if (location->first_column == location->last_column)
+                        fprintf(stderr, "%d:%d",
+                                location->first_line,
+                                location->first_column);
+                else
+                        fprintf(stderr, "%d.%d-%d",
+                                location->first_line,
+                                location->first_column,
+                                location->last_column);
+        } else
+                fprintf(stderr, "%d.%d-%d.%d",
+                        location->first_line,
+                        location->first_column,
+                        location->last_line,
+                        location->last_column);
+        fprintf(stderr, ": %s: %s\n", (const char *)parser->p, message);
 }
 
 static xmlNodePtr

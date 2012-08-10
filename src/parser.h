@@ -14,6 +14,6 @@ struct nmc_parser
 };
 
 xmlDocPtr nmc_parse(const xmlChar *input);
-int nmc_parser_lex(struct nmc_parser *parser, YYSTYPE *value);
+int nmc_parser_lex(struct nmc_parser *parser, YYSTYPE *value, YYLTYPE *location);
 
 #endif
