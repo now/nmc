@@ -185,7 +185,7 @@ bol(struct nmc_parser *parser, YYSTYPE *value)
                 return token(parser, parser->p + strlen("| "), ROW);
         else if (xmlStrncmp(parser->p, BAD_CAST "|-", strlen("|-")) == 0) {
                 const xmlChar *end = parser->p + strlen("|-");
-                while (*end != '\n' && *end != '\0')
+                while (!is_end(end))
                         end++;
                 return token(parser, end, TABLESEPARATOR);
         } else if (*parser->p == '\0')
