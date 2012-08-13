@@ -49,6 +49,12 @@ substring(struct nmc_parser *parser, YYSTYPE *value, const xmlChar *end, int typ
         return short_substring(parser, value, end, 0, 0, type);
 }
 
+static int
+error(struct nmc_parser *parser)
+{
+        return token(parser, parser->p, ERROR);
+}
+
 /* TODO Remove end */
 static int
 dedent(struct nmc_parser *parser, const xmlChar *end)
@@ -151,7 +157,7 @@ definition(struct nmc_parser *parser, YYSTYPE *value)
                 end++;
         }
 
-        return token(parser, parser->p, ERROR);
+        return error(parser);
 }
 
 static int
@@ -159,7 +165,7 @@ bol_substring(struct nmc_parser *parser, YYSTYPE *value, int length, int type)
 {
         return *(parser->p + length) == ' ' ?
                 short_substring(parser, value, parser->p + length + 1, 0, 1, type) :
-                token(parser, parser->p, ERROR);
+                error(parser);
 }
 
 static int
@@ -167,7 +173,7 @@ bol_token(struct nmc_parser *parser, int length, int type)
 {
         return *(parser->p + length) == ' ' ?
                 token(parser, parser->p + length + 1, type) :
-                token(parser, parser->p, ERROR);
+                error(parser);
 }
 
 static int
@@ -224,7 +230,7 @@ bol(struct nmc_parser *parser, YYSTYPE *value)
                 return token(parser, parser->p, END);
         }
 
-        return token(parser, parser->p, ERROR);
+        return error(parser);
 }
 
 static int
@@ -308,7 +314,7 @@ code(struct nmc_parser *parser, YYSTYPE *value)
                !(*end == 0xe2 && *(end + 1) == 0x80 && *(end + 2) == 0xba))
                 end++;
         if (is_end(end))
-                return token(parser, parser->p, ERROR);
+                return error(parser);
         while (*end == 0xe2 && *(end + 1) == 0x80 && *(end + 2) == 0xba)
                 end += 3;
         return short_substring(parser, value, end, 3, 3, CODE);
@@ -322,7 +328,7 @@ emphasis(struct nmc_parser *parser, YYSTYPE *value)
                (*end != '/' || !is_inline_end(end + 1)))
                 end++;
         if (is_end(end))
-                return token(parser, parser->p, ERROR);
+                return error(parser);
         end++;
         return short_substring(parser, value, end, 1, 1, EMPHASIS);
 }
