@@ -155,43 +155,76 @@ definition(struct nmc_parser *parser, YYSTYPE *value)
 }
 
 static int
+bol_substring(struct nmc_parser *parser, YYSTYPE *value, int length, int type)
+{
+        return *(parser->p + length) == ' ' ?
+                short_substring(parser, value, parser->p + length + 1, 1, type) :
+                token(parser, parser->p, ERROR);
+}
+
+static int
+bol_token(struct nmc_parser *parser, int length, int type)
+{
+        return *(parser->p + length) == ' ' ?
+                token(parser, parser->p + length + 1, type) :
+                token(parser, parser->p, ERROR);
+}
+
+static int
 bol(struct nmc_parser *parser, YYSTYPE *value)
 {
         parser->bol = false;
 
         int length;
+        if ((length = subscript(parser)) > 0)
+                return bol_substring(parser, value, length, ENUMERATION);
+        else if ((length = superscript(parser)) > 0)
+                return bol_substring(parser, value, length, FOOTNOTE);
 
-        /* TODO Turn this into a state machine instead, so that we never
-         * examine a byte more than once. */
-        if (xmlStrncmp(parser->p, BAD_CAST "    ", 4) == 0)
-                return token(parser, parser->p + 4, CODEBLOCK);
-        else if (xmlStrncmp(parser->p, BAD_CAST "  ", 2) == 0)
-                return token(parser, parser->p + 2, PARAGRAPH);
-        else if (xmlStrncmp(parser->p, BAD_CAST "§ ", strlen("§ ")) == 0)
-                return token(parser, parser->p + strlen("§ "), SECTION);
-        else if (xmlStrncmp(parser->p, BAD_CAST "• ", strlen("• ")) == 0)
-                return token(parser, parser->p + strlen("• "), ITEMIZATION);
-        else if (xmlStrncmp(parser->p, BAD_CAST "/ ", strlen("/ ")) == 0)
-                return definition(parser, value);
-        else if ((length = subscript(parser)) > 0 && *(parser->p + length) == ' ')
-                return short_substring(parser, value, parser->p + length + 1, 1, ENUMERATION);
-        else if ((length = superscript(parser)) > 0 && *(parser->p + length) == ' ')
-                return short_substring(parser, value, parser->p + length + 1, 1, FOOTNOTE);
-        else if (xmlStrncmp(parser->p, BAD_CAST "> ", strlen("> ")) == 0)
-                return token(parser, parser->p + strlen("> "), QUOTE);
-        else if (xmlStrncmp(parser->p, BAD_CAST "— ", strlen("— ")) == 0)
-                return token(parser, parser->p + strlen("— "), ATTRIBUTION);
-        else if (xmlStrncmp(parser->p, BAD_CAST "| ", strlen("| ")) == 0)
-                return token(parser, parser->p + strlen("| "), ROW);
-        else if (xmlStrncmp(parser->p, BAD_CAST "|-", strlen("|-")) == 0) {
-                const xmlChar *end = parser->p + strlen("|-");
-                while (!is_end(end))
-                        end++;
-                return token(parser, end, TABLESEPARATOR);
-        } else if (*parser->p == '\0')
-                return END;
-        else
-                return token(parser, parser->p, ERROR);
+        switch (*parser->p) {
+        case ' ':
+                if (*(parser->p + 1) == ' ') {
+                        if (*(parser->p + 2) == ' ' && *(parser->p + 3) == ' ')
+                                return token(parser, parser->p + 4, CODEBLOCK);
+                        return token(parser, parser->p + 2, PARAGRAPH);
+                }
+                break;
+        case 0xc2:
+                if (*(parser->p + 1) == 0xa7)
+                        return bol_token(parser, 2, SECTION);
+                break;
+        case 0xe2:
+                if (*(parser->p + 1) == 0x80)
+                        switch (*(parser->p + 2)) {
+                        case 0xa2:
+                                return bol_token(parser, 3, ITEMIZATION);
+                        case 0x94:
+                                return bol_token(parser, 3, ATTRIBUTION);
+                        }
+                break;
+        case '/':
+                if (*(parser->p + 1) == ' ')
+                        return definition(parser, value);
+                break;
+        case '>':
+                return bol_token(parser, 1, QUOTE);
+        case '|':
+                switch (*(parser->p + 1)) {
+                case ' ':
+                        return token(parser, parser->p + 2, ROW);
+                case '-': {
+                        const xmlChar *end = parser->p + 3;
+                        while (!is_end(end))
+                                end++;
+                        return token(parser, end, TABLESEPARATOR);
+                }
+                }
+                break;
+        case '\0':
+                return token(parser, parser->p, END);
+        }
+
+        return token(parser, parser->p, ERROR);
 }
 
 static int
