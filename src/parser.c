@@ -133,7 +133,7 @@ static int
 definition(struct nmc_parser *parser, YYSTYPE *value)
 {
         parser->p += 2;
-        const xmlChar *end = parser->p;
+        const xmlChar *end = parser->p + 1;
 
         while (!is_end(end)) {
                 if (*end == '.') {
