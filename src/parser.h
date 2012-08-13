@@ -3,7 +3,6 @@
 
 struct nmc_parser
 {
-        const xmlChar *input;
         const xmlChar *p;
         int indent;
         int dedents;

@@ -14,8 +14,7 @@ xmlDocPtr
 nmc_parse(const xmlChar *input)
 {
         struct nmc_parser parser;
-        parser.input = input;
-        parser.p = parser.input;
+        parser.p = input;
         parser.dedents = 0;
         parser.indent = 0;
         parser.bol = false;
