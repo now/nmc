@@ -36,17 +36,17 @@ token(struct nmc_parser *parser, const xmlChar *end, int type)
 }
 
 static int
-short_substring(struct nmc_parser *parser, YYSTYPE *value, const xmlChar *end, int shorten, int type)
+short_substring(struct nmc_parser *parser, YYSTYPE *value, const xmlChar *end, int left, int right, int type)
 {
-        value->substring.string = parser->p;
-        value->substring.length = end - parser->p - shorten;
+        value->substring.string = parser->p + left;
+        value->substring.length = end - value->substring.string - right;
         return token(parser, end, type);
 }
 
 static int
 substring(struct nmc_parser *parser, YYSTYPE *value, const xmlChar *end, int type)
 {
-        return short_substring(parser, value, end, 0, type);
+        return short_substring(parser, value, end, 0, 0, type);
 }
 
 /* TODO Remove end */
@@ -132,8 +132,7 @@ is_space_or_end(const xmlChar *end)
 static int
 definition(struct nmc_parser *parser, YYSTYPE *value)
 {
-        parser->p += 2;
-        const xmlChar *end = parser->p + 1;
+        const xmlChar *end = parser->p + 3;
 
         while (!is_end(end)) {
                 if (*end == '.') {
@@ -145,6 +144,7 @@ definition(struct nmc_parser *parser, YYSTYPE *value)
                                 return short_substring(parser,
                                                        value,
                                                        end + 1,
+                                                       2,
                                                        end - send + 1,
                                                        DEFINITION);
                 }
@@ -158,7 +158,7 @@ static int
 bol_substring(struct nmc_parser *parser, YYSTYPE *value, int length, int type)
 {
         return *(parser->p + length) == ' ' ?
-                short_substring(parser, value, parser->p + length + 1, 1, type) :
+                short_substring(parser, value, parser->p + length + 1, 0, 1, type) :
                 token(parser, parser->p, ERROR);
 }
 
@@ -303,30 +303,28 @@ is_inline_end(const xmlChar *end)
 static int
 code(struct nmc_parser *parser, YYSTYPE *value)
 {
-        parser->p += 3;
-        const xmlChar *end = parser->p;
+        const xmlChar *end = parser->p + 3;
         while (!is_end(end) &&
                !(*end == 0xe2 && *(end + 1) == 0x80 && *(end + 2) == 0xba))
                 end++;
         if (is_end(end))
-                return token(parser, parser->p - 3, ERROR);
+                return token(parser, parser->p, ERROR);
         while (*end == 0xe2 && *(end + 1) == 0x80 && *(end + 2) == 0xba)
                 end += 3;
-        return short_substring(parser, value, end, 3, CODE);
+        return short_substring(parser, value, end, 3, 3, CODE);
 }
 
 static int
 emphasis(struct nmc_parser *parser, YYSTYPE *value)
 {
-        parser->p++;
-        const xmlChar *end = parser->p;
+        const xmlChar *end = parser->p + 1;
         while (!is_end(end) &&
                (*end != '/' || !is_inline_end(end + 1)))
                 end++;
         if (is_end(end))
-                return token(parser, parser->p - 1, ERROR);
+                return token(parser, parser->p, ERROR);
         end++;
-        return short_substring(parser, value, end, 1, EMPHASIS);
+        return short_substring(parser, value, end, 1, 1, EMPHASIS);
 }
 
 int
