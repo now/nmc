@@ -83,7 +83,7 @@
 static int
 nmc_grammar_lex(YYSTYPE *value, YYLTYPE *location, struct nmc_parser *parser)
 {
-        return nmc_parser_lex(parser, value, location);
+        return nmc_parser_lex(parser, location, value);
 }
 
 static void
