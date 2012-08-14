@@ -10,8 +10,37 @@
 
 int nmc_grammar_parse(struct nmc_parser *parser);
 
+static void
+error_free(xmlLinkPtr link)
+{
+        xmlFree(xmlLinkGetData(link));
+}
+
+void
+nmc_parser_error(struct nmc_parser *parser, YYLTYPE *location,
+                 const char *message, ...)
+{
+        va_list args;
+
+        va_start(args, message);
+        xmlChar buf[1];
+        int size = xmlStrVPrintf(buf, sizeof(buf), (const xmlChar *)message, args);
+        va_end(args);
+
+        struct nmc_parser_error *error =
+                (struct nmc_parser_error *)xmlMalloc(sizeof(struct nmc_parser_error));
+
+        error->location = *location;
+        error->message = (char *)xmlMalloc(size + 1);
+        va_start(args, message);
+        xmlStrVPrintf((xmlChar *)error->message, size + 1, (const xmlChar *)message, args);
+        va_end(args);
+
+        xmlListPushBack(parser->errors, error);
+}
+
 xmlDocPtr
-nmc_parse(const xmlChar *input)
+nmc_parse(const xmlChar *input, xmlListPtr *errors)
 {
         struct nmc_parser parser;
         parser.p = input;
@@ -22,6 +51,7 @@ nmc_parse(const xmlChar *input)
         parser.want = ERROR;
         parser.words = false;
         parser.doc = xmlNewDoc(BAD_CAST "1.0");
+        parser.errors = *errors = xmlListCreate(error_free, NULL);
 
         nmc_grammar_parse(&parser);
 

@@ -11,9 +11,19 @@ struct nmc_parser
         int want;
         bool words;
         xmlDocPtr doc;
+        xmlListPtr errors;
 };
 
-xmlDocPtr nmc_parse(const xmlChar *input);
+xmlDocPtr nmc_parse(const xmlChar *input, xmlListPtr *errors);
 int nmc_parser_lex(struct nmc_parser *parser, YYLTYPE *location, YYSTYPE *value);
+
+struct nmc_parser_error
+{
+        YYLTYPE location;
+        char *message;
+};
+
+void nmc_parser_error(struct nmc_parser *parser, YYLTYPE *location,
+                      const char *message, ...);
 
 #endif

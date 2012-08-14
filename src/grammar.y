@@ -88,26 +88,11 @@ nmc_grammar_lex(YYSTYPE *value, YYLTYPE *location, struct nmc_parser *parser)
 
 static void
 nmc_grammar_error(YYLTYPE *location,
-                  const struct nmc_parser *parser,
+                  struct nmc_parser *parser,
                   const char *message)
 {
-        if (location->first_line == location->last_line) {
-                if (location->first_column == location->last_column)
-                        fprintf(stderr, "%d:%d",
-                                location->first_line,
-                                location->first_column);
-                else
-                        fprintf(stderr, "%d.%d-%d",
-                                location->first_line,
-                                location->first_column,
-                                location->last_column);
-        } else
-                fprintf(stderr, "%d.%d-%d.%d",
-                        location->first_line,
-                        location->first_column,
-                        location->last_line,
-                        location->last_column);
-        fprintf(stderr, ": %s: %s\n", (const char *)parser->p, message);
+        nmc_parser_error(parser, location,
+                         "%s: %s", (const char *)parser->p, message);
 }
 
 static xmlNodePtr
