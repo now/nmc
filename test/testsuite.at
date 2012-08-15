@@ -395,6 +395,47 @@ AT_NMC_CHECK([title],
 
 AT_CLEANUP
 
+AT_SETUP([Document consisting of a title followed by two sections with footnotes])
+
+AT_DATA([title],
+[[Title
+
+§ Section
+
+    Word1 Word2¹ Word3
+
+¹ Footnote
+
+§ Section
+
+    Word1 Word2¹ Word3
+
+¹ Footnote
+]])
+
+AT_NMC_CHECK([title],
+[[  <title>Title</title>
+  <footnoted>
+    <section>
+      <title>Section</title>
+      <p>Word1 <reference id="¹">Word2</reference> Word3</p>
+    </section>
+    <footnotes>
+      <footnote id="¹" referenced="true">Footnote</footnote>
+    </footnotes>
+  </footnoted>
+  <footnoted>
+    <section>
+      <title>Section</title>
+      <p>Word1 <reference id="¹">Word2</reference> Word3</p>
+    </section>
+    <footnotes>
+      <footnote id="¹" referenced="true">Footnote</footnote>
+    </footnotes>
+  </footnoted>]])
+
+AT_CLEANUP
+
 AT_SETUP([Document consisting of a title followed by a code block])
 
 AT_DATA([title],

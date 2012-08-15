@@ -329,7 +329,10 @@ sections: footnotedsection
 | sections footnotedsection { $$ = sibling($1, $2); };
 
 footnotedsection: section
-| section footnotes { $$ = footnote($1, $2); };
+| section footnotes oblockseparator { $$ = footnote($1, $2); };
+
+oblockseparator: /* empty */
+| BLOCKSEPARATOR;
 
 section: SECTION { parser->want = INDENT; } title oblockssections { $$ = child(wrap("section", $3), $4); };
 
