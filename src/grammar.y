@@ -298,6 +298,15 @@ child(xmlNodePtr parent, xmlNodePtr child)
 }
 
 static xmlNodePtr
+children(xmlNodePtr parent, xmlNodePtr children)
+{
+        if (children == NULL)
+                return parent;
+        xmlAddChildList(parent, children);
+        return parent;
+}
+
+static xmlNodePtr
 wrap(const char *name, xmlNodePtr kid)
 {
         return child(node(name), kid);
@@ -523,7 +532,7 @@ append_spaced_word(struct nmc_parser *parser, xmlNodePtr inlines, const xmlChar 
 %%
 
 nmc: title oblockssections0 {
-        xmlDocSetRootElement(parser->doc, child(wrap("nml", $1), $2));
+        xmlDocSetRootElement(parser->doc, children(wrap("nml", $1), $2));
         xmlHashScan(parser->anchors, (xmlHashScanner)report_remaining_anchors, NULL);
 }
 
@@ -558,7 +567,7 @@ footnotedsection: section
 oblockseparator: /* empty */
 | BLOCKSEPARATOR;
 
-section: SECTION { parser->want = INDENT; } title oblockssections { $$ = child(wrap("section", $3), $4); };
+section: SECTION { parser->want = INDENT; } title oblockssections { $$ = children(wrap("section", $3), $4); };
 
 oblockssections: /* empty */ { $$ = NULL; }
 | INDENT blockssections DEDENT { $$ = $2; };
@@ -655,7 +664,7 @@ sigils: /* empty */ { $$ = NULL; }
 
 sigil: SIGIL { $$ = sigil_new(&@$, $1.string, $1.length); };
 
-item: { parser->want = INDENT; } inlines oblocks { $$ = child(wrap("item", wrap("p", $2)), $3); };
+item: { parser->want = INDENT; } inlines oblocks { $$ = children(wrap("item", wrap("p", $2)), $3); };
 
 oblocks: /* empty */ { $$ = NULL; }
 | INDENT blocks DEDENT { $$ = $2; };
