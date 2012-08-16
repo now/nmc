@@ -234,7 +234,7 @@ bol(struct nmc_parser *parser, YYLTYPE *location, YYSTYPE *value)
 
         int length;
         if ((length = subscript(parser)) > 0)
-                return bol_substring(parser, location, value, length, ENUMERATION);
+                return bol_token(parser, location, length, ENUMERATION);
         else if ((length = superscript(parser)) > 0)
                 return bol_substring(parser, location, value, length, FOOTNOTE);
 
