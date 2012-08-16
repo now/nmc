@@ -85,8 +85,8 @@ token(struct nmc_parser *parser, YYLTYPE *location, const xmlChar *end, int type
 }
 
 static int
-short_substring(struct nmc_parser *parser, YYLTYPE *location, YYSTYPE *value,
-                const xmlChar *end, int left, int right, int type)
+trimmed_substring(struct nmc_parser *parser, YYLTYPE *location, YYSTYPE *value,
+                  const xmlChar *end, int left, int right, int type)
 {
         value->substring.string = parser->p + left;
         value->substring.length = end - value->substring.string - right;
@@ -97,7 +97,7 @@ static int
 substring(struct nmc_parser *parser, YYLTYPE *location, YYSTYPE *value,
           const xmlChar *end, int type)
 {
-        return short_substring(parser, location, value, end, 0, 0, type);
+        return trimmed_substring(parser, location, value, end, 0, 0, type);
 }
 
 static int
@@ -197,13 +197,13 @@ definition(struct nmc_parser *parser, YYLTYPE *location, YYSTYPE *value)
                         while (*end == ' ')
                                 end++;
                         if (*end == '/' && is_space_or_end(end + 1))
-                                return short_substring(parser,
-                                                       location,
-                                                       value,
-                                                       end + 1,
-                                                       2,
-                                                       end - send + 1,
-                                                       DEFINITION);
+                                return trimmed_substring(parser,
+                                                         location,
+                                                         value,
+                                                         end + 1,
+                                                         2,
+                                                         end - send + 1,
+                                                         DEFINITION);
                 }
                 end++;
         }
@@ -215,7 +215,7 @@ static int
 bol_substring(struct nmc_parser *parser, YYLTYPE *location, YYSTYPE *value, int length, int type)
 {
         return *(parser->p + length) == ' ' ?
-                short_substring(parser, location, value, parser->p + length + 1, 0, 1, type) :
+                trimmed_substring(parser, location, value, parser->p + length + 1, 0, 1, type) :
                 error(parser, location);
 }
 
@@ -380,7 +380,7 @@ code(struct nmc_parser *parser, YYLTYPE *location, YYSTYPE *value)
                 return error(parser, location);
         while (*end == 0xe2 && *(end + 1) == 0x80 && *(end + 2) == 0xba)
                 end += 3;
-        return short_substring(parser, location, value, end, 3, 3, CODE);
+        return trimmed_substring(parser, location, value, end, 3, 3, CODE);
 }
 
 static int
@@ -393,7 +393,7 @@ emphasis(struct nmc_parser *parser, YYLTYPE *location, YYSTYPE *value)
         if (is_end(end))
                 return error(parser, location);
         end++;
-        return short_substring(parser, location, value, end, 1, 1, EMPHASIS);
+        return trimmed_substring(parser, location, value, end, 1, 1, EMPHASIS);
 }
 
 int
