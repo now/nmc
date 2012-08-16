@@ -3,13 +3,13 @@
 
 struct nmc_parser
 {
+        const xmlChar *input;
         const xmlChar *p;
         YYLTYPE location;
         int indent;
         int dedents;
         bool bol;
         int want;
-        bool words;
         xmlDocPtr doc;
         xmlHashTablePtr anchors;
         xmlListPtr errors;

@@ -438,6 +438,23 @@ AT_NMC_CHECK([title],
 
 AT_CLEANUP
 
+AT_SETUP([Document consisting of a title followed by a paragraph with a long footnote])
+
+AT_DATA([title],
+[[Title
+
+  Word1 Word2¹
+
+¹ Footnote1
+  Footnote11
+]])
+
+AT_NMC_CHECK([title],
+[[  <title>Title</title>
+  <p>Word1 <anchor id="¹" buffer="Footnote1 Footnote11">Word2</anchor></p>]])
+
+AT_CLEANUP
+
 AT_SETUP([Document consisting of a title followed by a code block])
 
 AT_DATA([title],

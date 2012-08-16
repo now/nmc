@@ -44,13 +44,13 @@ xmlDocPtr
 nmc_parse(const xmlChar *input, xmlListPtr *errors)
 {
         struct nmc_parser parser;
-        parser.p = input;
+        parser.input = input;
+        parser.p = parser.input;
         parser.location = (YYLTYPE){ 1, 1, 1, 1 };
         parser.dedents = 0;
         parser.indent = 0;
         parser.bol = false;
         parser.want = ERROR;
-        parser.words = false;
         parser.doc = xmlNewDoc(BAD_CAST "1.0");
         parser.anchors = xmlHashCreate(16);
         parser.errors = *errors = xmlListCreate(error_free, NULL);
@@ -186,6 +186,59 @@ is_space_or_end(const xmlChar *end)
 }
 
 static int
+buffer(struct nmc_parser *parser, YYLTYPE *location, xmlBufferPtr buffer, const xmlChar *begin, int type)
+{
+        while (*begin == ' ')
+                begin++;
+
+        const xmlChar *end = begin;
+
+again:
+        switch (*end) {
+        case '\0':
+                break;
+        case '\n': {
+                const xmlChar *send = end + 1;
+                while (*send == ' ')
+                        send++;
+                int spaces = send - (end + 1);
+                if (!is_end(send) && spaces >= parser->indent + 2) {
+                        xmlBufferAdd(buffer, begin, end - begin);
+                        begin = end + parser->indent + 2;
+                        end = send;
+                        parser->location.last_line++;
+                        goto again;
+                }
+                break;
+        }
+        case ' ':
+                end++;
+                xmlBufferAdd(buffer, begin, end - begin);
+                while (*end == ' ')
+                        end++;
+                begin = end;
+                goto again;
+        default:
+                end++;
+                goto again;
+        }
+        xmlBufferAdd(buffer, begin, end - begin);
+
+        return token(parser, location, end, type);
+}
+
+static int
+footnote(struct nmc_parser *parser, YYLTYPE *location, YYSTYPE *value, int length)
+{
+        if (*(parser->p + length) != ' ')
+                return error(parser, location);
+        value->raw_footnote.id = xmlStrndup(parser->p, length);
+        value->raw_footnote.buffer = xmlBufferCreate();
+
+        return buffer(parser, location, value->raw_footnote.buffer, parser->p + length + 1, FOOTNOTE);
+}
+
+static int
 codeblock(struct nmc_parser *parser, YYLTYPE *location, YYSTYPE *value)
 {
         const xmlChar *begin = parser->p + 4;
@@ -210,7 +263,7 @@ again:
                 if (spaces >= parser->indent + 4) {
                         xmlBufferAdd(value->buffer, begin, end - begin);
                         for (int i = 0; i < lines; i++)
-                                xmlBufferAdd(value->buffer, BAD_CAST "\n", 1);
+                                xmlBufferWriteChar(value->buffer, "\n");
                         begin = bss + parser->indent + 4;
                         end = bse;
                         parser->location.last_line += lines;
@@ -249,14 +302,6 @@ definition(struct nmc_parser *parser, YYLTYPE *location, YYSTYPE *value)
 }
 
 static int
-bol_substring(struct nmc_parser *parser, YYLTYPE *location, YYSTYPE *value, int length, int type)
-{
-        return *(parser->p + length) == ' ' ?
-                trimmed_substring(parser, location, value, parser->p + length + 1, 0, 1, type) :
-                error(parser, location);
-}
-
-static int
 bol_token(struct nmc_parser *parser, YYLTYPE *location, int length, int type)
 {
         return *(parser->p + length) == ' ' ?
@@ -273,7 +318,7 @@ bol(struct nmc_parser *parser, YYLTYPE *location, YYSTYPE *value)
         if ((length = subscript(parser)) > 0)
                 return bol_token(parser, location, length, ENUMERATION);
         else if ((length = superscript(parser)) > 0)
-                return bol_substring(parser, location, value, length, FOOTNOTE);
+                return footnote(parser, location, value, length);
 
         switch (*parser->p) {
         case ' ':
@@ -445,15 +490,16 @@ nmc_parser_lex(struct nmc_parser *parser, YYLTYPE *location, YYSTYPE *value)
         int length;
         const xmlChar *end = parser->p;
 
-        if (*end == ' ') {
+        if (end == parser->input) {
+                value->buffer = xmlBufferCreate();
+                return buffer(parser, location, value->buffer, end, TITLE);
+        } else if (*end == ' ') {
                 do {
                         end++;
                 } while (*end == ' ');
                 return substring(parser, location, value, end, SPACE);
         } else if (*end == '\n') {
                 return eol(parser, location, value);
-        } else if (parser->want == WORD) {
-                /* Fall through. */
         } else if (*end == 0xe2 && *(end + 1) == 0x80 && *(end + 2) == 0xb9) {
                 parser->p = end;
                 return code(parser, location, value);

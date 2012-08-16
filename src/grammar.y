@@ -18,12 +18,12 @@ struct footnote
 };
 
 static struct footnote *
-footnote_new(YYLTYPE *location, const xmlChar *string, int length, xmlBufferPtr buffer)
+footnote_new(YYLTYPE *location, xmlChar *id, xmlBufferPtr buffer)
 {
         struct footnote *footnote =
                 (struct footnote *)xmlMalloc(sizeof(struct footnote));
         footnote->location = *location;
-        footnote->id = xmlCharStrndup((const char *)string, length);
+        footnote->id = id;
         footnote->buffer = buffer;
         footnote->referenced = false;
         return footnote;
@@ -182,6 +182,7 @@ node_free(struct nmc_parser *parser, xmlNodePtr node)
 
 %token END 0 "end of file"
 %token ERROR
+%token <buffer> TITLE
 %token <substring> WORD
 %token PARAGRAPH
 %token <substring> SPACE
@@ -196,7 +197,7 @@ node_free(struct nmc_parser *parser, xmlNodePtr node)
 %token ROW
 %token ENTRY
 %token <buffer> CODEBLOCK
-%token <substring> FOOTNOTE
+%token <raw_footnote> FOOTNOTE
 %token SECTION
 %token INDENT
 %token DEDENT
@@ -220,7 +221,6 @@ node_free(struct nmc_parser *parser, xmlNodePtr node)
 %type <node> definitions definition
 %type <node> quote line attribution
 %type <node> table headbody body row entries entry
-%type <buffer> words swords
 %type <node> inlines sinlines anchoredinline inline
 %type <list> sigils
 %type <sigil> sigil
@@ -232,6 +232,10 @@ node_free(struct nmc_parser *parser, xmlNodePtr node)
                 const xmlChar *string;
                 int length;
         } substring;
+        struct {
+                xmlChar *id;
+                xmlBufferPtr buffer;
+        } raw_footnote;
         xmlBufferPtr buffer;
         xmlNodePtr node;
         xmlListPtr list;
@@ -333,23 +337,6 @@ siblings(xmlNodePtr first, xmlNodePtr rest)
         xmlAddSibling(first, rest);
         rest->next = next;
         return first;
-}
-
-static xmlBufferPtr
-buffer(const xmlChar *string, int length)
-{
-        /* TODO May be able to use xmlBufferCreateStatic() */
-        xmlBufferPtr buffer = xmlBufferCreate();
-        xmlBufferAdd(buffer, string, length);
-        return buffer;
-}
-
-static xmlBufferPtr
-append(xmlBufferPtr buffer, const xmlChar *string, int length)
-{
-        xmlBufferAdd(buffer, BAD_CAST " ", 1);
-        xmlBufferAdd(buffer, string, length);
-        return buffer;
 }
 
 static int
@@ -506,12 +493,10 @@ append_spaced_word(struct nmc_parser *parser, xmlNodePtr inlines, const xmlChar 
 
 %%
 
-nmc: title oblockssections0 {
-        xmlDocSetRootElement(parser->doc, children(wrap("nml", $1), $2));
+nmc: TITLE oblockssections0 {
+        xmlDocSetRootElement(parser->doc, children(wrap("nml", content("title", $1)), $2));
         xmlHashScan(parser->anchors, (xmlHashScanner)report_remaining_anchors, NULL);
 }
-
-title: words { $$ = content("title", $1); }
 
 oblockssections0: /* empty */ { $$ = NULL; }
 | BLOCKSEPARATOR blockssections { $$ = $2; };
@@ -543,13 +528,15 @@ oblockseparator: /* empty */
 
 section: SECTION { parser->want = INDENT; } title oblockssections { $$ = children(wrap("section", $3), $4); };
 
+title: inlines { $$ = wrap("title", $1); };
+
 oblockssections: /* empty */ { $$ = NULL; }
 | INDENT blockssections DEDENT { $$ = $2; };
 
 footnotes: footnote { $$ = xmlListCreate(footnote_free, NULL); xmlListPushBack($$, $1); }
 | footnotes footnote { $$ = $1; xmlListPushBack($$, $2); };
 
-footnote: FOOTNOTE words { $$ = footnote_new(&@$, $1.string, $1.length, $2); }
+footnote: FOOTNOTE { $$ = footnote_new(&@$, $1.id, $1.buffer); }
 
 paragraph: PARAGRAPH inlines { $$ = wrap("p", $2); };
 
@@ -592,20 +579,6 @@ entries: entry { $$ = wrap("row", $1); }
 
 entry: inlines { $$ = wrap("entry", $1); };
 
-words: { parser->words = true; } ospace swords ospace { parser->words = false; } { $$ = $3; };
-
-ospace: /* empty */
-| SPACE;
-
-swords: WORD { $$ = buffer($1.string, $1.length); }
-| swords spaces WORD { $$ = append($1, $3.string, $3.length); };
-
-spaces: spacecontinuation
-| spaces spacecontinuation;
-
-spacecontinuation: SPACE
-| CONTINUATION;
-
 inlines: ospace sinlines ospace { $$ = $2; };
 
 sinlines: WORD sigils { $$ = word(parser, $1.string, $1.length, $2); }
@@ -626,6 +599,15 @@ sigils: /* empty */ { $$ = NULL; }
 | sigils SIGILSEPARATOR sigil { $$ = $1; xmlListPushBack($$, $3); };
 
 sigil: SIGIL { $$ = sigil_new(&@$, $1.string, $1.length); };
+
+ospace: /* empty */
+| SPACE;
+
+spaces: spacecontinuation
+| spaces spacecontinuation;
+
+spacecontinuation: SPACE
+| CONTINUATION;
 
 item: { parser->want = INDENT; } inlines oblocks { $$ = children(wrap("item", wrap("p", $2)), $3); };
 
