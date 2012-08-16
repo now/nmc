@@ -314,6 +314,19 @@ sibling(xmlNodePtr first, xmlNodePtr last)
         return first;
 }
 
+static xmlNodePtr
+siblings(xmlNodePtr first, xmlNodePtr rest)
+{
+        if (first == NULL)
+                return rest;
+        if (rest == NULL)
+                return first;
+        xmlNodePtr next = rest->next;
+        xmlAddSibling(first, rest);
+        rest->next = next;
+        return first;
+}
+
 static xmlBufferPtr
 buffer(const xmlChar *string, int length)
 {
@@ -520,7 +533,7 @@ oblockssections0: /* empty */ { $$ = NULL; }
 | BLOCKSEPARATOR blockssections { $$ = $2; };
 
 blockssections: blocks
-| blocks BLOCKSEPARATOR sections { $$ = sibling($1, $3); }
+| blocks BLOCKSEPARATOR sections { $$ = siblings($1, $3); }
 | sections;
 
 blocks: block

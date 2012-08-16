@@ -170,6 +170,36 @@ AT_NMC_CHECK([title],
 
 AT_CLEANUP
 
+AT_SETUP([Document consisting of a title followed by a paragraph and a section])
+
+AT_DATA([title],
+[[Title
+
+  Paragraph1
+
+§ Section1
+
+    Paragraph1
+
+§ Section2
+
+    Paragraph2
+]])
+
+AT_NMC_CHECK([title],
+[[  <title>Title</title>
+  <p>Paragraph1</p>
+  <section>
+    <title>Section1</title>
+    <p>Paragraph1</p>
+  </section>
+  <section>
+    <title>Section2</title>
+    <p>Paragraph2</p>
+  </section>]])
+
+AT_CLEANUP
+
 AT_SETUP([Document consisting of a title followed by a paragraph, an itemization, and a paragraph])
 
 AT_DATA([title],
