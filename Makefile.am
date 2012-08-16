@@ -10,8 +10,7 @@ bin_PROGRAMS = src/nmc
 src_nmc_SOURCES = \
 	src/parser.c \
 	src/nmc.c \
-	src/grammar.y \
-	src/validator.c
+	src/grammar.y
 
 src_nmc_LDADD = $(XML_LIBS)
 

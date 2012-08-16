@@ -11,6 +11,7 @@ struct nmc_parser
         int want;
         bool words;
         xmlDocPtr doc;
+        xmlHashTablePtr anchors;
         xmlListPtr errors;
 };
 

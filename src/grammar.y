@@ -3,10 +3,172 @@
 #include <stdio.h>
 #include <stdbool.h>
 #include <libxml/tree.h>
+#include <libxml/xpath.h>
 
 #include "grammar.h"
 #include "nmc.h"
 #include "parser.h"
+
+struct footnote
+{
+        YYLTYPE location;
+        xmlChar *id;
+        xmlBufferPtr buffer;
+        bool referenced;
+};
+
+static struct footnote *
+footnote_new(YYLTYPE *location, const xmlChar *string, int length, xmlBufferPtr buffer)
+{
+        struct footnote *footnote =
+                (struct footnote *)xmlMalloc(sizeof(struct footnote));
+        footnote->location = *location;
+        footnote->id = xmlCharStrndup((const char *)string, length);
+        footnote->buffer = buffer;
+        footnote->referenced = false;
+        return footnote;
+}
+
+static void
+footnote_free(xmlLinkPtr link)
+{
+        struct footnote *footnote = (struct footnote *)xmlLinkGetData(link);
+        xmlFree(footnote->id);
+        xmlBufferFree(footnote->buffer);
+        xmlFree(footnote);
+}
+
+struct sigil
+{
+        YYLTYPE location;
+        xmlChar *id;
+};
+
+static struct sigil *
+sigil_new(YYLTYPE *location, const xmlChar *string, int length)
+{
+        struct sigil *sigil =
+                (struct sigil *)xmlMalloc(sizeof(struct sigil));
+        sigil->location = *location;
+        sigil->id = xmlCharStrndup((const char *)string, length);
+        return sigil;
+}
+
+static void
+sigil_free(xmlLinkPtr link)
+{
+        struct sigil *sigil = (struct sigil *)xmlLinkGetData(link);
+        xmlFree(sigil->id);
+        xmlFree(sigil);
+}
+
+struct anchor
+{
+        YYLTYPE location;
+        xmlNodePtr node;
+};
+
+static struct anchor *
+anchor_new(YYLTYPE *location, xmlNodePtr node)
+{
+        struct anchor *anchor =
+                (struct anchor *)xmlMalloc(sizeof(struct anchor));
+        anchor->location = *location;
+        anchor->node = node;
+        return anchor;
+}
+
+static inline const xmlChar *
+anchor_id(struct anchor *anchor)
+{
+        return xmlHasProp(anchor->node, BAD_CAST "id")->children->content;
+}
+
+static void
+anchor_free(xmlLinkPtr link)
+{
+        xmlFree(xmlLinkGetData(link));
+}
+
+static int
+report_remaining_anchor(struct anchor *anchor, struct nmc_parser *parser)
+{
+        nmc_parser_error(parser, &anchor->location,
+                         "reference to undefined footnote: %s",
+                         (const char *)anchor_id(anchor));
+        return 1;
+}
+
+static void
+report_remaining_anchors(xmlListPtr list, struct nmc_parser *parser, UNUSED(const xmlChar *name))
+{
+        xmlListWalk(list, (xmlListWalker)report_remaining_anchor, parser);
+}
+
+static void
+clear_anchors(UNUSED(xmlListPtr list), xmlHashTablePtr anchors, const xmlChar *name)
+{
+        xmlHashRemoveEntry(anchors, name, (xmlHashDeallocator)xmlListDelete);
+}
+
+struct find_anchor_closure
+{
+        xmlNodePtr node;
+        struct anchor *anchor;
+};
+
+static int
+find_anchor(struct anchor *anchor, struct find_anchor_closure *closure)
+{
+        if (anchor->node != closure->node)
+                return 1;
+        closure->anchor = anchor;
+        return 0;
+}
+
+static bool
+node_free_anchors_in(struct nmc_parser *parser, xmlXPathContextPtr context)
+{
+        xmlXPathObjectPtr object = xmlXPathEvalExpression((const xmlChar *)"//anchor", context);
+        if (object == NULL)
+                return false;
+
+        for (int i = 0; i < object->nodesetval->nodeNr; i++) {
+                xmlNodePtr node = object->nodesetval->nodeTab[i];
+                const xmlChar *id = xmlHasProp(node, BAD_CAST "id")->children->content;
+                xmlListPtr anchors = xmlHashLookup(parser->anchors, id);
+                if (anchors != NULL) {
+                        struct find_anchor_closure closure = { node, NULL };
+                        xmlListWalk(anchors, (xmlListWalker)find_anchor, &closure);
+                        if (closure.anchor != NULL)
+                                xmlListRemoveFirst(anchors, closure.anchor);
+                }
+        }
+
+        xmlXPathFreeObject(object);
+
+        return true;
+}
+
+static bool
+node_free_anchors(struct nmc_parser *parser, xmlNodePtr node)
+{
+        xmlXPathContextPtr context = xmlXPathNewContext(node->doc);
+        if (context == NULL)
+                return false;
+        context->node = node;
+        bool result = node_free_anchors_in(parser, context);
+        xmlXPathFreeContext(context);
+        return result;
+}
+
+static void
+node_free(struct nmc_parser *parser, xmlNodePtr node)
+{
+        if (!node_free_anchors(parser, node))
+                xmlHashScan(parser->anchors, (xmlHashScanner)clear_anchors, NULL);
+        xmlFreeNode(node);
+}
 }
 
 %define api.pure
@@ -40,8 +202,8 @@
 %token DEDENT
 %token <substring> CODE
 %token <substring> EMPHASIS
-%token <substring> REFERENCE
-%token REFERENCESEPARATOR
+%token <substring> SIGIL
+%token SIGILSEPARATOR
 %token BEGINGROUP
 %token ENDGROUP
 
@@ -50,7 +212,8 @@
 %type <node> blocks block
 %type <node> sections footnotedsection section
 %type <node> oblockssections
-%type <node> footnotes footnote
+%type <list> footnotes
+%type <footnote> footnote
 %type <node> paragraph
 %type <node> itemization itemizationitem
 %type <node> enumeration enumerationitem
@@ -60,7 +223,9 @@
 %type <node> codeblock
 %type <buffer> codeblockwords
 %type <buffer> words swords
-%type <node> inlines sinlines referencedinline inline references reference
+%type <node> inlines sinlines anchoredinline inline
+%type <list> sigils
+%type <sigil> sigil
 %type <node> item oblocks
 
 %union {
@@ -71,12 +236,17 @@
         } substring;
         xmlBufferPtr buffer;
         xmlNodePtr node;
+        xmlListPtr list;
+        struct footnote *footnote;
+        struct sigil *sigil;
 }
 
 %printer { fprintf(yyoutput, "%.*s", $$.length, $$.string); } <substring>
 
 %destructor { xmlBufferFree($$); } <buffer>
-%destructor { xmlFreeNode($$); } <node>
+%destructor { node_free(parser, $$); } <node>
+%destructor { xmlListDelete($$); } <list>
+%destructor { xmlFree($$); } <footnote>
 
 %code
 {
@@ -185,32 +355,51 @@ codeblock(xmlNodePtr blocks, const xmlChar *string, int length, xmlNodePtr code)
         return blocks;
 }
 
+static int
+update_anchor(struct anchor *anchor, struct footnote *footnote)
+{
+        xmlNewProp(anchor->node, BAD_CAST "buffer", xmlBufferContent(footnote->buffer));
+        return 1;
+}
+
+static int
+footnote_reference(struct footnote *footnote, struct nmc_parser *parser)
+{
+        xmlListPtr anchors = xmlHashLookup(parser->anchors, footnote->id);
+        if (anchors != NULL) {
+                xmlListWalk(anchors, (xmlListWalker)update_anchor, footnote);
+                xmlHashRemoveEntry(parser->anchors,
+                                   footnote->id,
+                                   (xmlHashDeallocator)xmlListDelete);
+                footnote->referenced = true;
+        }
+
+        return 1;
+}
+
+static int
+footnote_check(struct footnote *footnote, struct nmc_parser *parser)
+{
+        if (!footnote->referenced)
+                nmc_parser_error(parser,
+                                 &footnote->location,
+                                 "unreferenced footnote: %s", footnote->id);
+
+        return 1;
+}
+
 static xmlNodePtr
-footnote(xmlNodePtr blocks, xmlNodePtr footnotes)
+footnote(struct nmc_parser *parser, xmlNodePtr blocks, xmlListPtr footnotes)
 {
         xmlNodePtr last = blocks;
         while (last->next != NULL)
                 last = last->next;
 
-        if (xmlStrEqual(last->name, BAD_CAST "footnoted")) {
-                xmlAddChildList(xmlGetLastChild(last), footnotes->children);
-                footnotes->children = NULL;
-                xmlFreeNode(footnotes);
-                return blocks;
-        }
+        xmlListWalk(footnotes, (xmlListWalker)footnote_reference, parser);
+        xmlListWalk(footnotes, (xmlListWalker)footnote_check, parser);
+        xmlListDelete(footnotes);
 
-        xmlUnlinkNode(last);
-        xmlNodePtr footnoted = child(child(node("footnoted"), last), footnotes);
-        return last == blocks ? footnoted : sibling(blocks, footnoted);
-}
-
-static xmlNodePtr
-prop(xmlNodePtr node, const char *name, const xmlChar *string, int length)
-{
-        xmlChar *value = xmlStrndup(string, length);
-        xmlNewProp(node, BAD_CAST name, value);
-        xmlFree(value);
-        return node;
+        return blocks;
 }
 
 static xmlNodePtr
@@ -225,27 +414,46 @@ definition(const xmlChar *string, int length, xmlNodePtr item)
         return item;
 }
 
-static xmlNodePtr
-anchor(xmlNodePtr atom, xmlNodePtr references)
+struct anchor_closure
 {
-        if (references == NULL)
-                return atom;
+        struct nmc_parser *parser;
+        xmlNodePtr node;
+};
 
-        xmlNodePtr reference = references;
-        xmlAddChild(reference, atom);
-        while (reference->next != NULL) {
-                xmlNodePtr next = reference->next;
-                xmlUnlinkNode(reference);
-                xmlAddChild(next, reference);
-                reference = next;
+static int
+anchor_1(struct sigil *sigil, struct anchor_closure *closure)
+{
+        struct anchor *anchor = anchor_new(&sigil->location, node("anchor"));
+        xmlNewProp(anchor->node, BAD_CAST "id", sigil->id);
+        xmlAddChild(anchor->node, closure->node);
+        closure->node = anchor->node;
+
+        xmlListPtr anchors = xmlHashLookup(closure->parser->anchors, sigil->id);
+        if (anchors == NULL) {
+                anchors = xmlListCreate(anchor_free, NULL);
+                xmlHashAddEntry(closure->parser->anchors, sigil->id, anchors);
         }
-        return reference;
+        xmlListPushBack(anchors, anchor);
+
+        return 1;
 }
 
 static xmlNodePtr
-word(const xmlChar *string, int length, xmlNodePtr references)
+anchor(struct nmc_parser *parser, xmlNodePtr atom, xmlListPtr sigils)
 {
-        return anchor(xmlNewTextLen(string, length), references);
+        if (sigils == NULL)
+                return atom;
+
+        struct anchor_closure closure = { parser, atom };
+        xmlListWalk(sigils, (xmlListWalker)anchor_1, &closure);
+        xmlListDelete(sigils);
+        return closure.node;
+}
+
+static xmlNodePtr
+word(struct nmc_parser *parser, const xmlChar *string, int length, xmlListPtr sigils)
+{
+        return anchor(parser, xmlNewTextLen(string, length), sigils);
 }
 
 static xmlNodePtr
@@ -279,20 +487,20 @@ append_inline(xmlNodePtr inlines, xmlNodePtr node)
 }
 
 static xmlNodePtr
-append_word(xmlNodePtr inlines, const xmlChar *string, int length, xmlNodePtr references)
+append_word(struct nmc_parser *parser, xmlNodePtr inlines, const xmlChar *string, int length, xmlListPtr sigils)
 {
-        if (references != NULL)
-                return sibling(inlines, word(string, length, references));
+        if (sigils != NULL)
+                return sibling(inlines, word(parser, string, length, sigils));
 
         append_text(inlines, string, length);
         return inlines;
 }
 
 static xmlNodePtr
-append_spaced_word(xmlNodePtr inlines, const xmlChar *string, int length, xmlNodePtr references)
+append_spaced_word(struct nmc_parser *parser, xmlNodePtr inlines, const xmlChar *string, int length, xmlListPtr sigils)
 {
-        if (references != NULL)
-                return append_inline(inlines, word(string, length, references));
+        if (sigils != NULL)
+                return append_inline(inlines, word(parser, string, length, sigils));
 
         xmlNodeAddContentLen(append_space(inlines), string, length);
         return inlines;
@@ -301,7 +509,10 @@ append_spaced_word(xmlNodePtr inlines, const xmlChar *string, int length, xmlNod
 
 %%
 
-nmc: title oblockssections0 { xmlDocSetRootElement(parser->doc, child(wrap("nml", $1), $2)); };
+nmc: title oblockssections0 {
+        xmlDocSetRootElement(parser->doc, child(wrap("nml", $1), $2));
+        xmlHashScan(parser->anchors, (xmlHashScanner)report_remaining_anchors, NULL);
+}
 
 title: words { $$ = content("title", $1); }
 
@@ -316,7 +527,7 @@ blocks: block
 | codeblock
 | blocks BLOCKSEPARATOR block { $$ = sibling($1, $3); }
 | blocks BLOCKSEPARATOR codeblock { $$ = codeblock($1, $2.string, $2.length, $3); }
-| blocks BLOCKSEPARATOR footnotes { $$ = footnote($1, $3); };
+| blocks BLOCKSEPARATOR footnotes { $$ = footnote(parser, $1, $3); };
 
 block: paragraph
 | itemization
@@ -329,7 +540,7 @@ sections: footnotedsection
 | sections footnotedsection { $$ = sibling($1, $2); };
 
 footnotedsection: section
-| section footnotes oblockseparator { $$ = footnote($1, $2); };
+| section footnotes oblockseparator { $$ = footnote(parser, $1, $2); };
 
 oblockseparator: /* empty */
 | BLOCKSEPARATOR;
@@ -339,10 +550,10 @@ section: SECTION { parser->want = INDENT; } title oblockssections { $$ = child(w
 oblockssections: /* empty */ { $$ = NULL; }
 | INDENT blockssections DEDENT { $$ = $2; };
 
-footnotes: footnote { $$ = wrap("footnotes", $1); }
-| footnotes footnote { $$ = child($1, $2); };
+footnotes: footnote { $$ = xmlListCreate(footnote_free, NULL); xmlListPushBack($$, $1); }
+| footnotes footnote { $$ = $1; xmlListPushBack($$, $2); };
 
-footnote: FOOTNOTE words { $$ = prop(content("footnote", $2), "id", $1.string, $1.length); };
+footnote: FOOTNOTE words { $$ = footnote_new(&@$, $1.string, $1.length, $2); }
 
 paragraph: PARAGRAPH inlines { $$ = wrap("p", $2); };
 
@@ -412,24 +623,24 @@ spacecontinuation: SPACE
 
 inlines: ospace sinlines ospace { $$ = $2; };
 
-sinlines: WORD references { $$ = word($1.string, $1.length, $2); }
-| referencedinline
-| sinlines WORD references { $$ = append_word($1, $2.string, $2.length, $3); }
-| sinlines referencedinline { $$ = sibling($1, $2); }
-| sinlines spaces WORD references { $$ = append_spaced_word($1, $3.string, $3.length, $4); }
-| sinlines spaces referencedinline { $$ = append_inline($1, $3); };
+sinlines: WORD sigils { $$ = word(parser, $1.string, $1.length, $2); }
+| anchoredinline
+| sinlines WORD sigils { $$ = append_word(parser, $1, $2.string, $2.length, $3); }
+| sinlines anchoredinline { $$ = sibling($1, $2); }
+| sinlines spaces WORD sigils { $$ = append_spaced_word(parser, $1, $3.string, $3.length, $4); }
+| sinlines spaces anchoredinline { $$ = append_inline($1, $3); };
 
-referencedinline: inline references { $$ = anchor($1, $2); };
+anchoredinline: inline sigils { $$ = anchor(parser, $1, $2); };
 
 inline: CODE { $$ = scontent("code", $1.string, $1.length); }
 | EMPHASIS { $$ = scontent("emphasis", $1.string, $1.length); }
 | BEGINGROUP sinlines ENDGROUP { $$ = $2; };
 
-references: /* empty */ { $$ = NULL; }
-| reference
-| references REFERENCESEPARATOR reference { $$ = sibling($1, $3); };
+sigils: /* empty */ { $$ = NULL; }
+| sigil { $$ = xmlListCreate(sigil_free, NULL); xmlListPushBack($$, $1); }
+| sigils SIGILSEPARATOR sigil { $$ = $1; xmlListPushBack($$, $3); };
 
-reference: REFERENCE { $$ = prop(node("reference"), "id", $1.string, $1.length); };
+sigil: SIGIL { $$ = sigil_new(&@$, $1.string, $1.length); };
 
 item: { parser->want = INDENT; } inlines oblocks { $$ = child(wrap("item", wrap("p", $2)), $3); };
 

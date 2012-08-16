@@ -39,6 +39,7 @@ nmc_parser_error(struct nmc_parser *parser, YYLTYPE *location,
         xmlListPushBack(parser->errors, error);
 }
 
+
 xmlDocPtr
 nmc_parse(const xmlChar *input, xmlListPtr *errors)
 {
@@ -51,9 +52,12 @@ nmc_parse(const xmlChar *input, xmlListPtr *errors)
         parser.want = ERROR;
         parser.words = false;
         parser.doc = xmlNewDoc(BAD_CAST "1.0");
+        parser.anchors = xmlHashCreate(16);
         parser.errors = *errors = xmlListCreate(error_free, NULL);
 
         nmc_grammar_parse(&parser);
+
+        xmlHashFree(parser.anchors, (xmlHashDeallocator)xmlListDelete);
 
         return parser.doc;
 }
@@ -426,10 +430,10 @@ nmc_parser_lex(struct nmc_parser *parser, YYLTYPE *location, YYSTYPE *value)
                 return token(parser, location, parser->p + 1, ENDGROUP);
         } else if ((length = superscript(parser)) > 0) {
                 // TODO Only catch this if followed by is_inline_end().
-                return substring(parser, location, value, parser->p + length, REFERENCE);
+                return substring(parser, location, value, parser->p + length, SIGIL);
         } else if (*end == 0xe2 && *(end + 1) == 0x81 && *(end + 2) == 0xba) {
                 // TODO Only catch this if followed by is_inline_end().
-                return token(parser, location, parser->p + 3, REFERENCESEPARATOR);
+                return token(parser, location, parser->p + 3, SIGILSEPARATOR);
         }
 
         while (!is_inline_end(end))

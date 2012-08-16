@@ -65,7 +65,6 @@ AT_NMC_CHECK([title],
 
 AT_CLEANUP
 
-
 AT_SETUP([Document consisting of a title followed by two paragraphs])
 
 AT_DATA([title],
@@ -332,14 +331,7 @@ AT_DATA([title],
 
 AT_NMC_CHECK([title],
 [[  <title>Title</title>
-  <footnoted>
-    <p><reference id="²"><reference id="¹">Word1</reference></reference> Word2 <reference id="³³">Word3</reference></p>
-    <footnotes>
-      <footnote id="¹" referenced="true">Footnote1</footnote>
-      <footnote id="²" referenced="true">Footnote2</footnote>
-      <footnote id="³³" referenced="true">Footnote33</footnote>
-    </footnotes>
-  </footnoted>]])
+  <p><anchor id="²" buffer="Footnote2"><anchor id="¹" buffer="Footnote1">Word1</anchor></anchor> Word2 <anchor id="³³" buffer="Footnote33">Word3</anchor></p>]])
 
 AT_CLEANUP
 
@@ -359,12 +351,7 @@ AT_NMC_CHECK([title],
 [[  <title>Title</title>
   <section>
     <title>Section</title>
-    <footnoted>
-      <p>Word1 <reference id="¹">Word2</reference> Word3</p>
-      <footnotes>
-        <footnote id="¹" referenced="true">Footnote</footnote>
-      </footnotes>
-    </footnoted>
+    <p>Word1 <anchor id="¹" buffer="Footnote">Word2</anchor> Word3</p>
   </section>]])
 
 AT_CLEANUP
@@ -383,15 +370,10 @@ AT_DATA([title],
 
 AT_NMC_CHECK([title],
 [[  <title>Title</title>
-  <footnoted>
-    <section>
-      <title>Section</title>
-      <p>Word1 <reference id="¹">Word2</reference> Word3</p>
-    </section>
-    <footnotes>
-      <footnote id="¹" referenced="true">Footnote</footnote>
-    </footnotes>
-  </footnoted>]])
+  <section>
+    <title>Section</title>
+    <p>Word1 <anchor id="¹" buffer="Footnote">Word2</anchor> Word3</p>
+  </section>]])
 
 AT_CLEANUP
 
@@ -415,24 +397,14 @@ AT_DATA([title],
 
 AT_NMC_CHECK([title],
 [[  <title>Title</title>
-  <footnoted>
-    <section>
-      <title>Section</title>
-      <p>Word1 <reference id="¹">Word2</reference> Word3</p>
-    </section>
-    <footnotes>
-      <footnote id="¹" referenced="true">Footnote</footnote>
-    </footnotes>
-  </footnoted>
-  <footnoted>
-    <section>
-      <title>Section</title>
-      <p>Word1 <reference id="¹">Word2</reference> Word3</p>
-    </section>
-    <footnotes>
-      <footnote id="¹" referenced="true">Footnote</footnote>
-    </footnotes>
-  </footnoted>]])
+  <section>
+    <title>Section</title>
+    <p>Word1 <anchor id="¹" buffer="Footnote">Word2</anchor> Word3</p>
+  </section>
+  <section>
+    <title>Section</title>
+    <p>Word1 <anchor id="¹" buffer="Footnote">Word2</anchor> Word3</p>
+  </section>]])
 
 AT_CLEANUP
 
