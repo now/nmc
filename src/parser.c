@@ -186,6 +186,43 @@ is_space_or_end(const xmlChar *end)
 }
 
 static int
+codeblock(struct nmc_parser *parser, YYLTYPE *location, YYSTYPE *value)
+{
+        const xmlChar *begin = parser->p + 4;
+        const xmlChar *end = begin;
+        value->buffer = xmlBufferCreate();
+
+again:
+        while (!is_end(end))
+                end++;
+        if (*end == '\n') {
+                int lines = 1;
+                const xmlChar *bss = end + 1;
+                const xmlChar *bse = bss;
+                while (*bse == ' ' || *bse == '\n') {
+                        if (*bse == '\n') {
+                                lines++;
+                                bss = bse + 1;
+                        }
+                        bse++;
+                }
+                int spaces = bse - bss;
+                if (spaces >= parser->indent + 4) {
+                        xmlBufferAdd(value->buffer, begin, end - begin);
+                        for (int i = 0; i < lines; i++)
+                                xmlBufferAdd(value->buffer, BAD_CAST "\n", 1);
+                        begin = bss + parser->indent + 4;
+                        end = bse;
+                        parser->location.last_line += lines;
+                        goto again;
+                }
+        }
+        xmlBufferAdd(value->buffer, begin, end - begin);
+
+        return token(parser, location, end, CODEBLOCK);
+}
+
+static int
 definition(struct nmc_parser *parser, YYLTYPE *location, YYSTYPE *value)
 {
         const xmlChar *end = parser->p + 3;
@@ -242,7 +279,7 @@ bol(struct nmc_parser *parser, YYLTYPE *location, YYSTYPE *value)
         case ' ':
                 if (*(parser->p + 1) == ' ') {
                         if (*(parser->p + 2) == ' ' && *(parser->p + 3) == ' ')
-                                return token(parser, location, parser->p + 4, CODEBLOCK);
+                                return codeblock(parser, location, value);
                         return token(parser, location, parser->p + 2, PARAGRAPH);
                 }
                 break;

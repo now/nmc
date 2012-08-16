@@ -195,7 +195,7 @@ node_free(struct nmc_parser *parser, xmlNodePtr node)
 %token TABLESEPARATOR
 %token ROW
 %token ENTRY
-%token CODEBLOCK
+%token <buffer> CODEBLOCK
 %token <substring> FOOTNOTE
 %token SECTION
 %token INDENT
@@ -220,8 +220,6 @@ node_free(struct nmc_parser *parser, xmlNodePtr node)
 %type <node> definitions definition
 %type <node> quote line attribution
 %type <node> table headbody body row entries entry
-%type <node> codeblock
-%type <buffer> codeblockwords
 %type <buffer> words swords
 %type <node> inlines sinlines anchoredinline inline
 %type <list> sigils
@@ -242,6 +240,7 @@ node_free(struct nmc_parser *parser, xmlNodePtr node)
 }
 
 %printer { fprintf(yyoutput, "%.*s", $$.length, $$.string); } <substring>
+%printer { fprintf(yyoutput, "%s", xmlBufferContent($$)); } <buffer>
 
 %destructor { xmlBufferFree($$); } <buffer>
 %destructor { node_free(parser, $$); } <node>
@@ -346,35 +345,11 @@ buffer(const xmlChar *string, int length)
 }
 
 static xmlBufferPtr
-bappend(xmlBufferPtr buffer, const xmlChar *string, int length)
-{
-        xmlBufferAdd(buffer, string, length);
-        return buffer;
-}
-
-static xmlBufferPtr
 append(xmlBufferPtr buffer, const xmlChar *string, int length)
 {
         xmlBufferAdd(buffer, BAD_CAST " ", 1);
         xmlBufferAdd(buffer, string, length);
         return buffer;
-}
-
-static xmlNodePtr
-codeblock(xmlNodePtr blocks, const xmlChar *string, int length, xmlNodePtr code)
-{
-        xmlNodePtr last = blocks;
-        while (last->next != NULL)
-                last = last->next;
-
-        if (!xmlStrEqual(last->name, BAD_CAST "code"))
-                return sibling(blocks, code);
-
-        xmlNodeAddContentLen(last, string, length);
-        xmlAddChildList(last, code->children);
-        code->children = NULL;
-        xmlFreeNode(code);
-        return blocks;
 }
 
 static int
@@ -546,9 +521,7 @@ blockssections: blocks
 | sections;
 
 blocks: block
-| codeblock
 | blocks BLOCKSEPARATOR block { $$ = sibling($1, $3); }
-| blocks BLOCKSEPARATOR codeblock { $$ = codeblock($1, $2.string, $2.length, $3); }
 | blocks BLOCKSEPARATOR footnotes { $$ = footnote(parser, $1, $3); };
 
 block: paragraph
@@ -556,6 +529,7 @@ block: paragraph
 | enumeration
 | definitions
 | quote
+| CODEBLOCK { $$ = content("code", $1); }
 | table;
 
 sections: footnotedsection
@@ -617,17 +591,6 @@ entries: entry { $$ = wrap("row", $1); }
 | entries ENTRY entry { $$ = child($1, $3); };
 
 entry: inlines { $$ = wrap("entry", $1); };
-
-/* TODO: Retain ospaces */
-
-codeblock: CODEBLOCK { parser->words = true; } codeblockwords { parser->words = false; } { $$ = content("code", $3); }
-
-codeblockwords: SPACE { $$ = buffer($1.string, $1.length); }
-| WORD { $$ = buffer($1.string, $1.length); }
-| codeblockwords SPACE { $$ = bappend($1, $2.string, $2.length); }
-| codeblockwords WORD { $$ = bappend($1, $2.string, $2.length); }
-| codeblockwords CONTINUATION SPACE { $$ = bappend(bappend($1, BAD_CAST "\n", 1), $3.string, $3.length - 4); }
-| codeblockwords CONTINUATION WORD { $$ = bappend(bappend($1, BAD_CAST "\n", 1), $3.string, $3.length); };
 
 words: { parser->words = true; } ospace swords ospace { parser->words = false; } { $$ = $3; };
 
