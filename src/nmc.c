@@ -46,6 +46,9 @@ main(UNUSED(int argc), UNUSED(char **argv))
 
         if (getenv("NMC_DEBUG"))
                 nmc_grammar_debug = 1;
+
+        xmlInitParser();
+
         xmlListPtr errors;
         xmlDocPtr doc = nmc_parse(BAD_CAST buffer, &errors);
         if (!xmlListEmpty(errors))
@@ -54,6 +57,7 @@ main(UNUSED(int argc), UNUSED(char **argv))
         xmlListDelete(errors);
         xmlSaveFormatFileEnc("-", doc, "UTF-8", 1);
         xmlFreeDoc(doc);
+
         xmlCleanupParser();
 
         return result;
