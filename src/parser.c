@@ -86,7 +86,8 @@ token(struct nmc_parser *parser, YYLTYPE *location, const xmlChar *end, int type
                        (end - parser->p - (end == parser->p ? 0 : 1)));
 
         parser->location.first_line = parser->location.last_line;
-        parser->location.first_column = parser->location.last_column + 1;
+        parser->location.last_column++;
+        parser->location.first_column = parser->location.last_column;
         parser->p = end;
         return type;
 }
@@ -465,8 +466,11 @@ code(struct nmc_parser *parser, YYLTYPE *location, YYSTYPE *value)
         while (!is_end(end) &&
                !(*end == 0xe2 && *(end + 1) == 0x80 && *(end + 2) == 0xba))
                 end++;
-        if (is_end(end))
-                return error(parser, location);
+        if (is_end(end)) {
+                nmc_parser_error(parser, &parser->location,
+                                 "missing ending ‘›’ for code inline");
+                return trimmed_substring(parser, location, value, end, 3, 0, CODE);
+        }
         while (*end == 0xe2 && *(end + 1) == 0x80 && *(end + 2) == 0xba)
                 end += 3;
         return trimmed_substring(parser, location, value, end, 3, 3, CODE);
