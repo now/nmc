@@ -247,6 +247,7 @@ node_free(struct nmc_parser *parser, xmlNodePtr node)
 %printer { fprintf(yyoutput, "%s %s", $$.id, xmlBufferContent($$.buffer)); } <raw_footnote>
 %printer { fprintf(yyoutput, "%s", xmlBufferContent($$)); } <buffer>
 
+%destructor { xmlFree($$.id); xmlBufferFree($$.buffer); } <raw_footnote>
 %destructor { xmlBufferFree($$); } <buffer>
 %destructor { node_free(parser, $$); } <node>
 %destructor { xmlListDelete($$); } <list>
