@@ -55,7 +55,10 @@ main(UNUSED(int argc), UNUSED(char **argv))
                 result = EXIT_FAILURE;
         xmlListWalk(errors, (xmlListWalker)report_nmc_parser_error, NULL);
         xmlListDelete(errors);
-        xmlSaveFormatFileEnc("-", doc, "UTF-8", 1);
+
+        if (result == EXIT_SUCCESS)
+                xmlSaveFormatFileEnc("-", doc, "UTF-8", 1);
+
         xmlFreeDoc(doc);
 
         xmlCleanupParser();
