@@ -347,6 +347,20 @@ AT_NMC_CHECK([title],
 
 AT_CLEANUP
 
+AT_SETUP([Document consisting of a title followed by a three-item definition with the first being unterminated])
+
+AT_DATA([title],
+[[Title
+
+/ A.    1
+/ B. /   2
+/ C. /   3
+]])
+
+AT_NMC_CHECK_FAIL([title], [3:1: missing ending “. /” for term in definition])
+
+AT_CLEANUP
+
 AT_SETUP([Document consisting of a title followed by a paragraph with footnotes])
 
 AT_DATA([title],
@@ -620,6 +634,21 @@ AT_NMC_CHECK_FAIL([title], [3:3: missing ending ‘›’ for code inline])
 
 AT_CLEANUP
 
+AT_SETUP([Document consisting of a title followed by a paragraph containing two unterminated code inlines])
+
+AT_DATA([title],
+[[Title
+
+  ‹Code
+  ‹Code
+]])
+
+AT_NMC_CHECK_FAIL([title],
+[[3:3: missing ending ‘›’ for code inline
+4:3: missing ending ‘›’ for code inline]])
+
+AT_CLEANUP
+
 AT_SETUP([Document consisting of a title followed by a paragraph containing an emphasis inline])
 
 AT_DATA([title],
@@ -645,6 +674,18 @@ AT_DATA([title],
 AT_NMC_CHECK([title],
 [[  <title>Title</title>
   <p>Word1 <emphasis>True/False</emphasis> Word2</p>]])
+
+AT_CLEANUP
+
+AT_SETUP([Document consisting of a title followed by a paragraph containing an unterminated emphasis inline])
+
+AT_DATA([title],
+[[Title
+
+  /Emphasis
+]])
+
+AT_NMC_CHECK_FAIL([title], [3:3: missing ending ‘/’ for emphasis inline])
 
 AT_CLEANUP
 
@@ -798,5 +839,17 @@ AT_NMC_CHECK([title],
       </row>
     </body>
   </table>]])
+
+AT_CLEANUP
+
+AT_SETUP([Document consisting of a title followed by a broken beginning of line])
+
+AT_DATA([title],
+[[Title
+
+A a
+]])
+
+AT_NMC_CHECK_FAIL([title], [3:1: unrecognized character ‘A’ (U+0041) at beginning of line])
 
 AT_CLEANUP

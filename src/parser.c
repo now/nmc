@@ -306,7 +306,9 @@ definition(struct nmc_parser *parser, YYLTYPE *location, YYSTYPE *value)
                 end++;
         }
 
-        return error(parser, location);
+        nmc_parser_error(parser, &parser->location,
+                         "missing ending “. /” for term in definition");
+        return token(parser, location, end, ERROR);
 }
 
 static int
@@ -371,7 +373,21 @@ bol(struct nmc_parser *parser, YYLTYPE *location, YYSTYPE *value)
                 return token(parser, location, parser->p, END);
         }
 
-        return error(parser, location);
+        length = 0;
+        const xmlChar *end = parser->p;
+        while (*end != '\0' && length < 7)
+                end++, length++;
+        int uc = xmlGetUTF8Char(parser->p, &length);
+        if (uc == -1)
+                nmc_parser_error(parser, &parser->location,
+                                 "broken UTF-8 sequence at beginning of line starting with %#02x",
+                                 *parser->p);
+        else
+                nmc_parser_error(parser, &parser->location,
+                                 "unrecognized character ‘%.*s’ (U+%04X) at beginning of line",
+                                 length, parser->p, uc);
+
+        return PARAGRAPH;
 }
 
 static int
@@ -483,8 +499,11 @@ emphasis(struct nmc_parser *parser, YYLTYPE *location, YYSTYPE *value)
         while (!is_end(end) &&
                (*end != '/' || !is_inline_end(end + 1)))
                 end++;
-        if (is_end(end))
-                return error(parser, location);
+        if (is_end(end)) {
+                nmc_parser_error(parser, &parser->location,
+                                 "missing ending ‘/’ for emphasis inline");
+                return trimmed_substring(parser, location, value, end, 1, 0, EMPHASIS);
+        }
         end++;
         return trimmed_substring(parser, location, value, end, 1, 1, EMPHASIS);
 }

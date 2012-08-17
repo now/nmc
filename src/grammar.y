@@ -358,7 +358,13 @@ node_free(struct nmc_parser *parser, xmlNodePtr node)
 static int
 nmc_grammar_lex(YYSTYPE *value, YYLTYPE *location, struct nmc_parser *parser)
 {
-        return nmc_parser_lex(parser, location, value);
+        int token;
+
+        do {
+                token = nmc_parser_lex(parser, location, value);
+        } while (token == ERROR);
+
+        return token;
 }
 
 static void
