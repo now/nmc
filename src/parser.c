@@ -44,13 +44,12 @@ xmlDocPtr
 nmc_parse(const xmlChar *input, xmlListPtr *errors)
 {
         struct nmc_parser parser;
-        parser.input = input;
-        parser.p = parser.input;
+        parser.p = input;
         parser.location = (YYLTYPE){ 1, 1, 1, 1 };
         parser.dedents = 0;
         parser.indent = 0;
         parser.bol = false;
-        parser.want = ERROR;
+        parser.want = TITLE;
         parser.doc = xmlNewDoc(BAD_CAST "1.0");
         parser.anchors = xmlHashCreate(16);
         parser.errors = *errors = xmlListCreate(error_free, NULL);
@@ -490,7 +489,8 @@ nmc_parser_lex(struct nmc_parser *parser, YYLTYPE *location, YYSTYPE *value)
         int length;
         const xmlChar *end = parser->p;
 
-        if (end == parser->input) {
+        if (parser->want == TITLE) {
+                parser->want = ERROR;
                 value->buffer = xmlBufferCreate();
                 return buffer(parser, location, value->buffer, end, TITLE);
         } else if (*end == ' ') {
