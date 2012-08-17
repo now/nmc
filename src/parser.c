@@ -493,32 +493,40 @@ nmc_parser_lex(struct nmc_parser *parser, YYLTYPE *location, YYSTYPE *value)
                 parser->want = ERROR;
                 value->buffer = xmlBufferCreate();
                 return buffer(parser, location, value->buffer, end, TITLE);
-        } else if (*end == ' ') {
+        }
+
+        switch (*end) {
+        case ' ':
                 do {
                         end++;
                 } while (*end == ' ');
                 return substring(parser, location, value, end, SPACE);
-        } else if (*end == '\n') {
+        case '\n':
                 return eol(parser, location, value);
-        } else if (*end == 0xe2 && *(end + 1) == 0x80 && *(end + 2) == 0xb9) {
-                parser->p = end;
-                return code(parser, location, value);
-        } else if (*end == '|') {
+        case '|':
                 return token(parser, location, parser->p + 1, ENTRY);
-        } else if  (*end == '/') {
+        case '/':
                 return emphasis(parser, location, value);
-        } else if (*end == '{') {
+        case '{':
                 return token(parser, location, parser->p + 1, BEGINGROUP);
-        } else if (is_group_end(end)) {
-                return token(parser, location, parser->p + 1, ENDGROUP);
-        } else if ((length = superscript(parser)) > 0) {
-                // TODO Only catch this if followed by is_inline_end().
-                return substring(parser, location, value, parser->p + length, SIGIL);
-        } else if (*end == 0xe2 && *(end + 1) == 0x81 && *(end + 2) == 0xba) {
-                // TODO Only catch this if followed by is_inline_end().
-                return token(parser, location, parser->p + 3, SIGILSEPARATOR);
+        case 0xe2:
+                end++;
+                if (*end == 0x80 && *(end + 1) == 0xb9)
+                        return code(parser, location, value);
+                else if (*end == 0x81 && *(end + 1) == 0xba)
+                        // TODO Only catch this if followed by is_inline_end()
+                        // (or perhaps only if followed by superscript()).
+                        return token(parser, location, parser->p + 3, SIGILSEPARATOR);
+                goto word;
         }
 
+        if (is_group_end(end))
+                return token(parser, location, parser->p + 1, ENDGROUP);
+        else if ((length = superscript(parser)) > 0)
+                // TODO Only catch this if followed by is_inline_end().
+                return substring(parser, location, value, parser->p + length, SIGIL);
+
+word:
         while (!is_inline_end(end))
                 end++;
         if (end == parser->p)
