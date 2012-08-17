@@ -17,26 +17,34 @@ error_free(xmlLinkPtr link)
 }
 
 void
+nmc_parser_errorv(struct nmc_parser *parser, YYLTYPE *location,
+                  const char *message, va_list args)
+{
+        va_list saved;
+
+        va_copy(saved, args);
+
+        xmlChar buf[1];
+        int size = xmlStrVPrintf(buf, sizeof(buf), (const xmlChar *)message, args);
+
+        struct nmc_parser_error *error =
+                (struct nmc_parser_error *)xmlMalloc(sizeof(struct nmc_parser_error));
+        error->location = *location;
+        error->message = (char *)xmlMalloc(size + 1);
+        xmlStrVPrintf((xmlChar *)error->message, size + 1, (const xmlChar *)message, saved);
+        va_end(saved);
+
+        xmlListPushBack(parser->errors, error);
+}
+
+void
 nmc_parser_error(struct nmc_parser *parser, YYLTYPE *location,
                  const char *message, ...)
 {
         va_list args;
-
         va_start(args, message);
-        xmlChar buf[1];
-        int size = xmlStrVPrintf(buf, sizeof(buf), (const xmlChar *)message, args);
+        nmc_parser_errorv(parser, location, message, args);
         va_end(args);
-
-        struct nmc_parser_error *error =
-                (struct nmc_parser_error *)xmlMalloc(sizeof(struct nmc_parser_error));
-
-        error->location = *location;
-        error->message = (char *)xmlMalloc(size + 1);
-        va_start(args, message);
-        xmlStrVPrintf((xmlChar *)error->message, size + 1, (const xmlChar *)message, args);
-        va_end(args);
-
-        xmlListPushBack(parser->errors, error);
 }
 
 
