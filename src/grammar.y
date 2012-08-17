@@ -328,7 +328,6 @@ node_free(struct nmc_parser *parser, xmlNodePtr node)
 %type <node> item oblocks
 
 %union {
-        const xmlChar *string;
         struct {
                 const xmlChar *string;
                 int length;
