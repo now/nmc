@@ -1,5 +1,7 @@
 %code top
 {
+#include <sys/types.h>
+#include <regex.h>
 #include <stdio.h>
 #include <stdbool.h>
 #include <libxml/tree.h>
@@ -9,22 +11,120 @@
 #include "nmc.h"
 #include "parser.h"
 
+typedef xmlNodePtr (*definefn)(const xmlChar *, regmatch_t *);
+
+struct definition
+{
+        regex_t regex;
+        definefn define;
+};
+
+xmlListPtr definitions;
+
+static struct definition *
+definition_new(const char *pattern, definefn define)
+{
+        struct definition *definition =
+                (struct definition *)xmlMalloc(sizeof(struct definition));
+        /* TODO Error-check here */
+        regcomp(&definition->regex, pattern, REG_EXTENDED);
+        definition->define = define;
+        return definition;
+}
+
+static void
+definition_free(xmlLinkPtr link)
+{
+        struct definition *definition = (struct definition *)xmlLinkGetData(link);
+        regfree(&definition->regex);
+        xmlFree(definition);
+}
+
+static xmlNodePtr
+definition_element(const char *name, const xmlChar *buffer, regmatch_t *matches, const char **attributes)
+{
+        xmlNodePtr node = xmlNewNode(NULL, BAD_CAST name);
+        int i = 1;
+        for (const char **p = attributes; *p != NULL; p++) {
+                /* TODO Check that rm_so/rm_eo ≠ -1 */
+                xmlChar *value = xmlStrndup(buffer + matches[i].rm_so,
+                                            matches[i].rm_eo - matches[i].rm_so);
+                xmlNewProp(node, BAD_CAST *p, value);
+                xmlFree(value);
+                i++;
+        }
+        return node;
+}
+
+static xmlNodePtr
+abbreviation(const xmlChar *buffer, regmatch_t *matches)
+{
+        return definition_element("abbreviation", buffer, matches,
+                                  (const char *[]){ "for", NULL });
+}
+
+static xmlNodePtr
+ref(const xmlChar *buffer, regmatch_t *matches)
+{
+        return definition_element("ref", buffer, matches,
+                                  (const char *[]){ "title", "uri", NULL });
+}
+
+static void
+initialize_definitions(void)
+{
+        if (definitions != NULL)
+                return;
+        definitions = xmlListCreate(definition_free, NULL);
+        xmlListAppend(definitions, definition_new("^Abbreviation +for +(.+)", abbreviation));
+        xmlListAppend(definitions, definition_new("^(.+) +at +(.+)", ref));
+}
+
+struct footnote_define_closure
+{
+        const xmlChar *buffer;
+        xmlNodePtr node;
+};
+
+static int
+footnote_define(struct definition *definition, struct footnote_define_closure *closure)
+{
+        regmatch_t matches[definition->regex.re_nsub + 1];
+
+        if (regexec(&definition->regex,
+                    (const char *)closure->buffer,
+                    definition->regex.re_nsub + 1,
+                    matches,
+                    0) != 0)
+                return 1;
+
+        closure->node = definition->define(closure->buffer, matches);
+
+        return 0;
+}
+
 struct footnote
 {
         YYLTYPE location;
         xmlChar *id;
-        xmlBufferPtr buffer;
+        xmlNodePtr node;
         bool referenced;
 };
 
 static struct footnote *
 footnote_new(YYLTYPE *location, xmlChar *id, xmlBufferPtr buffer)
 {
+        struct footnote_define_closure closure = {
+                xmlBufferContent(buffer),
+                NULL
+        };
+        xmlListWalk(definitions, (xmlListWalker)footnote_define, &closure);
+
         struct footnote *footnote =
                 (struct footnote *)xmlMalloc(sizeof(struct footnote));
         footnote->location = *location;
         footnote->id = id;
-        footnote->buffer = buffer;
+        footnote->node = closure.node;
         footnote->referenced = false;
         return footnote;
 }
@@ -34,7 +134,7 @@ footnote_free(xmlLinkPtr link)
 {
         struct footnote *footnote = (struct footnote *)xmlLinkGetData(link);
         xmlFree(footnote->id);
-        xmlBufferFree(footnote->buffer);
+        xmlFreeNode(footnote->node);
         xmlFree(footnote);
 }
 
@@ -179,6 +279,7 @@ node_free(struct nmc_parser *parser, xmlNodePtr node)
 %error-verbose
 %expect 0
 %locations
+%initial-action { initialize_definitions(); }
 
 %token END 0 "end of file"
 %token ERROR
@@ -314,7 +415,7 @@ children(xmlNodePtr parent, xmlNodePtr children)
 static xmlNodePtr
 wrap(const char *name, xmlNodePtr kid)
 {
-        return child(node(name), kid);
+        return children(node(name), kid);
 }
 
 static xmlNodePtr
@@ -342,9 +443,12 @@ siblings(xmlNodePtr first, xmlNodePtr rest)
 }
 
 static int
-update_anchor(struct anchor *anchor, struct footnote *footnote)
+update_anchor(struct anchor *anchor, xmlNodePtr node)
 {
-        xmlNewProp(anchor->node, BAD_CAST "buffer", xmlBufferContent(footnote->buffer));
+        xmlNodePtr copy = xmlCopyNode(node, 2);
+        xmlReplaceNode(anchor->node, copy);
+        xmlAddChildList(copy, anchor->node->children);
+        anchor->node->children = NULL;
         return 1;
 }
 
@@ -353,7 +457,8 @@ footnote_reference(struct footnote *footnote, struct nmc_parser *parser)
 {
         xmlListPtr anchors = xmlHashLookup(parser->anchors, footnote->id);
         if (anchors != NULL) {
-                xmlListWalk(anchors, (xmlListWalker)update_anchor, footnote);
+                if (footnote->node != NULL)
+                        xmlListWalk(anchors, (xmlListWalker)update_anchor, footnote->node);
                 xmlHashRemoveEntry(parser->anchors,
                                    footnote->id,
                                    (xmlHashDeallocator)xmlListDelete);
@@ -377,10 +482,6 @@ footnote_check(struct footnote *footnote, struct nmc_parser *parser)
 static xmlNodePtr
 footnote(struct nmc_parser *parser, xmlNodePtr blocks, xmlListPtr footnotes)
 {
-        xmlNodePtr last = blocks;
-        while (last->next != NULL)
-                last = last->next;
-
         xmlListWalk(footnotes, (xmlListWalker)footnote_reference, parser);
         xmlListWalk(footnotes, (xmlListWalker)footnote_check, parser);
         xmlListDelete(footnotes);
@@ -497,7 +598,7 @@ append_spaced_word(struct nmc_parser *parser, xmlNodePtr inlines, const xmlChar 
 
 nmc: TITLE oblockssections0 {
         xmlDocSetRootElement(parser->doc, children(wrap("nml", content("title", $1)), $2));
-        xmlHashScan(parser->anchors, (xmlHashScanner)report_remaining_anchors, NULL);
+        xmlHashScan(parser->anchors, (xmlHashScanner)report_remaining_anchors, parser);
 }
 
 oblockssections0: /* empty */ { $$ = NULL; }
@@ -538,7 +639,14 @@ oblockssections: /* empty */ { $$ = NULL; }
 footnotes: footnote { $$ = xmlListCreate(footnote_free, NULL); xmlListPushBack($$, $1); }
 | footnotes footnote { $$ = $1; xmlListPushBack($$, $2); };
 
-footnote: FOOTNOTE { $$ = footnote_new(&@$, $1.id, $1.buffer); }
+footnote: FOOTNOTE {
+        $$ = footnote_new(&@$, $1.id, $1.buffer);
+        if ($$->node == NULL) {
+                nmc_parser_error(parser, &@$,
+                                 "unrecognized footnote content: %s",
+                                 xmlBufferContent($1.buffer));
+        }
+};
 
 paragraph: PARAGRAPH inlines { $$ = wrap("p", $2); };
 

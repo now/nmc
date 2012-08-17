@@ -352,16 +352,16 @@ AT_SETUP([Document consisting of a title followed by a paragraph with footnotes]
 AT_DATA([title],
 [[Title
 
-  Word1¹⁺² Word2 Word3³³
+  Abbr¹⁺² for US³³
 
-¹ Footnote1
-² Footnote2
-³³ Footnote33
+¹ Abbreviation for Abbreviation
+² See the Wikipedia entry for “Abbreviation” at http://en.wikipedia.org/wiki/Abbreviation
+³³ Abbreviation for United States
 ]])
 
 AT_NMC_CHECK([title],
 [[  <title>Title</title>
-  <p><anchor id="²" buffer="Footnote2"><anchor id="¹" buffer="Footnote1">Word1</anchor></anchor> Word2 <anchor id="³³" buffer="Footnote33">Word3</anchor></p>]])
+  <p><ref title="See the Wikipedia entry for “Abbreviation”" uri="http://en.wikipedia.org/wiki/Abbreviation"><abbreviation for="Abbreviation">Abbr</abbreviation></ref> for <abbreviation for="United States">US</abbreviation></p>]])
 
 AT_CLEANUP
 
@@ -372,16 +372,16 @@ AT_DATA([title],
 
 § Section
 
-    Word1 Word2¹ Word3
+    Word1 Abbr¹ Word3
 
-  ¹ Footnote
+  ¹ Abbreviation for Abbreviation
 ]])
 
 AT_NMC_CHECK([title],
 [[  <title>Title</title>
   <section>
     <title>Section</title>
-    <p>Word1 <anchor id="¹" buffer="Footnote">Word2</anchor> Word3</p>
+    <p>Word1 <abbreviation for="Abbreviation">Abbr</abbreviation> Word3</p>
   </section>]])
 
 AT_CLEANUP
@@ -393,16 +393,16 @@ AT_DATA([title],
 
 § Section
 
-    Word1 Word2¹ Word3
+    Word1 Abbr¹ Word3
 
-¹ Footnote
+¹ Abbreviation for Abbreviation
 ]])
 
 AT_NMC_CHECK([title],
 [[  <title>Title</title>
   <section>
     <title>Section</title>
-    <p>Word1 <anchor id="¹" buffer="Footnote">Word2</anchor> Word3</p>
+    <p>Word1 <abbreviation for="Abbreviation">Abbr</abbreviation> Word3</p>
   </section>]])
 
 AT_CLEANUP
@@ -414,26 +414,26 @@ AT_DATA([title],
 
 § Section
 
-    Word1 Word2¹ Word3
+    Word1 Abbr¹ Word3
 
-¹ Footnote
+¹ Abbreviation for Abbreviation
 
 § Section
 
-    Word1 Word2¹ Word3
+    Word1 Abbr¹ Word3
 
-¹ Footnote
+¹ Abbreviation for Abbreviation
 ]])
 
 AT_NMC_CHECK([title],
 [[  <title>Title</title>
   <section>
     <title>Section</title>
-    <p>Word1 <anchor id="¹" buffer="Footnote">Word2</anchor> Word3</p>
+    <p>Word1 <abbreviation for="Abbreviation">Abbr</abbreviation> Word3</p>
   </section>
   <section>
     <title>Section</title>
-    <p>Word1 <anchor id="¹" buffer="Footnote">Word2</anchor> Word3</p>
+    <p>Word1 <abbreviation for="Abbreviation">Abbr</abbreviation> Word3</p>
   </section>]])
 
 AT_CLEANUP
@@ -443,15 +443,29 @@ AT_SETUP([Document consisting of a title followed by a paragraph with a long foo
 AT_DATA([title],
 [[Title
 
-  Word1 Word2¹
+  Word1 Abbr¹ Word3
 
-¹ Footnote1
-  Footnote11
+¹ Abbreviation for
+  Abbreviation
 ]])
 
 AT_NMC_CHECK([title],
 [[  <title>Title</title>
-  <p>Word1 <anchor id="¹" buffer="Footnote1 Footnote11">Word2</anchor></p>]])
+  <p>Word1 <abbreviation for="Abbreviation">Abbr</abbreviation> Word3</p>]])
+
+AT_CLEANUP
+
+AT_SETUP([Document consisting of a title followed by a paragraph with an unrecognized footnote])
+
+AT_DATA([title],
+[[Title
+
+  Word1 Abbr¹ Word3
+
+¹ Junk text in this here footnote
+]])
+
+AT_NMC_CHECK_FAIL([title], [5.1-34: unrecognized footnote content: Junk text in this here footnote])
 
 AT_CLEANUP
 

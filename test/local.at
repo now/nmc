@@ -7,3 +7,7 @@ m4_define([AT_NMC_CHECK],
 $2
 [</nml>
 ])])
+
+m4_define([AT_NMC_CHECK_FAIL],
+[AT_CHECK([nmc <]$1, [1], [], $2[
+])])
