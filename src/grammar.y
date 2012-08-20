@@ -283,6 +283,7 @@ node_free(struct nmc_parser *parser, xmlNodePtr node)
 
 %token END 0 "end of file"
 %token ERROR
+%token AGAIN
 %token <buffer> TITLE
 %token <substring> WORD
 %token PARAGRAPH
@@ -296,7 +297,7 @@ node_free(struct nmc_parser *parser, xmlNodePtr node)
 %token ATTRIBUTION
 %token TABLESEPARATOR
 %token ROW
-%token ENTRY
+%token ENTRY "entry separator"
 %token <buffer> CODEBLOCK
 %token <raw_footnote> FOOTNOTE
 %token SECTION
@@ -362,7 +363,7 @@ nmc_grammar_lex(YYSTYPE *value, YYLTYPE *location, struct nmc_parser *parser)
 
         do {
                 token = nmc_parser_lex(parser, location, value);
-        } while (token == ERROR);
+        } while (token == AGAIN);
 
         return token;
 }

@@ -70,6 +70,18 @@ nmc_parse(const xmlChar *input, xmlListPtr *errors)
         return parser.doc;
 }
 
+static int
+parserc(struct nmc_parser *parser, int *length)
+{
+        int n = 0;
+        const xmlChar *end = parser->p;
+        while (*end != '\0' && n < 7)
+                end++, n++;
+        int uc = xmlGetUTF8Char(parser->p, &n);
+        *length = n;
+        return uc;
+}
+
 static void
 locate(struct nmc_parser *parser, YYLTYPE *location, int last_column)
 {
@@ -107,12 +119,6 @@ substring(struct nmc_parser *parser, YYLTYPE *location, YYSTYPE *value,
           const xmlChar *end, int type)
 {
         return trimmed_substring(parser, location, value, end, 0, 0, type);
-}
-
-static int
-error(struct nmc_parser *parser, YYLTYPE *location)
-{
-        return token(parser, location, parser->p, ERROR);
 }
 
 static int
@@ -237,14 +243,29 @@ again:
 }
 
 static int
+bol_space(struct nmc_parser *parser, int offset)
+{
+        if (*(parser->p + offset) == ' ')
+                return 1;
+        int length;
+        parserc(parser, &length);
+        nmc_parser_error(parser, &parser->location,
+                         "missing ‘ ’ after ‘%.*s’ at beginning of line",
+                         length, parser->p);
+        return 0;
+}
+
+static int
 footnote(struct nmc_parser *parser, YYLTYPE *location, YYSTYPE *value, int length)
 {
-        if (*(parser->p + length) != ' ')
-                return error(parser, location);
         value->raw_footnote.id = xmlStrndup(parser->p, length);
         value->raw_footnote.buffer = xmlBufferCreate();
 
-        return buffer(parser, location, value->raw_footnote.buffer, parser->p + length + 1, FOOTNOTE);
+        return buffer(parser,
+                      location,
+                      value->raw_footnote.buffer,
+                      parser->p + length + bol_space(parser, length),
+                      FOOTNOTE);
 }
 
 static int
@@ -287,7 +308,7 @@ again:
 static int
 definition(struct nmc_parser *parser, YYLTYPE *location, YYSTYPE *value)
 {
-        const xmlChar *end = parser->p + 3;
+        const xmlChar *end = parser->p + 1 + bol_space(parser, 1);
 
         while (!is_end(end)) {
                 if (*end == '.') {
@@ -309,15 +330,16 @@ definition(struct nmc_parser *parser, YYLTYPE *location, YYSTYPE *value)
 
         nmc_parser_error(parser, &parser->location,
                          "missing ending “. /” for term in definition");
-        return token(parser, location, end, ERROR);
+        return token(parser, location, end, AGAIN);
 }
 
 static int
 bol_token(struct nmc_parser *parser, YYLTYPE *location, int length, int type)
 {
-        return *(parser->p + length) == ' ' ?
-                token(parser, location, parser->p + length + 1, type) :
-                error(parser, location);
+        return token(parser,
+                     location,
+                     parser->p + length + bol_space(parser, length),
+                     type);
 }
 
 static bool
@@ -347,7 +369,7 @@ bol(struct nmc_parser *parser, YYLTYPE *location, YYSTYPE *value)
                                 return codeblock(parser, location, value);
                         return token(parser, location, parser->p + 2, PARAGRAPH);
                 }
-                break;
+                return bol_token(parser, location, 1, PARAGRAPH);
         case 0xc2:
                 if (*(parser->p + 1) == 0xa7)
                         return bol_token(parser, location, 2, SECTION);
@@ -362,32 +384,22 @@ bol(struct nmc_parser *parser, YYLTYPE *location, YYSTYPE *value)
                         }
                 break;
         case '/':
-                if (*(parser->p + 1) == ' ')
-                        return definition(parser, location, value);
-                break;
+                return definition(parser, location, value);
         case '>':
                 return bol_token(parser, location, 1, QUOTE);
         case '|':
-                switch (*(parser->p + 1)) {
-                case ' ':
-                        return token(parser, location, parser->p + 2, ROW);
-                case '-': {
+                if (*(parser->p + 1) == '-') {
                         const xmlChar *end = parser->p + 3;
                         while (!is_end(end))
                                 end++;
                         return token(parser, location, end, TABLESEPARATOR);
                 }
-                }
-                break;
+                return bol_token(parser, location, 1, ROW);
         case '\0':
                 return token(parser, location, parser->p, END);
         }
 
-        length = 0;
-        const xmlChar *end = parser->p;
-        while (*end != '\0' && length < 7)
-                end++, length++;
-        int uc = xmlGetUTF8Char(parser->p, &length);
+        int uc = parserc(parser, &length);
         if (uc == -1)
                 nmc_parser_error(parser, &parser->location,
                                  "broken UTF-8 sequence at beginning of line starting with %#02x",
