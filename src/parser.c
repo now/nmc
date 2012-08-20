@@ -560,7 +560,7 @@ nmc_parser_lex(struct nmc_parser *parser, YYLTYPE *location, YYSTYPE *value)
         case '\n':
                 return eol(parser, location, value);
         case '|':
-                return token(parser, location, parser->p + 1, ENTRY);
+                return token(parser, location, parser->p + 1, ENTRYSEPARATOR);
         case '/':
                 return emphasis(parser, location, value);
         case '{':

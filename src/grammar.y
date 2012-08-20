@@ -293,7 +293,7 @@ node_free(struct nmc_parser *parser, xmlNodePtr node)
 %token ATTRIBUTION
 %token TABLESEPARATOR
 %token ROW
-%token ENTRY "entry separator"
+%token ENTRYSEPARATOR "entry separator"
 %token <buffer> CODEBLOCK
 %token <raw_footnote> FOOTNOTE
 %token SECTION
@@ -674,10 +674,10 @@ headbody: row { $$ = wrap("body", $1); }
 body: row
 | body row { $$ = sibling($1, $2); };
 
-row: ROW entries ENTRY { $$ = $2; };
+row: ROW entries ENTRYSEPARATOR { $$ = $2; };
 
 entries: entry { $$ = wrap("row", $1); }
-| entries ENTRY entry { $$ = child($1, $3); };
+| entries ENTRYSEPARATOR entry { $$ = child($1, $3); };
 
 entry: inlines { $$ = wrap("entry", $1); };
 
