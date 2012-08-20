@@ -1,6 +1,7 @@
 #include <config.h>
 
 #include <libxml/tree.h>
+#include <libxml/xmlunicode.h>
 #include <stdbool.h>
 #include <string.h>
 
@@ -319,6 +320,15 @@ bol_token(struct nmc_parser *parser, YYLTYPE *location, int length, int type)
                 error(parser, location);
 }
 
+static bool
+nmc_isprint(int c)
+{
+        /* TODO Would like to avoid xmlUCSIsCatCn(c), but it’s not available. */
+        return !(xmlUCSIsCatCc(c) ||
+                 xmlUCSIsCatCf(c) ||
+                 xmlUCSIsCatCs(c));
+}
+
 static int
 bol(struct nmc_parser *parser, YYLTYPE *location, YYSTYPE *value)
 {
@@ -382,6 +392,10 @@ bol(struct nmc_parser *parser, YYLTYPE *location, YYSTYPE *value)
                 nmc_parser_error(parser, &parser->location,
                                  "broken UTF-8 sequence at beginning of line starting with %#02x",
                                  *parser->p);
+        else if (!nmc_isprint(uc))
+                nmc_parser_error(parser, &parser->location,
+                                 "unrecognized character U+%04X at beginning of line",
+                                 uc);
         else
                 nmc_parser_error(parser, &parser->location,
                                  "unrecognized character ‘%.*s’ (U+%04X) at beginning of line",
