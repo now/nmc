@@ -403,8 +403,6 @@ scontent(const char *name, const xmlChar *string, int length)
 static xmlNodePtr
 child(xmlNodePtr parent, xmlNodePtr child)
 {
-        if (child == NULL)
-                return parent;
         xmlAddChild(parent, child);
         return parent;
 }
@@ -424,13 +422,9 @@ wrap(const char *name, xmlNodePtr kid)
         return children(node(name), kid);
 }
 
-static xmlNodePtr
+static inline xmlNodePtr
 sibling(xmlNodePtr first, xmlNodePtr last)
 {
-        if (first == NULL)
-                return last;
-        if (last == NULL)
-                return first;
         xmlAddSibling(first, last);
         return first;
 }
@@ -438,10 +432,6 @@ sibling(xmlNodePtr first, xmlNodePtr last)
 static xmlNodePtr
 siblings(xmlNodePtr first, xmlNodePtr rest)
 {
-        if (first == NULL)
-                return rest;
-        if (rest == NULL)
-                return first;
         xmlNodePtr next = rest->next;
         xmlAddSibling(first, rest);
         rest->next = next;
