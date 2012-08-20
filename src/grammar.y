@@ -452,14 +452,15 @@ static int
 footnote_reference(struct footnote *footnote, struct nmc_parser *parser)
 {
         xmlListPtr anchors = xmlHashLookup(parser->anchors, footnote->id);
-        if (anchors != NULL) {
-                if (footnote->node != NULL)
-                        xmlListWalk(anchors, (xmlListWalker)update_anchor, footnote->node);
-                xmlHashRemoveEntry(parser->anchors,
-                                   footnote->id,
-                                   (xmlHashDeallocator)xmlListDelete);
-                footnote->referenced = true;
-        }
+        if (anchors == NULL)
+                return 1;
+
+        if (footnote->node != NULL)
+                xmlListWalk(anchors, (xmlListWalker)update_anchor, footnote->node);
+        xmlHashRemoveEntry(parser->anchors,
+                           footnote->id,
+                           (xmlHashDeallocator)xmlListDelete);
+        footnote->referenced = true;
 
         return 1;
 }
