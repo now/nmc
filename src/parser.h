@@ -26,6 +26,6 @@ struct nmc_parser_error
 void nmc_parser_errorv(struct nmc_parser *parser, YYLTYPE *location,
                        const char *message, va_list args);
 void nmc_parser_error(struct nmc_parser *parser, YYLTYPE *location,
-                      const char *message, ...);
+                      const char *message, ...) PRINTF(3, 4);
 
 #endif
