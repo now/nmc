@@ -434,6 +434,20 @@ siblings(xmlNodePtr first, xmlNodePtr rest)
         return first;
 }
 
+static xmlListPtr
+push(xmlListPtr list, void *item)
+{
+        xmlListPushBack(list, item);
+        return list;
+}
+
+static xmlListPtr
+list(xmlListDeallocator deallocator, void *item)
+{
+        xmlListPtr list = xmlListCreate(deallocator, NULL);
+        return push(list, item);
+}
+
 static int
 update_anchor(struct anchor *anchor, xmlNodePtr node)
 {
@@ -629,8 +643,8 @@ title: inlines { $$ = wrap("title", $1); };
 oblockssections: /* empty */ { $$ = NULL; }
 | INDENT blockssections DEDENT { $$ = $2; };
 
-footnotes: footnote { $$ = xmlListCreate(footnote_free, NULL); xmlListPushBack($$, $1); }
-| footnotes footnote { $$ = $1; xmlListPushBack($$, $2); };
+footnotes: footnote { $$ = list(footnote_free, $1); }
+| footnotes footnote { $$ = push($1, $2); };
 
 footnote: FOOTNOTE {
         $$ = footnote_new(&@$, $1.id, $1.buffer);
@@ -697,8 +711,8 @@ inline: CODE { $$ = scontent("code", $1.string, $1.length); }
 | BEGINGROUP sinlines ENDGROUP { $$ = $2; };
 
 sigils: /* empty */ { $$ = NULL; }
-| sigil { $$ = xmlListCreate(sigil_free, NULL); xmlListPushBack($$, $1); }
-| sigils SIGILSEPARATOR sigil { $$ = $1; xmlListPushBack($$, $3); };
+| sigil { $$ = list(sigil_free, $1); }
+| sigils SIGILSEPARATOR sigil { $$ = push($1, $3); };
 
 sigil: SIGIL { $$ = sigil_new(&@$, $1.string, $1.length); };
 
