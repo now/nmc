@@ -138,7 +138,7 @@ dedents(struct nmc_parser *parser, YYLTYPE *location, const xmlChar *end, int sp
         return dedent(parser, location, end);
 }
 
-static int
+static inline int
 length_of_superscript(const xmlChar *input)
 {
         switch (*input) {
@@ -475,13 +475,13 @@ eol(struct nmc_parser *parser, YYLTYPE *location, YYSTYPE *value)
         }
 }
 
-static bool
+static inline bool
 is_reference_or_space_or_end(const xmlChar *end)
 {
         return is_space_or_end(end) || length_of_superscript(end) > 0;
 }
 
-static bool
+static inline bool
 is_group_end(const xmlChar *end)
 {
         if (*end == '}') {
@@ -494,7 +494,7 @@ is_group_end(const xmlChar *end)
         return false;
 }
 
-static bool
+static inline bool
 is_inline_end(const xmlChar *end)
 {
         return is_reference_or_space_or_end(end) ||
