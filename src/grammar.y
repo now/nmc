@@ -634,11 +634,10 @@ footnotes: footnote { $$ = xmlListCreate(footnote_free, NULL); xmlListPushBack($
 
 footnote: FOOTNOTE {
         $$ = footnote_new(&@$, $1.id, $1.buffer);
-        if ($$->node == NULL) {
+        if ($$->node == NULL)
                 nmc_parser_error(parser, &@$,
                                  "unrecognized footnote content: %s",
                                  xmlBufferContent($1.buffer));
-        }
 };
 
 paragraph: PARAGRAPH inlines { $$ = wrap("p", $2); };
