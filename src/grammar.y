@@ -75,8 +75,8 @@ initialize_definitions(void)
         if (definitions != NULL)
                 return;
         definitions = xmlListCreate(definition_free, NULL);
-        xmlListAppend(definitions, definition_new("^Abbreviation +for +(.+)", abbreviation));
-        xmlListAppend(definitions, definition_new("^(.+) +at +(.+)", ref));
+        xmlListPushBack(definitions, definition_new("^Abbreviation +for +(.+)", abbreviation));
+        xmlListPushBack(definitions, definition_new("^(.+) +at +(.+)", ref));
 }
 
 struct footnote_define_closure
