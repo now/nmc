@@ -17,4 +17,8 @@
 #  define UNUSED(v) v __attribute__((__unused__))
 #endif
 
+#define nmc_new(type) nmc_new_n(type, 1)
+
+#define nmc_new_n(type, n) (type *)xmlMalloc(sizeof(type) * (n))
+
 #endif

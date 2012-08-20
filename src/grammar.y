@@ -24,8 +24,7 @@ xmlListPtr definitions;
 static struct definition *
 definition_new(const char *pattern, definefn define)
 {
-        struct definition *definition =
-                (struct definition *)xmlMalloc(sizeof(struct definition));
+        struct definition *definition = nmc_new(struct definition);
         /* TODO Error-check here */
         regcomp(&definition->regex, pattern, REG_EXTENDED);
         definition->define = define;
@@ -120,8 +119,7 @@ footnote_new(YYLTYPE *location, xmlChar *id, xmlBufferPtr buffer)
         };
         xmlListWalk(definitions, (xmlListWalker)footnote_define, &closure);
 
-        struct footnote *footnote =
-                (struct footnote *)xmlMalloc(sizeof(struct footnote));
+        struct footnote *footnote = nmc_new(struct footnote);
         footnote->location = *location;
         footnote->id = id;
         footnote->node = closure.node;
@@ -147,8 +145,7 @@ struct sigil
 static struct sigil *
 sigil_new(YYLTYPE *location, const xmlChar *string, int length)
 {
-        struct sigil *sigil =
-                (struct sigil *)xmlMalloc(sizeof(struct sigil));
+        struct sigil *sigil = nmc_new(struct sigil);
         sigil->location = *location;
         sigil->id = xmlCharStrndup((const char *)string, length);
         return sigil;
@@ -171,8 +168,7 @@ struct anchor
 static struct anchor *
 anchor_new(YYLTYPE *location, xmlNodePtr node)
 {
-        struct anchor *anchor =
-                (struct anchor *)xmlMalloc(sizeof(struct anchor));
+        struct anchor *anchor = nmc_new(struct anchor);
         anchor->location = *location;
         anchor->node = node;
         return anchor;

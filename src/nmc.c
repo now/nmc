@@ -40,7 +40,7 @@ main(UNUSED(int argc), UNUSED(char **argv))
 {
         int result = EXIT_SUCCESS;
 
-        char *buffer = xmlMalloc(2000000);
+        char *buffer = nmc_new_n(char, 2000000);
         ssize_t bytes = read(STDIN_FILENO, buffer, 2000000);
         buffer[bytes] = '\0';
 

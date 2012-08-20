@@ -28,10 +28,9 @@ nmc_parser_errorv(struct nmc_parser *parser, YYLTYPE *location,
         xmlChar buf[1];
         int size = xmlStrVPrintf(buf, sizeof(buf), (const xmlChar *)message, args);
 
-        struct nmc_parser_error *error =
-                (struct nmc_parser_error *)xmlMalloc(sizeof(struct nmc_parser_error));
+        struct nmc_parser_error *error = nmc_new(struct nmc_parser_error);
         error->location = *location;
-        error->message = (char *)xmlMalloc(size + 1);
+        error->message = nmc_new_n(char, size + 1);
         xmlStrVPrintf((xmlChar *)error->message, size + 1, (const xmlChar *)message, saved);
         va_end(saved);
 
