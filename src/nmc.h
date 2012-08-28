@@ -23,4 +23,6 @@
 
 #define nmc_free(value) xmlFree(value)
 
+#define nmc_lengthof(array) (sizeof(array) / sizeof((array)[0]))
+
 #endif

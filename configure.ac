@@ -63,7 +63,13 @@ fi
 
 AC_PROG_YACC
 AC_CHECK_PROGS([VALGRIND], [valgrind])
+
 PKG_CHECK_MODULES([XML], [libxml-2.0])
+
+AC_CHECK_HEADERS([getopt.h])
+AC_CHECK_FUNCS([getopt_long],,
+  [AC_CHECK_LIB([gnugetopt],[getopt_long],[AC_DEFINE([HAVE_GETOPT_LONG])])])
+
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_FILES([
   Makefile
