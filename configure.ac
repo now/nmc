@@ -62,6 +62,7 @@ if test "${enableval}" = yes; then
 fi
 
 AC_PROG_YACC
+AC_CHECK_PROGS([VALGRIND], [valgrind])
 PKG_CHECK_MODULES([XML], [libxml-2.0])
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_FILES([

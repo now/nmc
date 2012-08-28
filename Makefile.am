@@ -53,6 +53,15 @@ $(TESTSUITE): $(testdir)/testsuite.at $(testdir)/package.m4 $(TESTSUITE_AT)
 	$(AUTOTEST) -I '$(testdir)' -o $@.tmp $@.at
 	mv $@.tmp $@
 
+.PHONY: maintainer-check-valgrind
+maintainer-check-valgrind: $(BUILT_SOURCES) all-am $(testdir)/atconfig $(testdir)/atlocal $(TESTSUITE)
+	test -z '$(VALGRIND)' || \
+	  VALGRIND_OPTS='--leak-check=full --show-reachable=yes' \
+	  $(SHELL) '$(TESTSUITE)' -C '$(testdir)' $(TESTSUITEFLAGS) PRENMC='$(VALGRIND) -q'
+
+.PHONY: maintainer-check
+maintainer-check: maintainer-check-valgrind
+
 EXTRA_DIST = \
 	     $(testdir)/atlocal.in \
 	     $(testdir)/package.m4 \
