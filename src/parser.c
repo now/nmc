@@ -14,7 +14,10 @@ int nmc_grammar_parse(struct nmc_parser *parser);
 static void
 error_free(xmlLinkPtr link)
 {
-        xmlFree(xmlLinkGetData(link));
+        struct nmc_parser_error *error =
+                (struct nmc_parser_error *)xmlLinkGetData(link);
+        nmc_free(error->message);
+        nmc_free(error);
 }
 
 void

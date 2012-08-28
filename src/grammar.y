@@ -11,6 +11,9 @@
 #include "nmc.h"
 #include "parser.h"
 
+extern void nmc_grammar_initialize(void);
+extern void nmc_grammar_finalize(void);
+
 typedef xmlNodePtr (*definefn)(const xmlChar *, regmatch_t *);
 
 struct definition
@@ -36,7 +39,7 @@ definition_free(xmlLinkPtr link)
 {
         struct definition *definition = (struct definition *)xmlLinkGetData(link);
         regfree(&definition->regex);
-        xmlFree(definition);
+        nmc_free(definition);
 }
 
 static xmlNodePtr
@@ -69,14 +72,21 @@ ref(const xmlChar *buffer, regmatch_t *matches)
                                   (const char *[]){ "title", "uri", NULL });
 }
 
-static void
-initialize_definitions(void)
+void
+nmc_grammar_initialize(void)
 {
         if (definitions != NULL)
                 return;
         definitions = xmlListCreate(definition_free, NULL);
         xmlListPushBack(definitions, definition_new("^Abbreviation +for +(.+)", abbreviation));
         xmlListPushBack(definitions, definition_new("^(.+) +at +(.+)", ref));
+}
+
+void
+nmc_grammar_finalize(void)
+{
+        if (definitions != NULL)
+                xmlListDelete(definitions);
 }
 
 struct footnote_define_closure
@@ -128,12 +138,17 @@ footnote_new(YYLTYPE *location, xmlChar *id, xmlBufferPtr buffer)
 }
 
 static void
-footnote_free(xmlLinkPtr link)
+footnote_free1(struct footnote *footnote)
 {
-        struct footnote *footnote = (struct footnote *)xmlLinkGetData(link);
         xmlFree(footnote->id);
         xmlFreeNode(footnote->node);
-        xmlFree(footnote);
+        nmc_free(footnote);
+}
+
+static void
+footnote_free(xmlLinkPtr link)
+{
+        footnote_free1((struct footnote *)xmlLinkGetData(link));
 }
 
 struct sigil
@@ -156,7 +171,7 @@ sigil_free(xmlLinkPtr link)
 {
         struct sigil *sigil = (struct sigil *)xmlLinkGetData(link);
         xmlFree(sigil->id);
-        xmlFree(sigil);
+        nmc_free(sigil);
 }
 
 struct anchor
@@ -183,7 +198,10 @@ anchor_id(struct anchor *anchor)
 static void
 anchor_free(xmlLinkPtr link)
 {
-        xmlFree(xmlLinkGetData(link));
+        struct anchor *anchor = (struct anchor *)xmlLinkGetData(link);
+        if (anchor->node->children == NULL)
+                xmlFreeNode(anchor->node);
+        nmc_free(anchor);
 }
 
 static int
@@ -275,7 +293,6 @@ node_free(struct nmc_parser *parser, xmlNodePtr node)
 %error-verbose
 %expect 0
 %locations
-%initial-action { initialize_definitions(); }
 
 %token END 0 "end of file"
 %token ERROR
@@ -348,7 +365,7 @@ node_free(struct nmc_parser *parser, xmlNodePtr node)
 %destructor { xmlBufferFree($$); } <buffer>
 %destructor { node_free(parser, $$); } <node>
 %destructor { xmlListDelete($$); } <list>
-%destructor { xmlFree($$); } <footnote>
+%destructor { footnote_free1($$); } <footnote>
 
 %code
 {
@@ -652,6 +669,7 @@ footnote: FOOTNOTE {
                 nmc_parser_error(parser, &@$,
                                  "unrecognized footnote content: %s",
                                  xmlBufferContent($1.buffer));
+        xmlBufferFree($1.buffer);
 };
 
 paragraph: PARAGRAPH inlines { $$ = wrap("p", $2); };

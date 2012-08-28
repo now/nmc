@@ -10,6 +10,8 @@
 #include "parser.h"
 
 extern int nmc_grammar_debug;
+extern void nmc_grammar_initialize(void);
+extern void nmc_grammar_finalize(void);
 
 static int
 report_nmc_parser_error(const struct nmc_parser_error *error)
@@ -49,6 +51,8 @@ main(UNUSED(int argc), UNUSED(char **argv))
 
         xmlInitParser();
 
+        nmc_grammar_initialize();
+
         xmlListPtr errors;
         xmlDocPtr doc = nmc_parse(BAD_CAST buffer, &errors);
         if (!xmlListEmpty(errors))
@@ -61,7 +65,11 @@ main(UNUSED(int argc), UNUSED(char **argv))
 
         xmlFreeDoc(doc);
 
+        nmc_grammar_finalize();
+
         xmlCleanupParser();
+
+        nmc_free(buffer);
 
         return result;
 }

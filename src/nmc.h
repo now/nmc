@@ -21,4 +21,6 @@
 
 #define nmc_new_n(type, n) (type *)xmlMalloc(sizeof(type) * (n))
 
+#define nmc_free(value) xmlFree(value)
+
 #endif
