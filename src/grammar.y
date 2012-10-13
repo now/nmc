@@ -1,3 +1,8 @@
+%code requires
+{
+struct nmc_parser;
+}
+
 %code top
 {
 #include <sys/types.h>
@@ -465,13 +470,18 @@ list(xmlListDeallocator deallocator, void *item)
         return push(list, item);
 }
 
+static xmlNodePtr
+move_children(xmlNodePtr to, xmlNodePtr from)
+{
+        xmlAddChildList(to, from->children);
+        from->children = NULL;
+        return to;
+}
+
 static int
 update_anchor(struct anchor *anchor, xmlNodePtr node)
 {
-        xmlNodePtr copy = xmlCopyNode(node, 2);
-        xmlReplaceNode(anchor->node, copy);
-        xmlAddChildList(copy, anchor->node->children);
-        anchor->node->children = NULL;
+        xmlReplaceNode(anchor->node, move_children(xmlCopyNode(node, 2), anchor->node));
         return 1;
 }
 
@@ -516,9 +526,7 @@ footnote(struct nmc_parser *parser, xmlNodePtr blocks, xmlListPtr footnotes)
 static xmlNodePtr
 definition(const xmlChar *string, int length, xmlNodePtr item)
 {
-        xmlNodePtr definition = node("definition");
-        xmlAddChildList(definition, item->children);
-        item->children = NULL;
+        xmlNodePtr definition = move_children(node("definition"), item);
         xmlAddChild(item, scontent("term", string, length));
         xmlAddChild(item, definition);
 
