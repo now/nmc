@@ -9,8 +9,6 @@
 #include "nmc.h"
 #include "parser.h"
 
-int nmc_grammar_parse(struct nmc_parser *parser);
-
 static void
 error_free(xmlLinkPtr link)
 {
