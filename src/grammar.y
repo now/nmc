@@ -195,9 +195,9 @@ anchor_new(YYLTYPE *location, xmlNodePtr node)
 }
 
 static inline const xmlChar *
-anchor_id(struct anchor *anchor)
+id(xmlNodePtr node)
 {
-        return xmlHasProp(anchor->node, BAD_CAST "id")->children->content;
+        return xmlHasProp(node, BAD_CAST "id")->children->content;
 }
 
 static void
@@ -214,7 +214,7 @@ report_remaining_anchor(struct anchor *anchor, struct nmc_parser *parser)
 {
         nmc_parser_error(parser, &anchor->location,
                          "reference to undefined footnote: %s",
-                         (const char *)anchor_id(anchor));
+                         (const char *)id(anchor->node));
         return 1;
 }
 
@@ -254,8 +254,7 @@ node_free_anchors_in(struct nmc_parser *parser, xmlXPathContextPtr context)
 
         for (int i = 0; i < object->nodesetval->nodeNr; i++) {
                 xmlNodePtr node = object->nodesetval->nodeTab[i];
-                const xmlChar *id = xmlHasProp(node, BAD_CAST "id")->children->content;
-                xmlListPtr anchors = xmlHashLookup(parser->anchors, id);
+                xmlListPtr anchors = xmlHashLookup(parser->anchors, id(node));
                 if (anchors != NULL) {
                         struct find_anchor_closure closure = { node, NULL };
                         xmlListWalk(anchors, (xmlListWalker)find_anchor, &closure);
