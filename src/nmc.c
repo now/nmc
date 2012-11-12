@@ -12,8 +12,6 @@
 #include "parser.h"
 
 extern int nmc_grammar_debug;
-extern void nmc_grammar_initialize(void);
-extern void nmc_grammar_finalize(void);
 
 struct {
         char c;

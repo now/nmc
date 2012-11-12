@@ -1,6 +1,8 @@
 %code requires
 {
 struct nmc_parser;
+void nmc_grammar_initialize(void);
+void nmc_grammar_finalize(void);
 }
 
 %code top
@@ -16,9 +18,6 @@ struct nmc_parser;
 #include "list.h"
 #include "nmc.h"
 #include "parser.h"
-
-extern void nmc_grammar_initialize(void);
-extern void nmc_grammar_finalize(void);
 
 typedef xmlNodePtr (*definefn)(const xmlChar *, regmatch_t *);
 
