@@ -8,8 +8,10 @@ BUILT_SOURCES = \
 bin_PROGRAMS = src/nmc
 
 src_nmc_SOURCES = \
+	src/list.h \
 	src/parser.c \
 	src/nmc.c \
+	src/nmc.h \
 	src/grammar.y
 
 src_nmc_LDADD = $(XML_LIBS)

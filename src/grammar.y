@@ -13,6 +13,7 @@ struct nmc_parser;
 #include <libxml/xpath.h>
 
 #include "grammar.h"
+#include "list.h"
 #include "nmc.h"
 #include "parser.h"
 
@@ -23,28 +24,22 @@ typedef xmlNodePtr (*definefn)(const xmlChar *, regmatch_t *);
 
 struct definition
 {
+        struct definition *next;
         regex_t regex;
         definefn define;
 };
 
-xmlListPtr definitions;
+struct definition *definitions;
 
-static struct definition *
-definition_new(const char *pattern, definefn define)
+static void
+definitions_push(const char *pattern, definefn define)
 {
         struct definition *definition = nmc_new(struct definition);
         /* TODO Error-check here */
         regcomp(&definition->regex, pattern, REG_EXTENDED);
         definition->define = define;
-        return definition;
-}
 
-static void
-definition_free(xmlLinkPtr link)
-{
-        struct definition *definition = (struct definition *)xmlLinkGetData(link);
-        regfree(&definition->regex);
-        nmc_free(definition);
+        definitions = list_cons(definition, definitions);
 }
 
 static xmlNodePtr
@@ -82,39 +77,32 @@ nmc_grammar_initialize(void)
 {
         if (definitions != NULL)
                 return;
-        definitions = xmlListCreate(definition_free, NULL);
-        xmlListPushBack(definitions, definition_new("^Abbreviation +for +(.+)", abbreviation));
-        xmlListPushBack(definitions, definition_new("^(.+) +at +(.+)", ref));
+        definitions_push("^(.+) +at +(.+)", ref);
+        definitions_push("^Abbreviation +for +(.+)", abbreviation);
 }
 
 void
 nmc_grammar_finalize(void)
 {
-        if (definitions != NULL)
-                xmlListDelete(definitions);
+        list_for_each_safe(struct definition, p, n, definitions) {
+                regfree(&p->regex);
+                nmc_free(p);
+        }
+        definitions = NULL;
 }
 
-struct footnote_define_closure
+static xmlNodePtr
+define(const xmlChar *content)
 {
-        const xmlChar *buffer;
-        xmlNodePtr node;
-};
+        list_for_each(struct definition, p, definitions) {
+                regmatch_t matches[p->regex.re_nsub + 1];
 
-static int
-footnote_define(struct definition *definition, struct footnote_define_closure *closure)
-{
-        regmatch_t matches[definition->regex.re_nsub + 1];
+                if (regexec(&p->regex, (const char *)content,
+                            p->regex.re_nsub + 1, matches, 0) == 0)
+                        return p->define(content, matches);
+        }
 
-        if (regexec(&definition->regex,
-                    (const char *)closure->buffer,
-                    definition->regex.re_nsub + 1,
-                    matches,
-                    0) != 0)
-                return 1;
-
-        closure->node = definition->define(closure->buffer, matches);
-
-        return 0;
+        return NULL;
 }
 
 struct footnote
@@ -128,16 +116,10 @@ struct footnote
 static struct footnote *
 footnote_new(YYLTYPE *location, xmlChar *id, xmlBufferPtr buffer)
 {
-        struct footnote_define_closure closure = {
-                xmlBufferContent(buffer),
-                NULL
-        };
-        xmlListWalk(definitions, (xmlListWalker)footnote_define, &closure);
-
         struct footnote *footnote = nmc_new(struct footnote);
         footnote->location = *location;
         footnote->id = id;
-        footnote->node = closure.node;
+        footnote->node = define(xmlBufferContent(buffer));
         footnote->referenced = false;
         return footnote;
 }
