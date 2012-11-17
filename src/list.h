@@ -3,6 +3,8 @@
 
 #define list_cons(item, list) (item->next = list, item)
 
+#define list_shift(item, list) (item = list, list = list->next)
+
 #define list_for_each(type, item, list) \
         for (type *item = list; item != NULL; item = item->next)
 

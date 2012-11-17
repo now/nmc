@@ -35,7 +35,6 @@ AC_ARG_ENABLE(gcc-warnings,
 if test "${enableval}" = yes; then
   nmc_WARN_ADD([-Werror], [WERROR_CFLAGS])
   nmc_WARN_ADD([-Wall])
-  nmc_WARN_ADD([-Waggregate-return])
   nmc_WARN_ADD([-Wcast-align])
   nmc_WARN_ADD([-Wextra])
   nmc_WARN_ADD([-Wformat=2])
@@ -56,7 +55,6 @@ if test "${enableval}" = yes; then
   nmc_WARN_ADD([-Wsuggest-attribute=const])
   nmc_WARN_ADD([-Wsuggest-attribute=noreturn])
   nmc_WARN_ADD([-Wsuggest-attribute=pure])
-  nmc_WARN_ADD([-Wswitch-enum])
   nmc_WARN_ADD([-Wundef])
   nmc_WARN_ADD([-Wwrite-strings])
 fi

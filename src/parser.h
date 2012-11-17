@@ -9,12 +9,12 @@ struct nmc_parser
         int dedents;
         bool bol;
         int want;
-        xmlDocPtr doc;
+        struct node *doc;
         xmlHashTablePtr anchors;
         xmlListPtr errors;
 };
 
-xmlDocPtr nmc_parse(const xmlChar *input, xmlListPtr *errors);
+struct node *nmc_parse(const xmlChar *input, xmlListPtr *errors);
 int nmc_parser_lex(struct nmc_parser *parser, YYLTYPE *location, YYSTYPE *value);
 
 struct nmc_parser_error

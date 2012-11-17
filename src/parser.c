@@ -48,8 +48,7 @@ nmc_parser_error(struct nmc_parser *parser, YYLTYPE *location,
         va_end(args);
 }
 
-
-xmlDocPtr
+struct node *
 nmc_parse(const xmlChar *input, xmlListPtr *errors)
 {
         struct nmc_parser parser;
@@ -59,7 +58,7 @@ nmc_parse(const xmlChar *input, xmlListPtr *errors)
         parser.indent = 0;
         parser.bol = false;
         parser.want = TITLE;
-        parser.doc = xmlNewDoc(BAD_CAST "1.0");
+        parser.doc = NULL;
         parser.anchors = xmlHashCreate(16);
         parser.errors = *errors = xmlListCreate(error_free, NULL);
 

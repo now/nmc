@@ -8,7 +8,9 @@
 #include <unistd.h>
 
 #include "grammar.h"
+#include "list.h"
 #include "nmc.h"
+#include "node.h"
 #include "parser.h"
 
 extern int nmc_grammar_debug;
@@ -166,16 +168,16 @@ main(int argc, char *const *argv)
         nmc_grammar_initialize();
 
         xmlListPtr errors;
-        xmlDocPtr doc = nmc_parse(BAD_CAST buffer, &errors);
+        struct node *doc = nmc_parse(BAD_CAST buffer, &errors);
         if (!xmlListEmpty(errors))
                 result = EXIT_FAILURE;
         xmlListWalk(errors, (xmlListWalker)report_nmc_parser_error, NULL);
         xmlListDelete(errors);
 
         if (result == EXIT_SUCCESS)
-                xmlSaveFormatFileEnc("-", doc, "UTF-8", 1);
+                nmc_node_to_xml(doc);
 
-        xmlFreeDoc(doc);
+        node_free(doc);
 
         nmc_grammar_finalize();
 
