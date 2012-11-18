@@ -10,6 +10,12 @@ struct nodes
         struct node *first;
         struct node *last;
 };
+
+struct footnotes
+{
+        struct footnote *first;
+        struct footnote *last;
+};
 }
 
 %code top
@@ -155,35 +161,29 @@ define(const xmlChar *content)
 
 struct footnote
 {
+        struct footnote *next;
         YYLTYPE location;
         xmlChar *id;
         struct auxiliary_node *node;
-        bool referenced;
 };
 
 static struct footnote *
 footnote_new(YYLTYPE *location, xmlChar *id, xmlBufferPtr buffer)
 {
         struct footnote *footnote = nmc_new(struct footnote);
+        footnote->next = NULL;
         footnote->location = *location;
         footnote->id = id;
         footnote->node = define(xmlBufferContent(buffer));
-        footnote->referenced = false;
         return footnote;
 }
 
 static void
-footnote_free1(struct footnote *footnote)
+footnote_free(struct footnote *footnote)
 {
         xmlFree(footnote->id);
         node_free((struct node *)footnote->node);
         nmc_free(footnote);
-}
-
-static void
-footnote_free(xmlLinkPtr link)
-{
-        footnote_free1((struct footnote *)xmlLinkGetData(link));
 }
 
 struct sigil
@@ -283,7 +283,7 @@ report_remaining_anchors(xmlListPtr list, struct nmc_parser *parser, UNUSED(cons
 
 %type <nodes> oblockssections0 blockssections blocks sections oblockssections
 %type <node> block footnotedsection section title
-%type <list> footnotes
+%type <footnotes> footnotes
 %type <footnote> footnote
 %type <node> paragraph
 %type <node> itemization itemizationitem
@@ -314,7 +314,7 @@ report_remaining_anchors(xmlListPtr list, struct nmc_parser *parser, UNUSED(cons
         xmlBufferPtr buffer;
         struct node *node;
         struct nodes nodes;
-        xmlListPtr list;
+        struct footnotes footnotes;
         struct footnote *footnote;
         struct sigil *sigil;
 }
@@ -327,8 +327,8 @@ report_remaining_anchors(xmlListPtr list, struct nmc_parser *parser, UNUSED(cons
 %destructor { xmlBufferFree($$); } <buffer>
 %destructor { node_unlink_and_free(parser, $$.first); } <nodes>
 %destructor { node_unlink_and_free(parser, $$); } <node>
-%destructor { xmlListDelete($$); } <list>
-%destructor { footnote_free1($$); } <footnote>
+%destructor { footnote_free($$.first); } <footnotes>
+%destructor { footnote_free($$); } <footnote>
 %destructor { sigil_free($$); } <sigil>
 
 %code
@@ -446,20 +446,6 @@ wrap_children(enum node_type type, struct node *first, struct nodes rest)
         return wrap1(type, first);
 }
 
-static xmlListPtr
-push(xmlListPtr list, void *item)
-{
-        xmlListPushBack(list, item);
-        return list;
-}
-
-static xmlListPtr
-list(xmlListDeallocator deallocator, void *item)
-{
-        xmlListPtr list = xmlListCreate(deallocator, NULL);
-        return push(list, item);
-}
-
 static int
 update_anchor(struct anchor *anchor, struct auxiliary_node *node)
 {
@@ -472,41 +458,26 @@ update_anchor(struct anchor *anchor, struct auxiliary_node *node)
         return 1;
 }
 
-static int
-footnote_reference(struct footnote *footnote, struct nmc_parser *parser)
-{
-        xmlListPtr anchors = xmlHashLookup(parser->anchors, footnote->id);
-        if (anchors == NULL)
-                return 1;
-
-        if (footnote->node != NULL)
-                xmlListWalk(anchors, (xmlListWalker)update_anchor, footnote->node);
-        footnote->node = NULL;
-        xmlHashRemoveEntry(parser->anchors,
-                           footnote->id,
-                           (xmlHashDeallocator)xmlListDelete);
-        footnote->referenced = true;
-
-        return 1;
-}
-
-static int
-footnote_check(struct footnote *footnote, struct nmc_parser *parser)
-{
-        if (!footnote->referenced)
-                nmc_parser_error(parser,
-                                 &footnote->location,
-                                 "unreferenced footnote: %s", footnote->id);
-
-        return 1;
-}
-
 static void
-footnote(struct nmc_parser *parser, xmlListPtr footnotes)
+footnote(struct nmc_parser *parser, struct footnotes footnotes)
 {
-        xmlListWalk(footnotes, (xmlListWalker)footnote_reference, parser);
-        xmlListWalk(footnotes, (xmlListWalker)footnote_check, parser);
-        xmlListDelete(footnotes);
+        list_for_each_safe(struct footnote, p, n, footnotes.first) {
+                xmlListPtr anchors = xmlHashLookup(parser->anchors, p->id);
+                if (anchors == NULL) {
+                        nmc_parser_error(parser,
+                                         &p->location,
+                                         "unreferenced footnote: %s", p->id);
+                        continue;
+                }
+
+                if (p->node != NULL)
+                        xmlListWalk(anchors, (xmlListWalker)update_anchor, p->node);
+                p->node = NULL;
+                xmlHashRemoveEntry(parser->anchors,
+                                   p->id,
+                                   (xmlHashDeallocator)xmlListDelete);
+                footnote_free(p);
+        }
 }
 #define footnote(parser, result, footnotes) (footnote(parser, footnotes), result)
 
@@ -669,8 +640,8 @@ title: inlines { $$ = wrap(NODE_TITLE, $1); };
 oblockssections: /* empty */ { $$ = nodes(NULL); }
 | INDENT blockssections DEDENT { $$ = $2; };
 
-footnotes: footnote { $$ = list(footnote_free, $1); }
-| footnotes footnote { $$ = push($1, $2); };
+footnotes: footnote { $$ = (struct footnotes){ $1, $1 }; }
+| footnotes footnote { $$ = (struct footnotes){ $1.first, $2 }; $1.last->next = $2; };
 
 footnote: FOOTNOTE {
         $$ = footnote_new(&@$, $1.id, $1.buffer);
