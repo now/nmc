@@ -38,9 +38,9 @@ struct anchor
 {
         struct anchor *next;
         YYLTYPE location;
+        xmlChar *id;
         struct auxiliary_node *node;
         struct node *child;
-        xmlChar *id;
 };
 
 static void
@@ -221,8 +221,8 @@ anchor_free1(struct anchor *anchor)
         /* TODO And what if anchor->child is a NODE_ANCHOR?  This will be
          * easier to manage once we don’t have anchors and footnotes in
          * xmlLists. */
-        node_free(anchor->child);
         xmlFree(anchor->id);
+        node_free(anchor->child);
         nmc_free(anchor);
 }
 
