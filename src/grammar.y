@@ -188,6 +188,7 @@ footnote_free(xmlLinkPtr link)
 
 struct sigil
 {
+        struct sigil *next;
         YYLTYPE location;
         xmlChar *id;
 };
@@ -196,17 +197,19 @@ static struct sigil *
 sigil_new(YYLTYPE *location, const xmlChar *string, int length)
 {
         struct sigil *sigil = nmc_new(struct sigil);
+        sigil->next = NULL;
         sigil->location = *location;
         sigil->id = xmlCharStrndup((const char *)string, length);
         return sigil;
 }
 
 static void
-sigil_free(xmlLinkPtr link)
+sigil_free(struct sigil *sigil)
 {
-        struct sigil *sigil = (struct sigil *)xmlLinkGetData(link);
-        xmlFree(sigil->id);
-        nmc_free(sigil);
+        list_for_each_safe(struct sigil, p, n, sigil) {
+                xmlFree(p->id);
+                nmc_free(p);
+        }
 }
 
 static void
@@ -295,8 +298,7 @@ report_remaining_anchors(xmlListPtr list, struct nmc_parser *parser, UNUSED(cons
 %type <nodes> headbody body entries
 %type <nodes> inlines sinlines
 %type <node> anchoredinline inline
-%type <list> sigils
-%type <sigil> sigil
+%type <sigil> sigils sigil
 %type <node> item
 %type <nodes> oblocks
 
@@ -327,9 +329,7 @@ report_remaining_anchors(xmlListPtr list, struct nmc_parser *parser, UNUSED(cons
 %destructor { node_unlink_and_free(parser, $$); } <node>
 %destructor { xmlListDelete($$); } <list>
 %destructor { footnote_free1($$); } <footnote>
-/* TODO This is almost not necessary, but still…
 %destructor { sigil_free($$); } <sigil>
-*/
 
 %code
 {
@@ -521,45 +521,35 @@ definition(const xmlChar *string, int length, struct node *item)
         return item;
 }
 
-struct anchor_closure
-{
-        struct nmc_parser *parser;
-        struct node *node;
-};
-
-static int
-anchor_1(struct sigil *sigil, struct anchor_closure *closure)
-{
-        struct anchor *anchor = nmc_new(struct anchor);
-        anchor->location = sigil->location;
-        anchor->id = xmlStrdup(sigil->id);
-        anchor->child = closure->node;
-        anchor->node = nmc_new(struct auxiliary_node);
-        anchor->node->node.next = NULL;
-        anchor->node->node.type = NODE_ANCHOR;
-        anchor->node->node.u.anchor = anchor;
-        closure->node = (struct node *)anchor->node;
-
-        xmlListPtr anchors = xmlHashLookup(closure->parser->anchors, anchor->id);
-        if (anchors == NULL) {
-                anchors = xmlListCreate(anchor_free, NULL);
-                xmlHashAddEntry(closure->parser->anchors, anchor->id, anchors);
-        }
-        xmlListPushBack(anchors, anchor);
-
-        return 1;
-}
-
+/* Anchor sigils appearing in reverse order. */
 static struct node *
-anchor(struct nmc_parser *parser, struct node *atom, xmlListPtr sigils)
+anchor(struct nmc_parser *parser, struct node *atom, struct sigil *sigils)
 {
-        if (sigils == NULL)
-                return atom;
+        struct node *outermost = atom;
+        list_for_each(struct sigil, p, sigils) {
+                struct anchor *anchor = nmc_new(struct anchor);
+                anchor->location = p->location;
+                anchor->id = xmlStrdup(p->id);
+                anchor->node = nmc_new(struct auxiliary_node);
+                anchor->node->node.next = NULL;
+                anchor->node->node.type = NODE_ANCHOR;
+                anchor->node->node.u.anchor = anchor;
+                if (outermost == atom) {
+                        anchor->child = atom;
+                        outermost = (struct node *)anchor->node;
+                } else {
+                        anchor->child = outermost->u.anchor->child;
+                        outermost->u.anchor->child = (struct node *)anchor->node;
+                }
 
-        struct anchor_closure closure = { parser, atom };
-        xmlListWalk(sigils, (xmlListWalker)anchor_1, &closure);
-        xmlListDelete(sigils);
-        return closure.node;
+                xmlListPtr anchors = xmlHashLookup(parser->anchors, anchor->id);
+                if (anchors == NULL) {
+                        anchors = xmlListCreate(anchor_free, NULL);
+                        xmlHashAddEntry(parser->anchors, anchor->id, anchors);
+                }
+                xmlListPushBack(anchors, anchor);
+        }
+        return outermost;
 }
 
 static struct node *
@@ -572,8 +562,8 @@ xmlBufferSetAllocationScheme(n->u.buffer,XML_BUFFER_ALLOC_EXACT);
         return n;
 }
 
-static struct node *
-word(struct nmc_parser *parser, const xmlChar *string, int length, xmlListPtr sigils)
+static inline struct node *
+word(struct nmc_parser *parser, const xmlChar *string, int length, struct sigil *sigils)
 {
         if (sigils == NULL)
                 return buffer(string, length);
@@ -621,7 +611,7 @@ append_inline(struct nodes inlines, struct node *node)
 }
 
 static inline struct nodes
-append_word(struct nmc_parser *parser, struct nodes inlines, const xmlChar *string, int length, xmlListPtr sigils)
+append_word(struct nmc_parser *parser, struct nodes inlines, const xmlChar *string, int length, struct sigil *sigils)
 {
         return (sigils != NULL) ?
                 inline_sibling(inlines, word(parser, string, length, sigils)) :
@@ -629,7 +619,7 @@ append_word(struct nmc_parser *parser, struct nodes inlines, const xmlChar *stri
 }
 
 static inline struct nodes
-append_spaced_word(struct nmc_parser *parser, struct nodes inlines, const xmlChar *string, int length, xmlListPtr sigils)
+append_spaced_word(struct nmc_parser *parser, struct nodes inlines, const xmlChar *string, int length, struct sigil *sigils)
 {
         return (sigils != NULL) ?
                 append_inline(inlines, word(parser, string, length, sigils)) :
@@ -756,8 +746,8 @@ inline: CODE { $$ = scontent(NODE_CODE, $1.string, $1.length); }
 | BEGINGROUP sinlines ENDGROUP { $$ = wrap(NODE_GROUP, textify($2)); };
 
 sigils: /* empty */ { $$ = NULL; }
-| sigil { $$ = list(sigil_free, $1); }
-| sigils SIGILSEPARATOR sigil { $$ = push($1, $3); };
+| sigil
+| sigils SIGILSEPARATOR sigil { $$ = $3; $$->next = $1; };
 
 sigil: SIGIL { $$ = sigil_new(&@$, $1.string, $1.length); };
 

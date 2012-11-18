@@ -135,6 +135,9 @@ node_free(struct node *node)
         while (p != NULL) {
                 /* TODO Add free function to types? */
                 switch (p->type) {
+                /* TODO Need to deal with NODE_ANCHOR in some way.  It mustn’t be allowed to get to default. */
+                case NODE_ANCHOR:
+                        break;
                 /* TODO Move this to grammar.y? */
                 case NODE_BUFFER:
                         xmlBufferFree(p->u.buffer);
