@@ -64,7 +64,7 @@ nmc_parse(const xmlChar *input, xmlListPtr *errors)
 
         nmc_grammar_parse(&parser);
 
-        xmlHashFree(parser.anchors, (xmlHashDeallocator)xmlListDelete);
+        xmlHashFree(parser.anchors, NULL);
 
         return parser.doc;
 }
