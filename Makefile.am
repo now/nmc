@@ -45,13 +45,20 @@ $(testdir)/package.m4: $(top_srcdir)/configure.ac
 	} >'$@'
 
 check-local: $(testdir)/atconfig $(testdir)/atlocal $(TESTSUITE)
+	@echo '$(TESTSUITE): Entering directory `$(testdir)'\'
 	$(SHELL) '$(TESTSUITE)' -C '$(testdir)' $(TESTSUITEFLAGS)
+	@echo '$(TESTSUITE): Leaving directory `$(testdir)'\'
 
 installcheck-local: $(testdir)/atconfig $(testdir)/atlocal $(TESTSUITE)
+	@echo '$(TESTSUITE): Entering directory `$(testdir)'\'
 	$(SHELL) '$(TESTSUITE)' -C '$(testdir)' AUTOTEST_PATH='$(bindir)' $(TESTSUITEFLAGS)
+	@echo '$(TESTSUITE): Leaving directory `$(testdir)'\'
 
 clean-local:
-	test ! -f '$(TESTSUITE)' || $(SHELL) '$(TESTSUITE)' -C '$(testdir)' --clean
+	if test -f '$(TESTSUITE)'; then \
+	@echo '$(TESTSUITE): Entering directory `$(testdir)'\' \
+	$(SHELL) '$(TESTSUITE)' -C '$(testdir)' --clean \
+	@echo '$(TESTSUITE): Leaving directory `$(testdir)'\'
 
 $(TESTSUITE): $(testdir)/testsuite.at $(testdir)/package.m4 $(TESTSUITE_AT)
 	$(AUTOTEST) -I '$(testdir)' -o $@.tmp $@.at
@@ -59,9 +66,12 @@ $(TESTSUITE): $(testdir)/testsuite.at $(testdir)/package.m4 $(TESTSUITE_AT)
 
 .PHONY: maintainer-check-valgrind
 maintainer-check-valgrind: $(BUILT_SOURCES) all-am $(testdir)/atconfig $(testdir)/atlocal $(TESTSUITE)
-	test -z '$(VALGRIND)' || \
+	if test -n '$(VALGRIND)'; then \
+	  @echo '$(TESTSUITE): Entering directory `$(testdir)'\'
 	  VALGRIND_OPTS='--leak-check=full --show-reachable=yes' \
-	  $(SHELL) '$(TESTSUITE)' -C '$(testdir)' $(TESTSUITEFLAGS) PRENMC='$(VALGRIND) -q'
+	  $(SHELL) '$(TESTSUITE)' -C '$(testdir)' $(TESTSUITEFLAGS) PRENMC='$(VALGRIND) -q' \
+	  @echo '$(TESTSUITE): Leaving directory `$(testdir)'\'
+	fi
 
 .PHONY: maintainer-check
 maintainer-check: maintainer-check-valgrind
