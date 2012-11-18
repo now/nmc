@@ -56,9 +56,10 @@ installcheck-local: $(testdir)/atconfig $(testdir)/atlocal $(TESTSUITE)
 
 clean-local:
 	if test -f '$(TESTSUITE)'; then \
-	@echo '$(TESTSUITE): Entering directory `$(testdir)'\' \
-	$(SHELL) '$(TESTSUITE)' -C '$(testdir)' --clean \
-	@echo '$(TESTSUITE): Leaving directory `$(testdir)'\'
+	  echo '$(TESTSUITE): Entering directory `$(testdir)'\'; \
+	  $(SHELL) '$(TESTSUITE)' -C '$(testdir)' --clean; \
+	  echo '$(TESTSUITE): Leaving directory `$(testdir)'\'; \
+	fi
 
 $(TESTSUITE): $(testdir)/testsuite.at $(testdir)/package.m4 $(TESTSUITE_AT)
 	$(AUTOTEST) -I '$(testdir)' -o $@.tmp $@.at
@@ -66,11 +67,12 @@ $(TESTSUITE): $(testdir)/testsuite.at $(testdir)/package.m4 $(TESTSUITE_AT)
 
 .PHONY: maintainer-check-valgrind
 maintainer-check-valgrind: $(BUILT_SOURCES) all-am $(testdir)/atconfig $(testdir)/atlocal $(TESTSUITE)
+	echo $(top_srcdir)
 	if test -n '$(VALGRIND)'; then \
-	  @echo '$(TESTSUITE): Entering directory `$(testdir)'\'
-	  VALGRIND_OPTS='--leak-check=full --show-reachable=yes' \
-	  $(SHELL) '$(TESTSUITE)' -C '$(testdir)' $(TESTSUITEFLAGS) PRENMC='$(VALGRIND) -q' \
-	  @echo '$(TESTSUITE): Leaving directory `$(testdir)'\'
+	  echo '$(TESTSUITE): Entering directory `$(testdir)'\'; \
+	  VALGRIND_OPTS='--leak-check=full --show-reachable=yes --suppressions=../../valgrind.supp' \
+	  $(SHELL) '$(TESTSUITE)' -C '$(testdir)' $(TESTSUITEFLAGS) PRENMC='$(VALGRIND) -q'; \
+	  echo '$(TESTSUITE): Leaving directory `$(testdir)'\'; \
 	fi
 
 .PHONY: maintainer-check

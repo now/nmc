@@ -5,6 +5,10 @@ struct nmc_parser;
 void nmc_grammar_initialize(void);
 void nmc_grammar_finalize(void);
 
+struct anchor;
+
+void anchor_free(struct anchor *anchor);
+
 struct nodes
 {
         struct node *first;
@@ -57,11 +61,8 @@ static void
 node_unlink_and_free(struct nmc_parser *parser, struct node *node)
 {
         nmc_node_traverse(node, (traversefn)anchor_unlink, nmc_node_traverse_null, parser);
-        /* TODO And what if node is a NODE_ANCHOR?  This will be easier to
-         * manage once we don’t have anchors and footnotes in xmlLists. */
-        /* TODO What if nmc_node_traverse fails (due to OOM)?  We still need to
-         * free anchors in node_free and we need to clear out
-         * parser->anchors. */
+        /* TODO Once nmc_node_traverse can actually handle reporting OOM, if
+         * that occurs, parser->anchors must be completely cleared. */
         node_free(node);
 }
 
@@ -205,22 +206,24 @@ sigil_new(YYLTYPE *location, const xmlChar *string, int length)
 }
 
 static void
-sigil_free(struct sigil *sigil)
+sigil_free1(struct sigil *sigil)
 {
-        list_for_each_safe(struct sigil, p, n, sigil) {
-                xmlFree(p->id);
-                nmc_free(p);
-        }
+        xmlFree(sigil->id);
+        nmc_free(sigil);
 }
 
 static void
-anchor_free1(struct anchor *anchor)
+sigil_free(struct sigil *sigil)
 {
-        /* Do we ever have to free anchor->node?  I mean, it’s always on the stack or in the tree, right? */
-        // node_free((struct node *)anchor->node);
-        /* TODO And what if anchor->child is a NODE_ANCHOR?  This will be
-         * easier to manage once we don’t have anchors and footnotes in
-         * xmlLists. */
+        list_for_each_safe(struct sigil, p, n, sigil)
+                sigil_free1(p);
+}
+
+void
+anchor_free(struct anchor *anchor)
+{
+        /* NOTE anchor->node is either on the stack or in the tree, so we don’t
+         * need to free it here. */
         xmlFree(anchor->id);
         node_free(anchor->child);
         nmc_free(anchor);
@@ -370,7 +373,7 @@ node(enum node_type type)
 static char *
 detach(xmlBufferPtr buffer)
 {
-        int l = xmlBufferLength(buffer);
+        int l = xmlBufferLength(buffer) + 1;
         char *r = (char *)xmlBufferDetach(buffer);
         char *p = (char *)xmlRealloc(r, l);
         xmlBufferFree(buffer);
@@ -460,7 +463,7 @@ update_anchors(struct anchors *anchors, struct auxiliary_node *node)
                 p->node->attributes = node->attributes;
                 p->node = NULL;
                 p->child = NULL;
-                anchor_free1(p);
+                anchor_free(p);
         }
 }
 
@@ -529,6 +532,8 @@ anchor(struct nmc_parser *parser, struct node *atom, struct sigil *sigils)
                         anchors->last->next = anchor;
                         anchors->last = anchor;
                 }
+
+                sigil_free1(p);
         }
         return outermost;
 }

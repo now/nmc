@@ -1,8 +1,6 @@
 #ifndef SRC_NODE_H
 #define SRC_NODE_H
 
-struct anchor;
-
 enum node_type {
         NODE_DOCUMENT,
         NODE_TITLE,
