@@ -316,8 +316,8 @@ report_remaining_anchors(struct anchors *anchors, struct nmc_parser *parser, UNU
                 xmlBufferPtr buffer;
         } raw_footnote;
         xmlBufferPtr buffer;
-        struct node *node;
         struct nodes nodes;
+        struct node *node;
         struct footnotes footnotes;
         struct footnote *footnote;
         struct sigil *sigil;
