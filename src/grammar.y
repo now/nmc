@@ -14,12 +14,11 @@ struct nodes
         struct node *first;
         struct node *last;
 };
+}
 
-struct footnotes
+%code provides
 {
-        struct footnote *first;
-        struct footnote *last;
-};
+char *nmc_location_str(const YYLTYPE *location);
 }
 
 %code top
@@ -32,6 +31,7 @@ struct footnotes
 #include <regex.h>
 #include <stdio.h>
 #include <stdbool.h>
+#include <string.h>
 
 #include "list.h"
 #include "nmc.h"
@@ -169,6 +169,20 @@ define(const xmlChar *content)
         return NULL;
 }
 
+char *
+nmc_location_str(const YYLTYPE *l)
+{
+        char *s;
+        if (l->first_line == l->last_line) {
+                if (l->first_column == l->last_column)
+                        asprintf(&s, "%d:%d", l->first_line, l->first_column);
+                else
+                        asprintf(&s, "%d.%d-%d", l->first_line, l->first_column, l->last_column);
+        } else
+                asprintf(&s, "%d.%d-%d.%d", l->first_line, l->first_column, l->last_line, l->last_column);
+        return s;
+}
+
 struct footnote
 {
         struct footnote *next;
@@ -295,8 +309,7 @@ report_remaining_anchors(struct anchor *anchors, struct nmc_parser *parser, UNUS
 
 %type <nodes> oblockssections0 blockssections blocks sections oblockssections
 %type <node> block footnotedsection section title
-%type <footnotes> footnotes
-%type <footnote> footnote
+%type <footnote> footnotes footnote
 %type <node> paragraph
 %type <node> itemization itemizationitem
 %type <nodes> itemizationitems
@@ -326,7 +339,6 @@ report_remaining_anchors(struct anchor *anchors, struct nmc_parser *parser, UNUS
         xmlBufferPtr buffer;
         struct nodes nodes;
         struct node *node;
-        struct footnotes footnotes;
         struct footnote *footnote;
         struct sigil *sigil;
 }
@@ -339,7 +351,6 @@ report_remaining_anchors(struct anchor *anchors, struct nmc_parser *parser, UNUS
 %destructor { xmlBufferFree($$); } <buffer>
 %destructor { node_unlink_and_free(parser, $$.first); } <nodes>
 %destructor { node_unlink_and_free(parser, $$); } <node>
-%destructor { footnote_free($$.first); } <footnotes>
 %destructor { footnote_free($$); } <footnote>
 %destructor { sigil_free($$); } <sigil>
 
@@ -473,9 +484,9 @@ update_anchors(struct anchor *anchors, struct auxiliary_node *node)
 }
 
 static void
-footnote(struct nmc_parser *parser, struct footnotes footnotes)
+footnote(struct nmc_parser *parser, struct footnote *footnotes)
 {
-        list_for_each_safe(struct footnote, p, n, footnotes.first) {
+        list_for_each_safe(struct footnote, p, n, footnotes) {
                 struct anchor *anchors = xmlHashLookup(parser->anchors, p->id);
                 if (anchors == NULL) {
                         nmc_parser_error(parser,
@@ -493,6 +504,24 @@ footnote(struct nmc_parser *parser, struct footnotes footnotes)
         }
 }
 #define footnote(parser, result, footnotes) (footnote(parser, footnotes), result)
+
+static inline struct footnote *
+fibling(struct nmc_parser *parser, struct footnote *footnotes, struct footnote *footnote)
+{
+        struct footnote *last;
+        list_for_each(struct footnote, p, footnotes) {
+                if (xmlStrcmp(footnote->id, p->id) == 0) {
+                        char *s = nmc_location_str(&p->location);
+                        nmc_parser_error(parser, &footnote->location,
+                                         "footnote already defined at %s: %s", s, p->id);
+                        free(s);
+                        return footnotes;
+                }
+                last = p;
+        }
+        last->next = footnote;
+        return footnotes;
+}
 
 static struct node *
 definition(const xmlChar *string, int length, struct node *item)
@@ -657,8 +686,8 @@ title: inlines { $$ = wrap(NODE_TITLE, $1); };
 oblockssections: /* empty */ { $$ = nodes(NULL); }
 | INDENT blockssections DEDENT { $$ = $2; };
 
-footnotes: footnote { $$ = (struct footnotes){ $1, $1 }; }
-| footnotes footnote { $$ = (struct footnotes){ $1.first, $2 }; $1.last->next = $2; };
+footnotes: footnote
+| footnotes footnote { $$ = fibling(parser, $1, $2); };
 
 footnote: FOOTNOTE {
         $$ = footnote_new(&@$, $1.id, $1.buffer);

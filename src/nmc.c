@@ -29,23 +29,9 @@ struct {
 static int
 report_nmc_parser_error(const struct nmc_parser_error *error)
 {
-        if (error->location.first_line == error->location.last_line) {
-                if (error->location.first_column == error->location.last_column)
-                        fprintf(stderr, "%d:%d",
-                                error->location.first_line,
-                                error->location.first_column);
-                else
-                        fprintf(stderr, "%d.%d-%d",
-                                error->location.first_line,
-                                error->location.first_column,
-                                error->location.last_column);
-        } else
-                fprintf(stderr, "%d.%d-%d.%d",
-                        error->location.first_line,
-                        error->location.first_column,
-                        error->location.last_line,
-                        error->location.last_column);
-        fprintf(stderr, ": %s\n", error->message);
+        char *s = nmc_location_str(&error->location);
+        fprintf(stderr, "%s: %s\n", s, error->message);
+        free(s);
 
         return 1;
 }

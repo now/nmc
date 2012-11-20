@@ -483,6 +483,21 @@ AT_NMC_CHECK_FAIL([title], [5.1-34: unrecognized footnote content: Junk text in 
 
 AT_CLEANUP
 
+AT_SETUP([Document consisting of a title followed by a paragraph followed by two footnotes with same sigil])
+
+AT_DATA([title],
+[[Title
+
+  Word1¹
+
+¹ Abbreviation for Abbreviaton
+¹ Abbreviation for Abbreviaton
+]])
+
+AT_NMC_CHECK_FAIL([title], [6.1-31: footnote already defined at 5.1-31: ¹])
+
+AT_CLEANUP
+
 AT_SETUP([Document consisting of a title followed by a paragraph followed by two unreferenced footnotes])
 
 AT_DATA([title],
