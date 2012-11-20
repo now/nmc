@@ -167,12 +167,13 @@ main(int argc, char *const *argv)
 
         nmc_grammar_initialize();
 
-        xmlListPtr errors;
+        struct nmc_parser_error *errors;
         struct node *doc = nmc_parse(BAD_CAST buffer, &errors);
-        if (!xmlListEmpty(errors))
+        if (errors != NULL)
                 result = EXIT_FAILURE;
-        xmlListWalk(errors, (xmlListWalker)report_nmc_parser_error, NULL);
-        xmlListDelete(errors);
+        list_for_each(struct nmc_parser_error, p, errors)
+                report_nmc_parser_error(p);
+        nmc_parser_error_free(errors);
 
         if (result == EXIT_SUCCESS)
                 nmc_node_to_xml(doc);

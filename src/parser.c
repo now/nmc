@@ -6,21 +6,21 @@
 #include <string.h>
 
 #include "grammar.h"
+#include "list.h"
 #include "nmc.h"
 #include "parser.h"
 
-static void
-error_free(xmlLinkPtr link)
+void
+nmc_parser_error_free(struct nmc_parser_error *error)
 {
-        struct nmc_parser_error *error =
-                (struct nmc_parser_error *)xmlLinkGetData(link);
-        nmc_free(error->message);
-        nmc_free(error);
+        list_for_each_safe(struct nmc_parser_error, p, n, error) {
+                nmc_free(p->message);
+                nmc_free(p);
+        }
 }
 
-void
-nmc_parser_errorv(struct nmc_parser *parser, YYLTYPE *location,
-                  const char *message, va_list args)
+struct nmc_parser_error *
+nmc_parser_error_newv(YYLTYPE *location, const char *message, va_list args)
 {
         va_list saved;
 
@@ -30,26 +30,49 @@ nmc_parser_errorv(struct nmc_parser *parser, YYLTYPE *location,
         int size = xmlStrVPrintf(buf, sizeof(buf), (const xmlChar *)message, args);
 
         struct nmc_parser_error *error = nmc_new(struct nmc_parser_error);
+        error->next = NULL;
         error->location = *location;
         error->message = nmc_new_n(char, size + 1);
         xmlStrVPrintf((xmlChar *)error->message, size + 1, (const xmlChar *)message, saved);
+
         va_end(saved);
 
-        xmlListPushBack(parser->errors, error);
+        return error;
 }
 
-void
-nmc_parser_error(struct nmc_parser *parser, YYLTYPE *location,
-                 const char *message, ...)
+struct nmc_parser_error *
+nmc_parser_error_new(YYLTYPE *location, const char *message, ...)
 {
         va_list args;
         va_start(args, message);
-        nmc_parser_errorv(parser, location, message, args);
+        struct nmc_parser_error *error = nmc_parser_error_newv(location, message, args);
         va_end(args);
+        return error;
+}
+
+void
+nmc_parser_errors(struct nmc_parser *parser,
+                  struct nmc_parser_error *first, struct nmc_parser_error *last)
+{
+        if (parser->errors.first == NULL)
+                parser->errors.first = first;
+        if (parser->errors.last != NULL)
+                parser->errors.last->next = first;
+        parser->errors.last = last;
+}
+
+void
+nmc_parser_error(struct nmc_parser *parser, YYLTYPE *location, const char *message, ...)
+{
+        va_list args;
+        va_start(args, message);
+        struct nmc_parser_error *error = nmc_parser_error_newv(location, message, args);
+        va_end(args);
+        nmc_parser_errors(parser, error, error);
 }
 
 struct node *
-nmc_parse(const xmlChar *input, xmlListPtr *errors)
+nmc_parse(const xmlChar *input, struct nmc_parser_error **errors)
 {
         struct nmc_parser parser;
         parser.p = input;
@@ -60,12 +83,13 @@ nmc_parse(const xmlChar *input, xmlListPtr *errors)
         parser.want = TITLE;
         parser.doc = NULL;
         parser.anchors = xmlHashCreate(16);
-        parser.errors = *errors = xmlListCreate(error_free, NULL);
+        parser.errors.first = parser.errors.last = NULL;
 
         nmc_grammar_parse(&parser);
 
         xmlHashFree(parser.anchors, NULL);
 
+        *errors = parser.errors.first;
         return parser.doc;
 }
 
