@@ -14,6 +14,8 @@ src_nmc_SOURCES = \
 	src/nmc.h \
 	src/node.c \
 	src/node.h \
+	src/string.c \
+	src/string.h \
 	src/grammar.y
 
 src_nmc_LDADD = $(XML_LIBS)

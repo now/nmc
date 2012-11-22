@@ -37,6 +37,7 @@ char *nmc_location_str(const YYLTYPE *location);
 #include "nmc.h"
 #include "node.h"
 #include "parser.h"
+#include "string.h"
 
 struct anchor
 {
@@ -74,7 +75,7 @@ node_unlink_and_free(struct nmc_parser *parser, struct node *node)
         node_free(node);
 }
 
-typedef struct auxiliary_node *(*definefn)(const xmlChar *, regmatch_t *);
+typedef struct auxiliary_node *(*definefn)(const char *, regmatch_t *);
 
 struct definition
 {
@@ -97,7 +98,7 @@ definitions_push(const char *pattern, definefn define)
 }
 
 static struct auxiliary_node *
-definition_element(const char *name, const xmlChar *buffer, regmatch_t *matches, const char **attributes)
+definition_element(const char *name, const char *buffer, regmatch_t *matches, const char **attributes)
 {
         int n = 0;
         for (const char **p = attributes; *p != NULL; p++)
@@ -113,7 +114,7 @@ definition_element(const char *name, const xmlChar *buffer, regmatch_t *matches,
         for (const char **p = attributes; *p != NULL; p++) {
                 /* TODO Check that rm_so/rm_eo ≠ -1 */
                 a->name = *p;
-                a->value = (char *)xmlStrndup(buffer + m->rm_so, m->rm_eo - m->rm_so);
+                a->value = strndup(buffer + m->rm_so, m->rm_eo - m->rm_so);
                 m++;
                 a++;
         }
@@ -123,14 +124,14 @@ definition_element(const char *name, const xmlChar *buffer, regmatch_t *matches,
 }
 
 static struct auxiliary_node *
-abbreviation(const xmlChar *buffer, regmatch_t *matches)
+abbreviation(const char *buffer, regmatch_t *matches)
 {
         return definition_element("abbreviation", buffer, matches,
                                   (const char *[]){ "for", NULL });
 }
 
 static struct auxiliary_node *
-ref(const xmlChar *buffer, regmatch_t *matches)
+ref(const char *buffer, regmatch_t *matches)
 {
         return definition_element("ref", buffer, matches,
                                   (const char *[]){ "title", "uri", NULL });
@@ -156,7 +157,7 @@ nmc_grammar_finalize(void)
 }
 
 static struct auxiliary_node *
-define(const xmlChar *content)
+define(const char *content)
 {
         list_for_each(struct definition, p, definitions) {
                 regmatch_t matches[p->regex.re_nsub + 1];
@@ -192,13 +193,18 @@ struct footnote
 };
 
 static struct footnote *
-footnote_new(YYLTYPE *location, xmlChar *id, xmlBufferPtr buffer)
+footnote_new(struct nmc_parser *parser, YYLTYPE *location, xmlChar *id, struct nmc_string *string)
 {
         struct footnote *footnote = nmc_new(struct footnote);
         footnote->next = NULL;
         footnote->location = *location;
         footnote->id = id;
-        footnote->node = define(xmlBufferContent(buffer));
+        footnote->node = define(nmc_string_str(string));
+        if (footnote->node == NULL)
+                nmc_parser_error(parser, location,
+                                 "unrecognized footnote content: %s",
+                                 nmc_string_str(string));
+        nmc_string_free(string);
         return footnote;
 }
 
@@ -281,7 +287,7 @@ report_remaining_anchors(struct anchor *anchors, struct nmc_parser *parser, UNUS
 %token END 0 "end of file"
 %token ERROR
 %token AGAIN
-%token <buffer> TITLE
+%token <string> TITLE
 %token <substring> WORD
 %token PARAGRAPH
 %token <substring> SPACE
@@ -295,7 +301,7 @@ report_remaining_anchors(struct anchor *anchors, struct nmc_parser *parser, UNUS
 %token TABLESEPARATOR
 %token ROW
 %token ENTRYSEPARATOR "entry separator"
-%token <buffer> CODEBLOCK
+%token <string> CODEBLOCK
 %token <raw_footnote> FOOTNOTE
 %token SECTION
 %token INDENT
@@ -334,9 +340,9 @@ report_remaining_anchors(struct anchor *anchors, struct nmc_parser *parser, UNUS
         } substring;
         struct {
                 xmlChar *id;
-                xmlBufferPtr buffer;
+                struct nmc_string *string;
         } raw_footnote;
-        xmlBufferPtr buffer;
+        struct nmc_string *string;
         struct nodes nodes;
         struct node *node;
         struct footnote *footnote;
@@ -344,11 +350,11 @@ report_remaining_anchors(struct anchor *anchors, struct nmc_parser *parser, UNUS
 }
 
 %printer { fprintf(yyoutput, "%.*s", $$.length, $$.string); } <substring>
-%printer { fprintf(yyoutput, "%s %s", $$.id, xmlBufferContent($$.buffer)); } <raw_footnote>
-%printer { fprintf(yyoutput, "%s", xmlBufferContent($$)); } <buffer>
+%printer { fprintf(yyoutput, "%s %s", $$.id, nmc_string_str($$.string)); } <raw_footnote>
+%printer { fprintf(yyoutput, "%s", nmc_string_str($$)); } <string>
 
-%destructor { xmlFree($$.id); xmlBufferFree($$.buffer); } <raw_footnote>
-%destructor { xmlBufferFree($$); } <buffer>
+%destructor { xmlFree($$.id); nmc_string_free($$.string); } <raw_footnote>
+%destructor { nmc_string_free($$); } <string>
 %destructor { node_unlink_and_free(parser, $$.first); } <nodes>
 %destructor { node_unlink_and_free(parser, $$); } <node>
 %destructor { footnote_free($$); } <footnote>
@@ -386,30 +392,20 @@ node(enum node_type type)
         return n;
 }
 
-static char *
-detach(xmlBufferPtr buffer)
-{
-        int l = xmlBufferLength(buffer) + 1;
-        char *r = (char *)xmlBufferDetach(buffer);
-        char *p = (char *)xmlRealloc(r, l);
-        xmlBufferFree(buffer);
-        return p != NULL ? p : r;
-}
-
 static struct node *
-text(enum node_type type, xmlBufferPtr buffer)
+text(enum node_type type, struct nmc_string *string)
 {
         struct node *n = node(type);
         n->u.children = node(NODE_TEXT);
-        n->u.children->u.text = detach(buffer);
+        n->u.children->u.text = nmc_string_str_free(string);
         return n;
 }
 
 static struct node *
-content(enum node_type type, xmlBufferPtr buffer)
+content(enum node_type type, struct nmc_string *string)
 {
         struct node *n = node(type);
-        n->u.text = detach(buffer);
+        n->u.text = nmc_string_str_free(string);
         return n;
 }
 
@@ -573,9 +569,7 @@ static struct node *
 buffer(const xmlChar *string, int length)
 {
         struct node *n = node(NODE_BUFFER);
-        n->u.buffer = xmlBufferCreateSize(length);
-xmlBufferSetAllocationScheme(n->u.buffer,XML_BUFFER_ALLOC_EXACT);
-        xmlBufferAdd(n->u.buffer, string, length);
+        n->u.buffer = nmc_string_new((const char *)string, length);
         return n;
 }
 
@@ -591,7 +585,7 @@ static inline struct nodes
 append_text(struct nodes inlines, const xmlChar *string, int length)
 {
         if (inlines.last->type == NODE_BUFFER) {
-                xmlBufferAdd(inlines.last->u.buffer, string, length);
+                nmc_string_append(inlines.last->u.buffer, (const char *)string, length);
                 return inlines;
         }
 
@@ -609,8 +603,7 @@ textify(struct nodes inlines)
 {
         if (inlines.last->type == NODE_BUFFER) {
                 inlines.last->type = NODE_TEXT;
-                xmlBufferPtr buffer = inlines.last->u.buffer;
-                inlines.last->u.text = detach(buffer);
+                inlines.last->u.text = nmc_string_str_free(inlines.last->u.buffer);
         }
         return inlines;
 }
@@ -689,14 +682,7 @@ oblockssections: /* empty */ { $$ = nodes(NULL); }
 footnotes: footnote
 | footnotes footnote { $$ = fibling(parser, $1, $2); };
 
-footnote: FOOTNOTE {
-        $$ = footnote_new(&@$, $1.id, $1.buffer);
-        if ($$->node == NULL)
-                nmc_parser_error(parser, &@$,
-                                 "unrecognized footnote content: %s",
-                                 xmlBufferContent($1.buffer));
-        xmlBufferFree($1.buffer);
-};
+footnote: FOOTNOTE { $$ = footnote_new(parser, &@$, $1.id, $1.string); };
 
 paragraph: PARAGRAPH inlines { $$ = wrap(NODE_PARAGRAPH, $2); };
 

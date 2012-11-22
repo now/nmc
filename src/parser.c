@@ -9,6 +9,7 @@
 #include "list.h"
 #include "nmc.h"
 #include "parser.h"
+#include "string.h"
 
 void
 nmc_parser_error_free(struct nmc_parser_error *error)
@@ -224,7 +225,7 @@ is_space_or_end(const xmlChar *end)
 }
 
 static int
-buffer(struct nmc_parser *parser, YYLTYPE *location, xmlBufferPtr buffer, const xmlChar *begin, int type)
+string(struct nmc_parser *parser, YYLTYPE *location, struct nmc_string *string, const xmlChar *begin, int type)
 {
         while (*begin == ' ')
                 begin++;
@@ -241,7 +242,7 @@ again:
                         send++;
                 int spaces = send - (end + 1);
                 if (!is_end(send) && spaces >= parser->indent + 2) {
-                        xmlBufferAdd(buffer, begin, end - begin);
+                        nmc_string_append(string, (const char *)begin, end - begin);
                         begin = end + parser->indent + 2;
                         end = send;
                         parser->location.last_line++;
@@ -251,7 +252,7 @@ again:
         }
         case ' ':
                 end++;
-                xmlBufferAdd(buffer, begin, end - begin);
+                nmc_string_append(string, (const char *)begin, end - begin);
                 while (*end == ' ')
                         end++;
                 begin = end;
@@ -260,7 +261,7 @@ again:
                 end++;
                 goto again;
         }
-        xmlBufferAdd(buffer, begin, end - begin);
+        nmc_string_append(string, (const char *)begin, end - begin);
 
         return token(parser, location, end, type);
 }
@@ -282,11 +283,11 @@ static int
 footnote(struct nmc_parser *parser, YYLTYPE *location, YYSTYPE *value, int length)
 {
         value->raw_footnote.id = xmlStrndup(parser->p, length);
-        value->raw_footnote.buffer = xmlBufferCreate();
+        value->raw_footnote.string = nmc_string_new_empty();
 
-        return buffer(parser,
+        return string(parser,
                       location,
-                      value->raw_footnote.buffer,
+                      value->raw_footnote.string,
                       parser->p + length + bol_space(parser, length),
                       FOOTNOTE);
 }
@@ -296,7 +297,7 @@ codeblock(struct nmc_parser *parser, YYLTYPE *location, YYSTYPE *value)
 {
         const xmlChar *begin = parser->p + 4;
         const xmlChar *end = begin;
-        value->buffer = xmlBufferCreate();
+        value->string = nmc_string_new_empty();
 
 again:
         while (!is_end(end))
@@ -314,16 +315,16 @@ again:
                 }
                 int spaces = bse - bss;
                 if (spaces >= parser->indent + 4) {
-                        xmlBufferAdd(value->buffer, begin, end - begin);
+                        nmc_string_append(value->string, (const char *)begin, end - begin);
                         for (int i = 0; i < lines; i++)
-                                xmlBufferWriteChar(value->buffer, "\n");
+                                nmc_string_append(value->string, "\n", 1);
                         begin = bss + parser->indent + 4;
                         end = bse;
                         parser->location.last_line += lines;
                         goto again;
                 }
         }
-        xmlBufferAdd(value->buffer, begin, end - begin);
+        nmc_string_append(value->string, (const char *)begin, end - begin);
 
         return token(parser, location, end, CODEBLOCK);
 }
@@ -571,8 +572,8 @@ nmc_parser_lex(struct nmc_parser *parser, YYLTYPE *location, YYSTYPE *value)
 
         if (parser->want == TITLE) {
                 parser->want = ERROR;
-                value->buffer = xmlBufferCreate();
-                return buffer(parser, location, value->buffer, end, TITLE);
+                value->string = nmc_string_new_empty();
+                return string(parser, location, value->string, end, TITLE);
         }
 
         switch (*end) {

@@ -37,7 +37,7 @@ struct node
         union {
                 struct node *children;
                 char *text;
-                xmlBufferPtr buffer;
+                struct nmc_string *buffer;
                 struct anchor *anchor;
         } u;
 };
