@@ -25,7 +25,7 @@ struct nmc_parser
         bool bol;
         int want;
         struct node *doc;
-        xmlHashTablePtr anchors;
+        struct anchors *anchors;
         struct {
                 struct nmc_parser_error *first;
                 struct nmc_parser_error *last;

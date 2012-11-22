@@ -83,12 +83,12 @@ nmc_parse(const xmlChar *input, struct nmc_parser_error **errors)
         parser.bol = false;
         parser.want = TITLE;
         parser.doc = NULL;
-        parser.anchors = xmlHashCreate(16);
+        parser.anchors = NULL;
         parser.errors.first = parser.errors.last = NULL;
 
         nmc_grammar_parse(&parser);
 
-        xmlHashFree(parser.anchors, NULL);
+        anchors_free(parser.anchors);
 
         *errors = parser.errors.first;
         return parser.doc;

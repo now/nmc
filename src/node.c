@@ -139,7 +139,7 @@ node_free(struct node *node)
                 /* TODO Add free function to types? */
                 switch (p->type) {
                 case NODE_ANCHOR:
-                        anchor_free(p->u.anchor);
+                        anchor_free1(p->u.anchor);
                         break;
                 case NODE_BUFFER:
                         nmc_string_free(p->u.buffer);

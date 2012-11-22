@@ -7,7 +7,11 @@ void nmc_grammar_finalize(void);
 
 struct anchor;
 
-void anchor_free(struct anchor *anchor);
+void anchor_free1(struct anchor *anchor);
+
+struct anchors;
+
+void anchors_free(struct anchors *anchors);
 
 struct nodes
 {
@@ -48,18 +52,95 @@ struct anchor
         struct node *child;
 };
 
+struct anchors {
+        struct anchors *next;
+        char *id;
+        struct anchor *anchors;
+};
+
+static void
+anchors_free1(struct anchors *anchors)
+{
+        free(anchors->id);
+        nmc_free(anchors);
+}
+
+void
+anchors_free(struct anchors *anchors)
+{
+        list_for_each(struct anchors, p, anchors)
+                anchors_free1(anchors);
+}
+
+static struct anchors *
+anchors_find_prim(struct anchors *anchors, const char *id,
+                  struct anchors **previous, struct anchors **next)
+{
+        *previous = *next = NULL;
+        struct anchors *p = NULL;
+        list_for_each_safe(struct anchors, c, n, anchors) {
+                if (strcmp(c->id, id) == 0) {
+                        *previous = p;
+                        *next = n;
+                        return c;
+                }
+                p = c;
+        }
+        return NULL;
+}
+
+static struct anchors *
+anchors_find(struct anchors *anchors, const char *id)
+{
+        struct anchors *p, *n;
+        return anchors_find_prim(anchors, id, &p, &n);
+}
+
+static struct anchor *
+anchors_remove(struct anchors **anchors, const char *id)
+{
+        struct anchors *p, *n, *c = anchors_find_prim(*anchors, id, &p, &n);
+        if (c == NULL)
+                return NULL;
+        if (p == NULL)
+                *anchors = n;
+        else
+                p->next = n;
+        struct anchor *a = c->anchors;
+        anchors_free1(c);
+        return a;
+}
+
+static struct anchors *
+anchors_cons(struct anchors *anchors, struct anchor *anchor)
+{
+        list_for_each(struct anchors, p, anchors) {
+                if (strcmp(p->id, (const char *)anchor->id) == 0) {
+                        anchor->next = p->anchors;
+                        p->anchors = anchor;
+                        return anchors;
+                }
+        }
+        struct anchors *a = nmc_new(struct anchors);
+        a->next = anchors;
+        a->id = strdup((const char *)anchor->id);
+        a->anchors = anchor;
+        return a;
+}
+
 static void
 anchor_unlink(struct node *node, struct nmc_parser *parser)
 {
         if (node->type != NODE_ANCHOR)
                 return;
+        struct anchors *anchors = anchors_find(parser->anchors, (const char *)node->u.anchor->id);
         struct anchor *p = NULL;
-        list_for_each_safe(struct anchor, c, n, xmlHashLookup(parser->anchors, node->u.anchor->id)) {
+        list_for_each_safe(struct anchor, c, n, anchors->anchors) {
                 if (c->node == (struct auxiliary_node *)node) {
                         if (p == NULL)
-                                xmlHashUpdateEntry(parser->anchors, c->id, n, NULL);
+                                anchors->anchors = n;
                         else
-                                p->next = c;
+                                p->next = n;
                         break;
                 }
                 p = c;
@@ -248,7 +329,7 @@ sigil_free(struct sigil *sigil)
 }
 
 void
-anchor_free(struct anchor *anchor)
+anchor_free1(struct anchor *anchor)
 {
         /* NOTE anchor->node is either on the stack or in the tree, so we don’t
          * need to free it here. */
@@ -258,19 +339,24 @@ anchor_free(struct anchor *anchor)
 }
 
 static void
-report_remaining_anchors(struct anchor *anchors, struct nmc_parser *parser, UNUSED(const xmlChar *name))
+report_remaining_anchors(struct nmc_parser *parser)
 {
         struct nmc_parser_error *first = NULL, *previous = NULL, *last = NULL;
-        list_for_each_safe(struct anchor, p, n, anchors) {
-                first = nmc_parser_error_new(&p->location,
-                                             "reference to undefined footnote: %s",
-                                             (const char *)p->id);
-                if (last == NULL)
-                        last = first;
-                if (previous != NULL)
-                        first->next = previous;
-                previous = first;
+        /* TODO Sort these by location */
+        list_for_each_safe(struct anchors, p, n, parser->anchors) {
+                list_for_each(struct anchor, q, p->anchors) {
+                        first = nmc_parser_error_new(&q->location,
+                                                     "reference to undefined footnote: %s",
+                                                     (const char *)q->id);
+                        if (last == NULL)
+                                last = first;
+                        if (previous != NULL)
+                                first->next = previous;
+                        previous = first;
+                }
+                anchors_free1(p);
         }
+        parser->anchors = NULL;
         nmc_parser_errors(parser, first, last);
 }
 }
@@ -475,7 +561,7 @@ update_anchors(struct anchor *anchors, struct auxiliary_node *node)
                 p->node->attributes = node->attributes;
                 p->node = NULL;
                 p->child = NULL;
-                anchor_free(p);
+                anchor_free1(p);
         }
 }
 
@@ -483,14 +569,13 @@ static void
 footnote(struct nmc_parser *parser, struct footnote *footnotes)
 {
         list_for_each_safe(struct footnote, p, n, footnotes) {
-                struct anchor *anchors = xmlHashLookup(parser->anchors, p->id);
+                struct anchor *anchors = anchors_remove(&parser->anchors, (const char *)p->id);
                 if (anchors == NULL) {
                         nmc_parser_error(parser,
                                          &p->location,
                                          "unreferenced footnote: %s", p->id);
                         continue;
                 }
-                xmlHashRemoveEntry(parser->anchors, p->id, NULL);
 
                 if (p->node != NULL) {
                         update_anchors(anchors, p->node);
@@ -552,13 +637,7 @@ anchor(struct nmc_parser *parser, struct node *atom, struct sigil *sigils)
                         outermost->u.anchor->child = (struct node *)anchor->node;
                 }
 
-                struct anchor *anchors = xmlHashLookup(parser->anchors, anchor->id);
-                if (anchors == NULL) {
-                        xmlHashAddEntry(parser->anchors, anchor->id, anchor);
-                } else {
-                        anchor->next = anchors;
-                        xmlHashUpdateEntry(parser->anchors, anchor->id, anchor, NULL);
-                }
+                parser->anchors = anchors_cons(parser->anchors, anchor);
 
                 sigil_free1(p);
         }
@@ -641,7 +720,7 @@ append_spaced_word(struct nmc_parser *parser, struct nodes inlines, const xmlCha
 
 nmc: TITLE oblockssections0 {
         parser->doc = wrap_children(NODE_DOCUMENT, text(NODE_TITLE, $1), $2);
-        xmlHashScan(parser->anchors, (xmlHashScanner)report_remaining_anchors, parser);
+        report_remaining_anchors(parser);
 };
 
 oblockssections0: /* empty */ { $$ = nodes(NULL); }
