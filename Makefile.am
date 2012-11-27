@@ -37,24 +37,21 @@ TESTSUITE_AT =
 TESTSUITE = $(testdir)/testsuite
 
 AUTOTEST = $(AUTOM4TE) --language=autotest
+AUTOTESTFLAGS = -I $(testdir)
 
 testdir = $(srcdir)/test
 
 $(testdir)/package.m4: $(top_srcdir)/configure.ac
-	:;{ \
-	echo 'm4_define([AT_PACKAGE_NAME],' && \
-	echo '	[@PACKAGE_NAME@])' && \
-	echo 'm4_define([AT_PACKAGE_TARNAME],' && \
-	echo '	[@PACKAGE_TARNAME@])' && \
-	echo 'm4_define([AT_PACKAGE_VERSION],' && \
-	echo '	[@PACKAGE_VERSION@])' && \
-	echo 'm4_define([AT_PACKAGE_STRING],' && \
-	echo '	[@PACKAGE_STRING@])' && \
-	echo 'm4_define([AT_PACKAGE_BUGREPORT],' && \
-	echo '	[@PACKAGE_BUGREPORT@])'; \
-	echo 'm4_define([AT_PACKAGE_URL],' && \
-	echo '	[@PACKAGE_URL@])'; \
-	} >'$@'
+	$(AM_V_GEN)rm -f $@ $@.tmp
+	$(AM_V_at){ \
+	  echo 'm4_define([AT_PACKAGE_NAME], [$(PACKAGE_NAME)])' && \
+	  echo 'm4_define([AT_PACKAGE_TARNAME], [$(PACKAGE_TARNAME)])' && \
+	  echo 'm4_define([AT_PACKAGE_VERSION], [$(PACKAGE_VERSION)])' && \
+	  echo 'm4_define([AT_PACKAGE_STRING], [$(PACKAGE_STRING)])' && \
+	  echo 'm4_define([AT_PACKAGE_BUGREPORT], [$(PACKAGE_BUGREPORT)])' && \
+	  echo 'm4_define([AT_PACKAGE_URL], [$(PACKAGE_URL)])'; \
+	} > $@.tmp
+	$(AM_V_at)mv $@.tmp $@
 
 check-local: $(testdir)/atconfig $(testdir)/atlocal $(TESTSUITE)
 	@echo '$(TESTSUITE): Entering directory `$(testdir)'\'
@@ -74,8 +71,8 @@ clean-local:
 	fi
 
 $(TESTSUITE): $(testdir)/testsuite.at $(testdir)/package.m4 $(TESTSUITE_AT)
-	$(AUTOTEST) -I '$(testdir)' -o $@.tmp $@.at
-	mv $@.tmp $@
+	$(AM_V_GEN)$(AUTOTEST) $(AUTOTESTFLAGS) -o $@.tmp $<
+	$(AM_V_at)mv $@.tmp $@
 
 .PHONY: maintainer-check-valgrind
 maintainer-check-valgrind: $(BUILT_SOURCES) all-am $(testdir)/atconfig $(testdir)/atlocal $(TESTSUITE)
