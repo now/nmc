@@ -1,8 +1,10 @@
 #include <config.h>
 
-#include <libxml/tree.h>
-#include <libxml/xmlunicode.h>
+#include <stdarg.h>
 #include <stdbool.h>
+#include <stddef.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "grammar.h"
@@ -10,6 +12,7 @@
 #include "nmc.h"
 #include "parser.h"
 #include "string.h"
+#include "unicode.h"
 
 void
 nmc_parser_error_free(struct nmc_parser_error *error)
@@ -27,14 +30,14 @@ nmc_parser_error_newv(YYLTYPE *location, const char *message, va_list args)
 
         va_copy(saved, args);
 
-        xmlChar buf[1];
-        int size = xmlStrVPrintf(buf, sizeof(buf), (const xmlChar *)message, args);
+        char buf[1];
+        int size = vsnprintf(buf, sizeof(buf), message, args);
 
         struct nmc_parser_error *error = nmc_new(struct nmc_parser_error);
         error->next = NULL;
         error->location = *location;
         error->message = nmc_new_n(char, size + 1);
-        xmlStrVPrintf((xmlChar *)error->message, size + 1, (const xmlChar *)message, saved);
+        vsnprintf(error->message, size + 1, message, saved);
 
         va_end(saved);
 
@@ -73,7 +76,7 @@ nmc_parser_error(struct nmc_parser *parser, YYLTYPE *location, const char *messa
 }
 
 struct node *
-nmc_parse(const xmlChar *input, struct nmc_parser_error **errors)
+nmc_parse(const char *input, struct nmc_parser_error **errors)
 {
         struct nmc_parser parser;
         parser.p = input;
@@ -94,18 +97,6 @@ nmc_parse(const xmlChar *input, struct nmc_parser_error **errors)
         return parser.doc;
 }
 
-static int
-parserc(struct nmc_parser *parser, int *length)
-{
-        int n = 0;
-        const xmlChar *end = parser->p;
-        while (*end != '\0' && n < 7)
-                end++, n++;
-        int uc = xmlGetUTF8Char(parser->p, &n);
-        *length = n;
-        return uc;
-}
-
 static void
 locate(struct nmc_parser *parser, YYLTYPE *location, int last_column)
 {
@@ -114,7 +105,7 @@ locate(struct nmc_parser *parser, YYLTYPE *location, int last_column)
 }
 
 static int
-token(struct nmc_parser *parser, YYLTYPE *location, const xmlChar *end, int type)
+token(struct nmc_parser *parser, YYLTYPE *location, const char *end, int type)
 {
         if (location != NULL)
                 locate(parser,
@@ -131,7 +122,7 @@ token(struct nmc_parser *parser, YYLTYPE *location, const xmlChar *end, int type
 
 static int
 trimmed_substring(struct nmc_parser *parser, YYLTYPE *location, YYSTYPE *value,
-                  const xmlChar *end, int left, int right, int type)
+                  const char *end, int left, int right, int type)
 {
         value->substring.string = parser->p + left;
         value->substring.length = end - value->substring.string - right;
@@ -140,13 +131,13 @@ trimmed_substring(struct nmc_parser *parser, YYLTYPE *location, YYSTYPE *value,
 
 static int
 substring(struct nmc_parser *parser, YYLTYPE *location, YYSTYPE *value,
-          const xmlChar *end, int type)
+          const char *end, int type)
 {
         return trimmed_substring(parser, location, value, end, 0, 0, type);
 }
 
 static int
-dedent(struct nmc_parser *parser, YYLTYPE *location, const xmlChar *end)
+dedent(struct nmc_parser *parser, YYLTYPE *location, const char *end)
 {
         /* TODO: assert(parser->dedents > 0); */
         parser->dedents--;
@@ -154,7 +145,7 @@ dedent(struct nmc_parser *parser, YYLTYPE *location, const xmlChar *end)
 }
 
 static int
-dedents(struct nmc_parser *parser, YYLTYPE *location, const xmlChar *end, int spaces)
+dedents(struct nmc_parser *parser, YYLTYPE *location, const char *end, int spaces)
 {
         parser->dedents = (parser->indent - spaces) / 2;
         parser->indent -= 2 * parser->dedents;
@@ -162,87 +153,90 @@ dedents(struct nmc_parser *parser, YYLTYPE *location, const xmlChar *end, int sp
         return dedent(parser, location, end);
 }
 
-static inline int
-length_of_superscript(const xmlChar *input)
+typedef bool (*isfn)(uchar);
+
+static inline size_t
+length_of_run(struct nmc_parser *parser, isfn is)
 {
-        switch (*input) {
-        case 0xc2:
-                switch (*(input + 1)) {
-                case 0xb9: /* ¹ */
-                case 0xb2: /* ² */
-                case 0xb3: /* ³ */
-                        return 2;
-                default:
-                        return 0;
-                }
-        case 0xe2:
-                if (*(input + 1) == 0x81 &&
-                    (*(input + 2) == 0xb0 || /* ⁰ */
-                     (0xb4 <= *(input + 2) && *(input + 2) <= 0xb9))) /* ⁴⁻⁹ */
-                        return 3;
+        const char *end = parser->p;
+        while (is(u_dref(end)))
+                end = u_next(end);
+        return end - parser->p;
+}
+
+#define U_SUPERSCRIPT_0 ((uchar)0x2070)
+#define U_SUPERSCRIPT_1 ((uchar)0x00b9)
+#define U_SUPERSCRIPT_2 ((uchar)0x00b2)
+#define U_SUPERSCRIPT_3 ((uchar)0x00b3)
+#define U_SUPERSCRIPT_4 ((uchar)0x2074)
+#define U_SUPERSCRIPT_9 ((uchar)0x2079)
+
+static inline bool
+is_superscript(uchar c)
+{
+        switch (c) {
+        case U_SUPERSCRIPT_0:
+        case U_SUPERSCRIPT_1:
+        case U_SUPERSCRIPT_2:
+        case U_SUPERSCRIPT_3:
+                return true;
         default:
-                return 0;
+                return U_SUPERSCRIPT_4 <= c && c <= U_SUPERSCRIPT_9;
         }
 }
 
-static int
+static inline size_t
 superscript(struct nmc_parser *parser)
 {
-        int total = 0, length;
-        while ((length = length_of_superscript(parser->p + total)) > 0)
-                total += length;
-        return total;
+        return length_of_run(parser, is_superscript);
 }
 
-static int
-length_of_subscript(const xmlChar *input)
+#define U_SUBSCRIPT_0 ((uchar)0x2080)
+#define U_SUBSCRIPT_9 ((uchar)0x2089)
+
+static inline bool
+is_subscript(uchar c)
 {
-        if (*input == 0xe2 && *(input + 1) == 0x82 &&
-            (0x80 <= *(input + 2) && *(input + 2) <= 0x89))
-                return 3;
-        return 0;
+        return U_SUBSCRIPT_0 <= c && c <= U_SUBSCRIPT_9;
 }
 
-static int
+static inline size_t
 subscript(struct nmc_parser *parser)
 {
-        int total = 0, length;
-        while ((length = length_of_subscript(parser->p + total)) > 0)
-                total += 3;
-        return total;
+        return length_of_run(parser, is_subscript);
 }
 
 static inline bool
-is_end(const xmlChar *end)
+is_end(const char *end)
 {
         return *end == '\0' || *end == '\n';
 }
 
 static inline bool
-is_space_or_end(const xmlChar *end)
+is_space_or_end(const char *end)
 {
         return is_end(end) || *end == ' ';
 }
 
 static int
-string(struct nmc_parser *parser, YYLTYPE *location, struct nmc_string *string, const xmlChar *begin, int type)
+string(struct nmc_parser *parser, YYLTYPE *location, struct nmc_string *string, const char *begin, int type)
 {
         while (*begin == ' ')
                 begin++;
 
-        const xmlChar *end = begin;
+        const char *end = begin;
 
 again:
         switch (*end) {
         case '\0':
                 break;
         case '\n': {
-                const xmlChar *send = end + 1;
+                const char *send = end + 1;
                 while (*send == ' ')
                         send++;
-                int spaces = send - (end + 1);
+                size_t spaces = send - (end + 1);
                 if (!is_end(send) && spaces >= parser->indent + 2) {
-                        nmc_string_append(string, (const char *)begin, end - begin);
+                        nmc_string_append(string, begin, end - begin);
                         begin = end + parser->indent + 2;
                         end = send;
                         parser->location.last_line++;
@@ -252,7 +246,7 @@ again:
         }
         case ' ':
                 end++;
-                nmc_string_append(string, (const char *)begin, end - begin);
+                nmc_string_append(string, begin, end - begin);
                 while (*end == ' ')
                         end++;
                 begin = end;
@@ -261,28 +255,26 @@ again:
                 end++;
                 goto again;
         }
-        nmc_string_append(string, (const char *)begin, end - begin);
+        nmc_string_append(string, begin, end - begin);
 
         return token(parser, location, end, type);
 }
 
-static int
-bol_space(struct nmc_parser *parser, int offset)
+static size_t
+bol_space(struct nmc_parser *parser, size_t offset)
 {
         if (*(parser->p + offset) == ' ')
                 return 1;
-        int length;
-        parserc(parser, &length);
         nmc_parser_error(parser, &parser->location,
                          "missing ‘ ’ after ‘%.*s’ at beginning of line",
-                         length, parser->p);
+                         (int)(u_next(parser->p) - parser->p), parser->p);
         return 0;
 }
 
 static int
-footnote(struct nmc_parser *parser, YYLTYPE *location, YYSTYPE *value, int length)
+footnote(struct nmc_parser *parser, YYLTYPE *location, YYSTYPE *value, size_t length)
 {
-        value->raw_footnote.id = xmlStrndup(parser->p, length);
+        value->raw_footnote.id = strndup(parser->p, length);
         value->raw_footnote.string = nmc_string_new_empty();
 
         return string(parser,
@@ -295,17 +287,17 @@ footnote(struct nmc_parser *parser, YYLTYPE *location, YYSTYPE *value, int lengt
 static int
 codeblock(struct nmc_parser *parser, YYLTYPE *location, YYSTYPE *value)
 {
-        const xmlChar *begin = parser->p + 4;
-        const xmlChar *end = begin;
+        const char *begin = parser->p + 4;
+        const char *end = begin;
         value->string = nmc_string_new_empty();
 
 again:
         while (!is_end(end))
                 end++;
         if (*end == '\n') {
-                int lines = 1;
-                const xmlChar *bss = end + 1;
-                const xmlChar *bse = bss;
+                size_t lines = 1;
+                const char *bss = end + 1;
+                const char *bse = bss;
                 while (*bse == ' ' || *bse == '\n') {
                         if (*bse == '\n') {
                                 lines++;
@@ -313,10 +305,10 @@ again:
                         }
                         bse++;
                 }
-                int spaces = bse - bss;
+                size_t spaces = bse - bss;
                 if (spaces >= parser->indent + 4) {
-                        nmc_string_append(value->string, (const char *)begin, end - begin);
-                        for (int i = 0; i < lines; i++)
+                        nmc_string_append(value->string, begin, end - begin);
+                        for (size_t i = 0; i < lines; i++)
                                 nmc_string_append(value->string, "\n", 1);
                         begin = bss + parser->indent + 4;
                         end = bse;
@@ -324,7 +316,7 @@ again:
                         goto again;
                 }
         }
-        nmc_string_append(value->string, (const char *)begin, end - begin);
+        nmc_string_append(value->string, begin, end - begin);
 
         return token(parser, location, end, CODEBLOCK);
 }
@@ -332,11 +324,11 @@ again:
 static int
 definition(struct nmc_parser *parser, YYLTYPE *location, YYSTYPE *value)
 {
-        const xmlChar *end = parser->p + 1 + bol_space(parser, 1);
+        const char *end = parser->p + 1 + bol_space(parser, 1);
 
         while (!is_end(end)) {
                 if (*end == '.') {
-                        const xmlChar *send = end;
+                        const char *send = end;
                         end++;
                         while (*end == ' ')
                                 end++;
@@ -358,7 +350,7 @@ definition(struct nmc_parser *parser, YYLTYPE *location, YYSTYPE *value)
 }
 
 static int
-bol_token(struct nmc_parser *parser, YYLTYPE *location, int length, int type)
+bol_token(struct nmc_parser *parser, YYLTYPE *location, size_t length, int type)
 {
         return token(parser,
                      location,
@@ -366,76 +358,65 @@ bol_token(struct nmc_parser *parser, YYLTYPE *location, int length, int type)
                      type);
 }
 
-static bool
-nmc_isprint(int c)
-{
-        /* TODO Would like to avoid xmlUCSIsCatCn(c), but it’s not available. */
-        return !(xmlUCSIsCatCc(c) ||
-                 xmlUCSIsCatCf(c) ||
-                 xmlUCSIsCatCs(c));
-}
+#define U_SECTION_SIGN ((uchar)0x00a7)
+#define U_BULLET ((uchar)0x2022)
+#define U_EM_DASH ((uchar)0x2014)
 
 static int
 bol(struct nmc_parser *parser, YYLTYPE *location, YYSTYPE *value)
 {
         parser->bol = false;
 
-        int length;
+        size_t length;
         if ((length = subscript(parser)) > 0)
                 return bol_token(parser, location, length, ENUMERATION);
         else if ((length = superscript(parser)) > 0)
                 return footnote(parser, location, value, length);
 
-        switch (*parser->p) {
+        uchar c = u_lref(parser->p, &length);
+        switch (c) {
         case ' ':
                 if (*(parser->p + 1) == ' ') {
                         if (*(parser->p + 2) == ' ' && *(parser->p + 3) == ' ')
                                 return codeblock(parser, location, value);
                         return token(parser, location, parser->p + 2, PARAGRAPH);
                 }
-                return bol_token(parser, location, 1, PARAGRAPH);
-        case 0xc2:
-                if (*(parser->p + 1) == 0xa7)
-                        return bol_token(parser, location, 2, SECTION);
-                break;
-        case 0xe2:
-                if (*(parser->p + 1) == 0x80)
-                        switch (*(parser->p + 2)) {
-                        case 0xa2:
-                                return bol_token(parser, location, 3, ITEMIZATION);
-                        case 0x94:
-                                return bol_token(parser, location, 3, ATTRIBUTION);
-                        }
-                break;
+                return bol_token(parser, location, length, PARAGRAPH);
+        case U_SECTION_SIGN:
+                return bol_token(parser, location, length, SECTION);
+        case U_BULLET:
+                return bol_token(parser, location, length, ITEMIZATION);
+        case U_EM_DASH:
+                return bol_token(parser, location, length, ATTRIBUTION);
         case '/':
                 return definition(parser, location, value);
         case '>':
-                return bol_token(parser, location, 1, QUOTE);
+                return bol_token(parser, location, length, QUOTE);
         case '|':
                 if (*(parser->p + 1) == '-') {
-                        const xmlChar *end = parser->p + 3;
+                        // TODO This should probably be + 2.
+                        const char *end = parser->p + 3;
                         while (!is_end(end))
                                 end++;
                         return token(parser, location, end, TABLESEPARATOR);
                 }
-                return bol_token(parser, location, 1, ROW);
+                return bol_token(parser, location, length, ROW);
         case '\0':
                 return token(parser, location, parser->p, END);
         }
 
-        int uc = parserc(parser, &length);
-        if (uc == -1)
+        if (c == U_BAD_INPUT_CHAR)
                 nmc_parser_error(parser, &parser->location,
                                  "broken UTF-8 sequence at beginning of line starting with %#02x",
                                  *parser->p);
-        else if (!nmc_isprint(uc))
+        else if (!uc_issolid(c))
                 nmc_parser_error(parser, &parser->location,
                                  "unrecognized character U+%04X at beginning of line",
-                                 uc);
+                                 c);
         else
                 nmc_parser_error(parser, &parser->location,
                                  "unrecognized character ‘%.*s’ (U+%04X) at beginning of line",
-                                 length, parser->p, uc);
+                                 (int)length, parser->p, c);
 
         return PARAGRAPH;
 }
@@ -443,12 +424,12 @@ bol(struct nmc_parser *parser, YYLTYPE *location, YYSTYPE *value)
 static int
 eol(struct nmc_parser *parser, YYLTYPE *location, YYSTYPE *value)
 {
-        const xmlChar *end = parser->p;
+        const char *end = parser->p;
         end++;
         parser->location.last_line++;
         parser->location.first_line = parser->location.last_line;
         parser->location.first_column = 1;
-        const xmlChar *begin = end;
+        const char *begin = end;
         while (*end == ' ')
                 end++;
         if (*end == '\n') {
@@ -463,7 +444,7 @@ eol(struct nmc_parser *parser, YYLTYPE *location, YYSTYPE *value)
                         }
                         end++;
                 }
-                int spaces = end - begin;
+                size_t spaces = end - begin;
                 if (parser->want == INDENT && spaces > parser->indent + 2) {
                         parser->want = ERROR;
                         parser->indent += 2;
@@ -479,7 +460,7 @@ eol(struct nmc_parser *parser, YYLTYPE *location, YYSTYPE *value)
                         return substring(parser, NULL, value, begin + parser->indent, BLOCKSEPARATOR);
                 }
         } else {
-                int spaces = end - begin;
+                size_t spaces = end - begin;
                 if (spaces > parser->indent) {
                         locate(parser, location, parser->indent + 1);
                         parser->location.last_column--;
@@ -493,20 +474,20 @@ eol(struct nmc_parser *parser, YYLTYPE *location, YYSTYPE *value)
                         parser->bol = true;
                         return dedents(parser, NULL, end, spaces);
                 } else {
-                        parser->p = end;
-                        return bol(parser, location, value);
+                       parser->p = end;
+                       return bol(parser, location, value);
                 }
         }
 }
 
 static inline bool
-is_reference_or_space_or_end(const xmlChar *end)
+is_reference_or_space_or_end(const char *end)
 {
-        return is_space_or_end(end) || length_of_superscript(end) > 0;
+        return is_space_or_end(end) || is_superscript(u_dref(end));
 }
 
 static inline bool
-is_group_end(const xmlChar *end)
+is_group_end(const char *end)
 {
         if (*end == '}') {
                 do {
@@ -519,33 +500,36 @@ is_group_end(const xmlChar *end)
 }
 
 static inline bool
-is_inline_end(const xmlChar *end)
+is_inline_end(const char *end)
 {
         return is_reference_or_space_or_end(end) ||
                 is_group_end(end);
 }
 
+#define U_SINGLE_RIGHT_POINTING_ANGLE_QUOTATION_MARK ((uchar)0x203a)
+
 static int
 code(struct nmc_parser *parser, YYLTYPE *location, YYSTYPE *value)
 {
-        const xmlChar *end = parser->p + 3;
+        const char *end = parser->p + 3;
+        size_t length;
         while (!is_end(end) &&
-               !(*end == 0xe2 && *(end + 1) == 0x80 && *(end + 2) == 0xba))
-                end++;
+               u_lref(end, &length) != U_SINGLE_RIGHT_POINTING_ANGLE_QUOTATION_MARK)
+                end += length;
         if (is_end(end)) {
                 nmc_parser_error(parser, &parser->location,
                                  "missing ending ‘›’ for code inline");
                 return trimmed_substring(parser, location, value, end, 3, 0, CODE);
         }
-        while (*end == 0xe2 && *(end + 1) == 0x80 && *(end + 2) == 0xba)
-                end += 3;
-        return trimmed_substring(parser, location, value, end, 3, 3, CODE);
+        while (u_dref(end) == U_SINGLE_RIGHT_POINTING_ANGLE_QUOTATION_MARK)
+                end += length;
+        return trimmed_substring(parser, location, value, end, 3, length, CODE);
 }
 
 static int
 emphasis(struct nmc_parser *parser, YYLTYPE *location, YYSTYPE *value)
 {
-        const xmlChar *end = parser->p + 1;
+        const char *end = parser->p + 1;
         while (!is_end(end) &&
                (*end != '/' || !is_inline_end(end + 1)))
                 end++;
@@ -558,6 +542,9 @@ emphasis(struct nmc_parser *parser, YYLTYPE *location, YYSTYPE *value)
         return trimmed_substring(parser, location, value, end, 1, 1, EMPHASIS);
 }
 
+#define U_SINGLE_LEFT_POINTING_ANGLE_QUOTATION_MARK ((uchar)0x2039)
+#define U_SUPERSCRIPT_PLUS_SIGN ((uchar)0x207a)
+
 int
 nmc_parser_lex(struct nmc_parser *parser, YYLTYPE *location, YYSTYPE *value)
 {
@@ -567,8 +554,7 @@ nmc_parser_lex(struct nmc_parser *parser, YYLTYPE *location, YYSTYPE *value)
         if (parser->bol)
                 return bol(parser, location, value);
 
-        int length;
-        const xmlChar *end = parser->p;
+        const char *end = parser->p;
 
         if (parser->want == TITLE) {
                 parser->want = ERROR;
@@ -576,7 +562,9 @@ nmc_parser_lex(struct nmc_parser *parser, YYLTYPE *location, YYSTYPE *value)
                 return string(parser, location, value->string, end, TITLE);
         }
 
-        switch (*end) {
+        size_t length;
+        uchar c = u_lref(end, &length);
+        switch (c) {
         case ' ':
                 do {
                         end++;
@@ -585,20 +573,17 @@ nmc_parser_lex(struct nmc_parser *parser, YYLTYPE *location, YYSTYPE *value)
         case '\n':
                 return eol(parser, location, value);
         case '|':
-                return token(parser, location, parser->p + 1, ENTRYSEPARATOR);
+                return token(parser, location, parser->p + length, ENTRYSEPARATOR);
         case '/':
                 return emphasis(parser, location, value);
         case '{':
-                return token(parser, location, parser->p + 1, BEGINGROUP);
-        case 0xe2:
-                end++;
-                if (*end == 0x80 && *(end + 1) == 0xb9)
-                        return code(parser, location, value);
-                else if (*end == 0x81 && *(end + 1) == 0xba)
-                        // TODO Only catch this if followed by is_inline_end()
-                        // (or perhaps only if followed by superscript()).
-                        return token(parser, location, parser->p + 3, SIGILSEPARATOR);
-                goto word;
+                return token(parser, location, parser->p + length, BEGINGROUP);
+        case U_SINGLE_LEFT_POINTING_ANGLE_QUOTATION_MARK:
+                return code(parser, location, value);
+        case U_SUPERSCRIPT_PLUS_SIGN:
+                // TODO Only catch this if followed by is_inline_end()
+                // (or perhaps only if followed by superscript()).
+                return token(parser, location, parser->p + length, SIGILSEPARATOR);
         }
 
         if (is_group_end(end))
@@ -607,7 +592,6 @@ nmc_parser_lex(struct nmc_parser *parser, YYLTYPE *location, YYSTYPE *value)
                 // TODO Only catch this if followed by is_inline_end().
                 return substring(parser, location, value, parser->p + length, SIGIL);
 
-word:
         while (!is_inline_end(end))
                 end++;
         if (end == parser->p)

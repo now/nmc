@@ -1,6 +1,6 @@
 #include <stdbool.h>
 #include <stdio.h>
-#include <libxml/tree.h>
+#include <stdlib.h>
 
 #include "grammar.h"
 #include "list.h"

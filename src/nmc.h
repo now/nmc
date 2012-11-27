@@ -19,9 +19,9 @@
 
 #define nmc_new(type) nmc_new_n(type, 1)
 
-#define nmc_new_n(type, n) (type *)xmlMalloc(sizeof(type) * (n))
+#define nmc_new_n(type, n) (type *)malloc(sizeof(type) * (n))
 
-#define nmc_free(value) xmlFree(value)
+#define nmc_free(value) free(value)
 
 #define nmc_lengthof(array) (sizeof(array) / sizeof((array)[0]))
 

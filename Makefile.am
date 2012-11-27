@@ -1,6 +1,12 @@
-AM_CFLAGS = $(WARN_CFLAGS) $(WERROR_CFLAGS) $(XML_CFLAGS)
+AM_CFLAGS = $(WARN_CFLAGS) $(WERROR_CFLAGS)
 
 AM_YFLAGS = -d -v
+
+noinst_PROGRAMS = \
+	build/ucategory
+
+build_ucategory_SOURCES = \
+	build/ucategory.c
 
 BUILT_SOURCES = \
 	src/grammar.h
@@ -16,9 +22,13 @@ src_nmc_SOURCES = \
 	src/node.h \
 	src/string.c \
 	src/string.h \
-	src/grammar.y
+	src/grammar.y \
+	src/ucategory.h \
+	src/unicode.c \
+	src/unicode.h
 
-src_nmc_LDADD = $(XML_LIBS)
+src/ucategory.h: $(srcdir)/build/ucategory
+	$(srcdir)/build/ucategory < UnicodeData.txt > $@
 
 check_SCRIPTS = test/nmc
 
@@ -69,7 +79,6 @@ $(TESTSUITE): $(testdir)/testsuite.at $(testdir)/package.m4 $(TESTSUITE_AT)
 
 .PHONY: maintainer-check-valgrind
 maintainer-check-valgrind: $(BUILT_SOURCES) all-am $(testdir)/atconfig $(testdir)/atlocal $(TESTSUITE)
-	echo $(top_srcdir)
 	if test -n '$(VALGRIND)'; then \
 	  echo '$(TESTSUITE): Entering directory `$(testdir)'\'; \
 	  VALGRIND_OPTS='--leak-check=full --show-reachable=yes --suppressions=../../valgrind.supp' \

@@ -1,8 +1,9 @@
 #include <config.h>
 
 #include <getopt.h>
-#include <libxml/tree.h>
+#include <stdarg.h>
 #include <stdbool.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
@@ -12,6 +13,7 @@
 #include "nmc.h"
 #include "node.h"
 #include "parser.h"
+#include "unicode.h"
 
 extern int nmc_grammar_debug;
 
@@ -149,12 +151,10 @@ main(int argc, char *const *argv)
         if (getenv("NMC_DEBUG"))
                 nmc_grammar_debug = 1;
 
-        xmlInitParser();
-
         nmc_grammar_initialize();
 
         struct nmc_parser_error *errors;
-        struct node *doc = nmc_parse(BAD_CAST buffer, &errors);
+        struct node *doc = nmc_parse(buffer, &errors);
         if (errors != NULL)
                 result = EXIT_FAILURE;
         list_for_each(struct nmc_parser_error, p, errors)
@@ -167,8 +167,6 @@ main(int argc, char *const *argv)
         node_free(doc);
 
         nmc_grammar_finalize();
-
-        xmlCleanupParser();
 
         nmc_free(buffer);
 

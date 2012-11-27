@@ -25,16 +25,13 @@ struct nodes
 char *nmc_location_str(const YYLTYPE *location);
 }
 
-%code top
-{
-#include <libxml/tree.h>
-}
 %code
 {
 #include <sys/types.h>
 #include <regex.h>
 #include <stdio.h>
 #include <stdbool.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "list.h"
@@ -47,7 +44,7 @@ struct anchor
 {
         struct anchor *next;
         YYLTYPE location;
-        xmlChar *id;
+        char *id;
         struct auxiliary_node *node;
         struct node *child;
 };
@@ -115,7 +112,7 @@ static struct anchors *
 anchors_cons(struct anchors *anchors, struct anchor *anchor)
 {
         list_for_each(struct anchors, p, anchors) {
-                if (strcmp(p->id, (const char *)anchor->id) == 0) {
+                if (strcmp(p->id, anchor->id) == 0) {
                         anchor->next = p->anchors;
                         p->anchors = anchor;
                         return anchors;
@@ -123,7 +120,7 @@ anchors_cons(struct anchors *anchors, struct anchor *anchor)
         }
         struct anchors *a = nmc_new(struct anchors);
         a->next = anchors;
-        a->id = strdup((const char *)anchor->id);
+        a->id = strdup(anchor->id);
         a->anchors = anchor;
         return a;
 }
@@ -133,7 +130,7 @@ anchor_unlink(struct node *node, struct nmc_parser *parser)
 {
         if (node->type != NODE_ANCHOR)
                 return;
-        struct anchors *anchors = anchors_find(parser->anchors, (const char *)node->u.anchor->id);
+        struct anchors *anchors = anchors_find(parser->anchors, node->u.anchor->id);
         struct anchor *p = NULL;
         list_for_each_safe(struct anchor, c, n, anchors->anchors) {
                 if (c->node == (struct auxiliary_node *)node) {
@@ -243,7 +240,7 @@ define(const char *content)
         list_for_each(struct definition, p, definitions) {
                 regmatch_t matches[p->regex.re_nsub + 1];
 
-                if (regexec(&p->regex, (const char *)content,
+                if (regexec(&p->regex, content,
                             p->regex.re_nsub + 1, matches, 0) == 0)
                         return p->define(content, matches);
         }
@@ -269,12 +266,12 @@ struct footnote
 {
         struct footnote *next;
         YYLTYPE location;
-        xmlChar *id;
+        char *id;
         struct auxiliary_node *node;
 };
 
 static struct footnote *
-footnote_new(struct nmc_parser *parser, YYLTYPE *location, xmlChar *id, struct nmc_string *string)
+footnote_new(struct nmc_parser *parser, YYLTYPE *location, char *id, struct nmc_string *string)
 {
         struct footnote *footnote = nmc_new(struct footnote);
         footnote->next = NULL;
@@ -292,7 +289,7 @@ footnote_new(struct nmc_parser *parser, YYLTYPE *location, xmlChar *id, struct n
 static void
 footnote_free(struct footnote *footnote)
 {
-        xmlFree(footnote->id);
+        free(footnote->id);
         node_free((struct node *)footnote->node);
         nmc_free(footnote);
 }
@@ -301,23 +298,23 @@ struct sigil
 {
         struct sigil *next;
         YYLTYPE location;
-        xmlChar *id;
+        char *id;
 };
 
 static struct sigil *
-sigil_new(YYLTYPE *location, const xmlChar *string, int length)
+sigil_new(YYLTYPE *location, const char *string, int length)
 {
         struct sigil *sigil = nmc_new(struct sigil);
         sigil->next = NULL;
         sigil->location = *location;
-        sigil->id = xmlCharStrndup((const char *)string, length);
+        sigil->id = strndup(string, length);
         return sigil;
 }
 
 static void
 sigil_free1(struct sigil *sigil)
 {
-        xmlFree(sigil->id);
+        free(sigil->id);
         nmc_free(sigil);
 }
 
@@ -333,7 +330,7 @@ anchor_free1(struct anchor *anchor)
 {
         /* NOTE anchor->node is either on the stack or in the tree, so we don’t
          * need to free it here. */
-        xmlFree(anchor->id);
+        free(anchor->id);
         node_free(anchor->child);
         nmc_free(anchor);
 }
@@ -347,7 +344,7 @@ report_remaining_anchors(struct nmc_parser *parser)
                 list_for_each(struct anchor, q, p->anchors) {
                         first = nmc_parser_error_new(&q->location,
                                                      "reference to undefined footnote: %s",
-                                                     (const char *)q->id);
+                                                     q->id);
                         if (last == NULL)
                                 last = first;
                         if (previous != NULL)
@@ -421,11 +418,11 @@ report_remaining_anchors(struct nmc_parser *parser)
 
 %union {
         struct {
-                const xmlChar *string;
+                const char *string;
                 int length;
         } substring;
         struct {
-                xmlChar *id;
+                char *id;
                 struct nmc_string *string;
         } raw_footnote;
         struct nmc_string *string;
@@ -439,7 +436,7 @@ report_remaining_anchors(struct nmc_parser *parser)
 %printer { fprintf(yyoutput, "%s %s", $$.id, nmc_string_str($$.string)); } <raw_footnote>
 %printer { fprintf(yyoutput, "%s", nmc_string_str($$)); } <string>
 
-%destructor { xmlFree($$.id); nmc_string_free($$.string); } <raw_footnote>
+%destructor { free($$.id); nmc_string_free($$.string); } <raw_footnote>
 %destructor { nmc_string_free($$); } <string>
 %destructor { node_unlink_and_free(parser, $$.first); } <nodes>
 %destructor { node_unlink_and_free(parser, $$); } <node>
@@ -496,10 +493,10 @@ content(enum node_type type, struct nmc_string *string)
 }
 
 static struct node *
-scontent(enum node_type type, const xmlChar *string, int length)
+scontent(enum node_type type, const char *string, int length)
 {
         struct node *n = node(type);
-        n->u.text = (char *)xmlStrndup(string, length);
+        n->u.text = strndup(string, length);
         return n;
 }
 
@@ -569,7 +566,7 @@ static void
 footnote(struct nmc_parser *parser, struct footnote *footnotes)
 {
         list_for_each_safe(struct footnote, p, n, footnotes) {
-                struct anchor *anchors = anchors_remove(&parser->anchors, (const char *)p->id);
+                struct anchor *anchors = anchors_remove(&parser->anchors, p->id);
                 if (anchors == NULL) {
                         nmc_parser_error(parser,
                                          &p->location,
@@ -591,7 +588,7 @@ fibling(struct nmc_parser *parser, struct footnote *footnotes, struct footnote *
 {
         struct footnote *last;
         list_for_each(struct footnote, p, footnotes) {
-                if (xmlStrcmp(footnote->id, p->id) == 0) {
+                if (strcmp(footnote->id, p->id) == 0) {
                         char *s = nmc_location_str(&p->location);
                         nmc_parser_error(parser, &footnote->location,
                                          "footnote already defined at %s: %s", s, p->id);
@@ -605,7 +602,7 @@ fibling(struct nmc_parser *parser, struct footnote *footnotes, struct footnote *
 }
 
 static struct node *
-definition(const xmlChar *string, int length, struct node *item)
+definition(const char *string, int length, struct node *item)
 {
         struct node *n = scontent(NODE_TERM, string, length);
         n->next = node(NODE_DEFINITION);
@@ -624,7 +621,7 @@ anchor(struct nmc_parser *parser, struct node *atom, struct sigil *sigils)
                 struct anchor *anchor = nmc_new(struct anchor);
                 anchor->next = NULL;
                 anchor->location = p->location;
-                anchor->id = xmlStrdup(p->id);
+                anchor->id = strdup(p->id);
                 anchor->node = nmc_new(struct auxiliary_node);
                 anchor->node->node.next = NULL;
                 anchor->node->node.type = NODE_ANCHOR;
@@ -645,15 +642,15 @@ anchor(struct nmc_parser *parser, struct node *atom, struct sigil *sigils)
 }
 
 static struct node *
-buffer(const xmlChar *string, int length)
+buffer(const char *string, int length)
 {
         struct node *n = node(NODE_BUFFER);
-        n->u.buffer = nmc_string_new((const char *)string, length);
+        n->u.buffer = nmc_string_new(string, length);
         return n;
 }
 
 static inline struct node *
-word(struct nmc_parser *parser, const xmlChar *string, int length, struct sigil *sigils)
+word(struct nmc_parser *parser, const char *string, int length, struct sigil *sigils)
 {
         if (sigils == NULL)
                 return buffer(string, length);
@@ -661,10 +658,10 @@ word(struct nmc_parser *parser, const xmlChar *string, int length, struct sigil 
 }
 
 static inline struct nodes
-append_text(struct nodes inlines, const xmlChar *string, int length)
+append_text(struct nodes inlines, const char *string, int length)
 {
         if (inlines.last->type == NODE_BUFFER) {
-                nmc_string_append(inlines.last->u.buffer, (const char *)string, length);
+                nmc_string_append(inlines.last->u.buffer, string, length);
                 return inlines;
         }
 
@@ -674,7 +671,7 @@ append_text(struct nodes inlines, const xmlChar *string, int length)
 static inline struct nodes
 append_space(struct nodes inlines)
 {
-        return append_text(inlines, BAD_CAST " ", 1);
+        return append_text(inlines, " ", 1);
 }
 
 static inline struct nodes
@@ -700,7 +697,7 @@ append_inline(struct nodes inlines, struct node *node)
 }
 
 static inline struct nodes
-append_word(struct nmc_parser *parser, struct nodes inlines, const xmlChar *string, int length, struct sigil *sigils)
+append_word(struct nmc_parser *parser, struct nodes inlines, const char *string, int length, struct sigil *sigils)
 {
         return (sigils != NULL) ?
                 inline_sibling(inlines, word(parser, string, length, sigils)) :
@@ -708,7 +705,7 @@ append_word(struct nmc_parser *parser, struct nodes inlines, const xmlChar *stri
 }
 
 static inline struct nodes
-append_spaced_word(struct nmc_parser *parser, struct nodes inlines, const xmlChar *string, int length, struct sigil *sigils)
+append_spaced_word(struct nmc_parser *parser, struct nodes inlines, const char *string, int length, struct sigil *sigils)
 {
         return (sigils != NULL) ?
                 append_inline(inlines, word(parser, string, length, sigils)) :
