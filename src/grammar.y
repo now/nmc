@@ -34,8 +34,9 @@ char *nmc_location_str(const YYLTYPE *location);
 #include <stdlib.h>
 #include <string.h>
 
-#include "list.h"
 #include "nmc.h"
+#include "ext.h"
+#include "list.h"
 #include "node.h"
 #include "parser.h"
 #include "string.h"
@@ -254,11 +255,11 @@ nmc_location_str(const YYLTYPE *l)
         char *s;
         if (l->first_line == l->last_line) {
                 if (l->first_column == l->last_column)
-                        asprintf(&s, "%d:%d", l->first_line, l->first_column);
+                        nmc_asprintf(&s, "%d:%d", l->first_line, l->first_column);
                 else
-                        asprintf(&s, "%d.%d-%d", l->first_line, l->first_column, l->last_column);
+                        nmc_asprintf(&s, "%d.%d-%d", l->first_line, l->first_column, l->last_column);
         } else
-                asprintf(&s, "%d.%d-%d.%d", l->first_line, l->first_column, l->last_line, l->last_column);
+                nmc_asprintf(&s, "%d.%d-%d.%d", l->first_line, l->first_column, l->last_line, l->last_column);
         return s;
 }
 

@@ -7,9 +7,10 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "nmc.h"
+#include "ext.h"
 #include "grammar.h"
 #include "list.h"
-#include "nmc.h"
 #include "parser.h"
 #include "string.h"
 #include "unicode.h"
@@ -26,21 +27,10 @@ nmc_parser_error_free(struct nmc_parser_error *error)
 struct nmc_parser_error *
 nmc_parser_error_newv(YYLTYPE *location, const char *message, va_list args)
 {
-        va_list saved;
-
-        va_copy(saved, args);
-
-        char buf[1];
-        int size = vsnprintf(buf, sizeof(buf), message, args);
-
         struct nmc_parser_error *error = nmc_new(struct nmc_parser_error);
         error->next = NULL;
         error->location = *location;
-        error->message = nmc_new_n(char, size + 1);
-        vsnprintf(error->message, size + 1, message, saved);
-
-        va_end(saved);
-
+        nmc_vasprintf(&error->message, message, args);
         return error;
 }
 

@@ -33,7 +33,7 @@ report_nmc_parser_error(const struct nmc_parser_error *error)
 {
         char *s = nmc_location_str(&error->location);
         fprintf(stderr, "%s: %s\n", s, error->message);
-        free(s);
+        nmc_free(s);
 
         return 1;
 }

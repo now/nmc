@@ -14,6 +14,8 @@ BUILT_SOURCES = \
 bin_PROGRAMS = src/nmc
 
 src_nmc_SOURCES = \
+	src/ext.c \
+	src/ext.h \
 	src/list.h \
 	src/parser.c \
 	src/nmc.c \
