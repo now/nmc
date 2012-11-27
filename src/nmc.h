@@ -13,6 +13,10 @@
         __attribute__((format(printf, format_index, first_argument_index)))
 #endif
 
+#ifndef PURE
+#  define PURE __attribute__((pure))
+#endif
+
 #ifndef UNUSED
 #  define UNUSED(v) v __attribute__((__unused__))
 #endif

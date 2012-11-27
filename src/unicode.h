@@ -8,7 +8,7 @@ extern const char * const u_skip_lengths;
 
 #define u_next(p) ((p) + u_skip_lengths[*(const unsigned char *)(p)])
 
-uchar u_dref(const char *u) __attribute__((pure));
+PURE uchar u_dref(const char *u);
 
 static inline uchar
 u_lref(const char *u, size_t *length)
