@@ -2,7 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "nmc.h"
+#include "private.h"
 #include "ext.h"
 
 int

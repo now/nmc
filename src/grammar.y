@@ -1,5 +1,7 @@
 %code requires
 {
+#include "nmc.h"
+
 struct nmc_parser;
 
 void nmc_grammar_initialize(void);
@@ -34,7 +36,7 @@ char *nmc_location_str(const YYLTYPE *location);
 #include <stdlib.h>
 #include <string.h>
 
-#include "nmc.h"
+#include "private.h"
 #include "ext.h"
 #include "list.h"
 #include "node.h"

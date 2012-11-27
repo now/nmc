@@ -3,8 +3,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "private.h"
 #include "list.h"
-#include "nmc.h"
 #include "string.h"
 
 struct nmc_string

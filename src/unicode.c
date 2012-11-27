@@ -3,7 +3,7 @@
 #include <stdint.h>
 #include <stdio.h>
 
-#include "nmc.h"
+#include "private.h"
 #include "unicode.h"
 
 #define UNICODE_LAST_CHAR 0x10ffff
