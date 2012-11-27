@@ -5,7 +5,6 @@ AC_CONFIG_AUX_DIR([build])
 AM_INIT_AUTOMAKE([foreign silent-rules subdir-objects -Wall -Werror])
 AM_MISSING_PROG([AUTOM4TE], [autom4te])
 AM_SILENT_RULES([yes])
-AC_PROG_CC
 AC_PROG_CC_C99
 AM_PROG_CC_C_O
 
