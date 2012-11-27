@@ -41,7 +41,6 @@ if test "${enableval}" = yes; then
   nmc_WARN_ADD([-Winit-self])
   nmc_WARN_ADD([-Winline])
   nmc_WARN_ADD([-Wmissing-declarations])
-  nmc_WARN_ADD([-Wmissing-format-attribute])
   nmc_WARN_ADD([-Wmissing-include-dirs])
   nmc_WARN_ADD([-Wmissing-noreturn])
   nmc_WARN_ADD([-Wmissing-prototypes])
