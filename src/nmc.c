@@ -8,9 +8,9 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "private.h"
+#include <private.h>
 #include "grammar.h"
-#include "list.h"
+#include <nmc/list.h>
 #include "node.h"
 #include "parser.h"
 #include "unicode.h"

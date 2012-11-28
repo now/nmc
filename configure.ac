@@ -7,6 +7,8 @@ AM_MISSING_PROG([AUTOM4TE], [autom4te])
 AM_SILENT_RULES([yes])
 AC_PROG_CC_C99
 AM_PROG_CC_C_O
+AC_PROG_RANLIB
+AM_PROG_AR
 
 AC_DEFUN([nmc_WARN_ADD],
 [AS_VAR_PUSHDEF([nmc_Warn], [nmc_cv_warn_$1])dnl

@@ -1,6 +1,6 @@
 %code requires
 {
-#include "nmc.h"
+#include <nmc.h>
 
 struct nmc_parser;
 
@@ -36,9 +36,9 @@ char *nmc_location_str(const YYLTYPE *location);
 #include <stdlib.h>
 #include <string.h>
 
-#include "private.h"
+#include <private.h>
 #include "ext.h"
-#include "list.h"
+#include <nmc/list.h>
 #include "node.h"
 #include "parser.h"
 #include "string.h"

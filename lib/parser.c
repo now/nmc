@@ -7,11 +7,11 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "private.h"
+#include <private.h>
 #include "ext.h"
 #include "grammar.h"
-#include "list.h"
-#include "nmc.h"
+#include <nmc/list.h>
+#include <nmc.h>
 #include "parser.h"
 #include "string.h"
 #include "unicode.h"

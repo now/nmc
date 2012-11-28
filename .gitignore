@@ -1,6 +1,8 @@
 *.o
+.deps/
 *.dSYM/
 build/
+.dirstamp
 Makefile
 Makefile.in
 TAGS
@@ -10,12 +12,11 @@ config.h.in
 config.log
 config.status
 configure
-src/.deps/
-src/.dirstamp
+lib/grammar.c
+lib/grammar.h
+lib/grammar.output
+lib/libnmc.a
 src/nmc
-src/grammar.c
-src/grammar.h
-src/grammar.output
 stamp-h1
 test/atconfig
 test/atlocal

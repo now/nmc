@@ -1,4 +1,5 @@
 AM_CFLAGS = $(WARN_CFLAGS) $(WERROR_CFLAGS)
+AM_CPPFLAGS = -I$(top_srcdir)/common -I$(top_srcdir)/include
 
 AM_YFLAGS = -d -v
 
@@ -8,26 +9,42 @@ noinst_PROGRAMS = \
 build_ucategory_SOURCES = \
 	build/ucategory.c
 
+include_HEADERS = \
+	include/nmc.h
+
+pkginclude_HEADERS = \
+	include/nmc/list.h
+
+lib_LIBRARIES = \
+	lib/libnmc.a
+
+lib_libnmc_a_SOURCES = \
+	common/private.h \
+	lib/ext.c \
+	lib/ext.h \
+	lib/grammar.y \
+	lib/node.c \
+	lib/node.h \
+	lib/parser.c \
+	lib/string.c \
+	lib/string.h \
+	lib/ucategory.h \
+	lib/unicode.c \
+	lib/unicode.h
+
 BUILT_SOURCES = \
-	src/grammar.h
+	lib/grammar.h
 
 bin_PROGRAMS = src/nmc
 
+# TODO Temporary, until we move all headers under lib’s content to include/nmc.h
+src_nmc_CPPFLAGS = $(AM_CPPFLAGS) -I$(top_srcdir)/lib
+
 src_nmc_SOURCES = \
-	src/ext.c \
-	src/ext.h \
-	src/list.h \
-	src/parser.c \
-	src/nmc.c \
-	src/nmc.h \
-	src/node.c \
-	src/node.h \
-	src/string.c \
-	src/string.h \
-	src/grammar.y \
-	src/ucategory.h \
-	src/unicode.c \
-	src/unicode.h
+	common/private.h \
+	src/nmc.c
+
+src_nmc_LDADD = lib/libnmc.a
 
 src/ucategory.h: $(srcdir)/build/ucategory
 	$(srcdir)/build/ucategory < UnicodeData.txt > $@
