@@ -9,11 +9,8 @@
 #include <unistd.h>
 
 #include <private.h>
-#include "grammar.h"
+#include <nmc.h>
 #include <nmc/list.h>
-#include "node.h"
-#include "parser.h"
-#include "unicode.h"
 
 extern int nmc_grammar_debug;
 

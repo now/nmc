@@ -37,9 +37,6 @@ BUILT_SOURCES = \
 
 bin_PROGRAMS = src/nmc
 
-# TODO Temporary, until we move all headers under lib’s content to include/nmc.h
-src_nmc_CPPFLAGS = $(AM_CPPFLAGS) -I$(top_srcdir)/lib
-
 src_nmc_SOURCES = \
 	common/private.h \
 	src/nmc.c

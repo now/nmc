@@ -4,8 +4,8 @@
 
 #include <private.h>
 #include "grammar.h"
+#include <nmc.h>
 #include <nmc/list.h>
-#include "node.h"
 #include "string.h"
 
 enum node_level

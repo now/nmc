@@ -1,19 +1,7 @@
 %code requires
 {
-#include <nmc.h>
-
+#define YYLTYPE struct nmc_location
 struct nmc_parser;
-
-void nmc_grammar_initialize(void);
-void nmc_grammar_finalize(void);
-
-struct anchor;
-
-void anchor_free1(struct anchor *anchor);
-
-struct anchors;
-
-void anchors_free(struct anchors *anchors);
 
 struct nodes
 {
@@ -24,13 +12,20 @@ struct nodes
 
 %code provides
 {
-char *nmc_location_str(const YYLTYPE *location);
+struct anchor;
+
+void anchor_free1(struct anchor *anchor);
+
+struct anchors;
+
+void anchors_free(struct anchors *anchors);
 }
 
 %code
 {
 #include <sys/types.h>
 #include <regex.h>
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdbool.h>
 #include <stdlib.h>
@@ -38,8 +33,8 @@ char *nmc_location_str(const YYLTYPE *location);
 
 #include <private.h>
 #include "ext.h"
+#include <nmc.h>
 #include <nmc/list.h>
-#include "node.h"
 #include "parser.h"
 #include "string.h"
 
@@ -252,7 +247,7 @@ define(const char *content)
 }
 
 char *
-nmc_location_str(const YYLTYPE *l)
+nmc_location_str(const struct nmc_location *l)
 {
         char *s;
         if (l->first_line == l->last_line) {

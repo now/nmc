@@ -10,8 +10,8 @@
 #include <private.h>
 #include "ext.h"
 #include "grammar.h"
-#include <nmc/list.h>
 #include <nmc.h>
+#include <nmc/list.h>
 #include "parser.h"
 #include "string.h"
 #include "unicode.h"
