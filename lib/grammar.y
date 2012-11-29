@@ -14,7 +14,9 @@ struct nodes
 {
 struct anchor;
 
-void anchor_free1(struct anchor *anchor);
+struct anchor_node;
+
+void anchor_node_free1(struct anchor_node *node);
 
 struct anchors;
 
@@ -41,11 +43,37 @@ void anchors_free(struct anchors *anchors);
 struct anchor
 {
         struct anchor *next;
-        YYLTYPE location;
+        struct nmc_location location;
         char *id;
-        struct auxiliary_node *node;
-        struct node *child;
+        struct anchor_node *node;
 };
+
+static void
+anchor_free1(struct anchor *anchor)
+{
+        free(anchor->id);
+        /* NOTE anchor->node is either on the stack or in the tree, so we don’t
+         * need to free it here. */
+        nmc_free(anchor);
+}
+
+struct anchor_node
+{
+        struct node node;
+        union {
+                struct {
+                        const char *name;
+                        struct auxiliary_node_attribute *attributes;
+                } auxiliary;
+                struct anchor *anchor;
+        } u;
+};
+
+void
+anchor_node_free1(struct anchor_node *node)
+{
+        anchor_free1(node->u.anchor);
+}
 
 struct anchors {
         struct anchors *next;
@@ -128,10 +156,10 @@ anchor_unlink(struct node *node, struct nmc_parser *parser)
 {
         if (node->type != NODE_ANCHOR)
                 return;
-        struct anchors *anchors = anchors_find(parser->anchors, node->u.anchor->id);
+        struct anchors *anchors = anchors_find(parser->anchors, ((struct anchor_node *)node)->u.anchor->id);
         struct anchor *p = NULL;
         list_for_each_safe(struct anchor, c, n, anchors->anchors) {
-                if (c->node == (struct auxiliary_node *)node) {
+                if (c->node == (struct anchor_node *)node) {
                         if (p == NULL)
                                 anchors->anchors = n;
                         else
@@ -321,16 +349,6 @@ sigil_free(struct sigil *sigil)
 {
         list_for_each_safe(struct sigil, p, n, sigil)
                 sigil_free1(p);
-}
-
-void
-anchor_free1(struct anchor *anchor)
-{
-        /* NOTE anchor->node is either on the stack or in the tree, so we don’t
-         * need to free it here. */
-        free(anchor->id);
-        node_free(anchor->child);
-        nmc_free(anchor);
 }
 
 static void
@@ -551,11 +569,9 @@ update_anchors(struct anchor *anchors, struct auxiliary_node *node)
 {
         list_for_each_safe(struct anchor, p, n, anchors) {
                 p->node->node.type = node->node.type;
-                p->node->node.u.children = p->child;
-                p->node->name = node->name;
-                p->node->attributes = node->attributes;
+                p->node->u.auxiliary.name = node->name;
+                p->node->u.auxiliary.attributes = node->attributes;
                 p->node = NULL;
-                p->child = NULL;
                 anchor_free1(p);
         }
 }
@@ -620,16 +636,16 @@ anchor(struct nmc_parser *parser, struct node *atom, struct sigil *sigils)
                 anchor->next = NULL;
                 anchor->location = p->location;
                 anchor->id = strdup(p->id);
-                anchor->node = nmc_new(struct auxiliary_node);
+                anchor->node = nmc_new(struct anchor_node);
                 anchor->node->node.next = NULL;
                 anchor->node->node.type = NODE_ANCHOR;
-                anchor->node->node.u.anchor = anchor;
+                anchor->node->u.anchor = anchor;
                 if (outermost == atom) {
-                        anchor->child = atom;
+                        anchor->node->node.u.children = atom;
                         outermost = (struct node *)anchor->node;
                 } else {
-                        anchor->child = outermost->u.anchor->child;
-                        outermost->u.anchor->child = (struct node *)anchor->node;
+                        anchor->node->node.u.children = outermost->u.children;
+                        outermost->u.children = (struct node *)anchor->node;
                 }
 
                 parser->anchors = anchors_cons(parser->anchors, anchor);
