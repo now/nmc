@@ -6,7 +6,6 @@
 #include "grammar.h"
 #include <nmc.h>
 #include <nmc/list.h>
-#include "string.h"
 
 enum node_level
 {
@@ -145,7 +144,7 @@ node_free(struct node *node)
                                 last = last->next;
                         break;
                 case NODE_BUFFER:
-                        nmc_string_free(p->u.buffer);
+                        buffer_node_free1((struct buffer_node *)p);
                         break;
                 case NODE_TEXT:
                         nmc_free(p->u.text);

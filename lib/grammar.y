@@ -21,6 +21,10 @@ void anchor_node_free1(struct anchor_node *node);
 struct anchors;
 
 void anchors_free(struct anchors *anchors);
+
+struct buffer_node;
+
+void buffer_node_free1(struct buffer_node *node);
 }
 
 %code
@@ -177,6 +181,21 @@ node_unlink_and_free(struct nmc_parser *parser, struct node *node)
         /* TODO Once nmc_node_traverse can actually handle reporting OOM, if
          * that occurs, parser->anchors must be completely cleared. */
         node_free(node);
+}
+
+struct buffer_node
+{
+        struct node node;
+        union {
+                char *text;
+                struct nmc_string *buffer;
+        } u;
+};
+
+void
+buffer_node_free1(struct buffer_node *node)
+{
+        nmc_string_free(node->u.buffer);
 }
 
 typedef struct auxiliary_node *(*definefn)(const char *, regmatch_t *);
@@ -658,9 +677,11 @@ anchor(struct nmc_parser *parser, struct node *atom, struct sigil *sigils)
 static struct node *
 buffer(const char *string, int length)
 {
-        struct node *n = node(NODE_BUFFER);
+        struct buffer_node *n = nmc_new(struct buffer_node);
+        n->node.next = NULL;
+        n->node.type = NODE_BUFFER;
         n->u.buffer = nmc_string_new(string, length);
-        return n;
+        return (struct node *)n;
 }
 
 static inline struct node *
@@ -675,7 +696,7 @@ static inline struct nodes
 append_text(struct nodes inlines, const char *string, int length)
 {
         if (inlines.last->type == NODE_BUFFER) {
-                nmc_string_append(inlines.last->u.buffer, string, length);
+                nmc_string_append(((struct buffer_node *)inlines.last)->u.buffer, string, length);
                 return inlines;
         }
 
@@ -692,8 +713,9 @@ static inline struct nodes
 textify(struct nodes inlines)
 {
         if (inlines.last->type == NODE_BUFFER) {
-                inlines.last->type = NODE_TEXT;
-                inlines.last->u.text = nmc_string_str_free(inlines.last->u.buffer);
+                struct buffer_node *buffer = (struct buffer_node *)inlines.last;
+                buffer->node.type = NODE_TEXT;
+                buffer->u.text = nmc_string_str_free(buffer->u.buffer);
         }
         return inlines;
 }

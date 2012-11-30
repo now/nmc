@@ -35,7 +35,6 @@ struct node
         union {
                 struct node *children;
                 char *text;
-                struct nmc_string *buffer;
         } u;
 };
 
