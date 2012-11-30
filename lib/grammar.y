@@ -676,9 +676,9 @@ buffer(struct substring substring)
 static inline struct node *
 word(struct nmc_parser *parser, struct substring substring, struct sigil *sigils)
 {
-        if (sigils == NULL)
-                return buffer(substring);
-        return anchor(parser, subtext(NODE_TEXT, substring), sigils);
+        return (sigils != NULL) ?
+                anchor(parser, subtext(NODE_TEXT, substring), sigils) :
+                buffer(substring);
 }
 
 static inline struct nodes
