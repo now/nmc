@@ -220,15 +220,22 @@ definitions_push(const char *pattern, definefn define)
         definitions = list_cons(definition, definitions);
 }
 
+static inline struct node *
+node_init(struct node *node, enum node_type type)
+{
+        node->next = NULL;
+        node->type = type;
+        return node;
+}
+#define node_new(stype, type) ((stype *)node_init((struct node *)nmc_new(stype), type))
+
 static struct auxiliary_node *
 definition_element(const char *name, const char *buffer, regmatch_t *matches, const char **attributes)
 {
         int n = 0;
         for (const char **p = attributes; *p != NULL; p++)
                 n++;
-        struct auxiliary_node *d = nmc_new(struct auxiliary_node);
-        d->node.node.next = NULL;
-        d->node.node.type = NODE_AUXILIARY;
+        struct auxiliary_node *d = node_new(struct auxiliary_node, NODE_AUXILIARY);
         d->node.children = NULL;
         d->name = name;
         d->attributes = nmc_new_n(struct auxiliary_node_attribute, n + 1);
@@ -504,9 +511,7 @@ nmc_grammar_error(YYLTYPE *location,
 static struct node *
 text_node(enum node_type type, char *text)
 {
-        struct text_node *n = nmc_new(struct text_node);
-        n->node.next = NULL;
-        n->node.type = type;
+        struct text_node *n = node_new(struct text_node, type);
         n->text = text;
         return (struct node *)n;
 }
@@ -553,9 +558,7 @@ nibling(struct node *sibling, struct nodes siblings)
 static inline struct node *
 wrap1(enum node_type type, struct node *children)
 {
-        struct parent_node *n = nmc_new(struct parent_node);
-        n->node.next = NULL;
-        n->node.type = type;
+        struct parent_node *n = node_new(struct parent_node, type);
         n->children = children;
         return (struct node *)n;
 }
@@ -643,9 +646,7 @@ anchor(struct nmc_parser *parser, struct node *atom, struct sigil *sigils)
                 anchor->next = NULL;
                 anchor->location = p->location;
                 anchor->id = strdup(p->id);
-                anchor->node = nmc_new(struct anchor_node);
-                anchor->node->node.node.next = NULL;
-                anchor->node->node.node.type = NODE_ANCHOR;
+                anchor->node = node_new(struct anchor_node, NODE_ANCHOR);
                 anchor->node->u.anchor = anchor;
                 if (outermost == atom) {
                         anchor->node->node.children = atom;
@@ -665,9 +666,7 @@ anchor(struct nmc_parser *parser, struct node *atom, struct sigil *sigils)
 static struct node *
 buffer(const char *string, int length)
 {
-        struct buffer_node *n = nmc_new(struct buffer_node);
-        n->node.next = NULL;
-        n->node.type = NODE_BUFFER;
+        struct buffer_node *n = node_new(struct buffer_node, NODE_BUFFER);
         n->u.buffer = nmc_string_new(string, length);
         return (struct node *)n;
 }
