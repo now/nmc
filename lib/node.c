@@ -147,7 +147,7 @@ node_free(struct node *node)
                         buffer_node_free1((struct buffer_node *)p);
                         break;
                 case NODE_TEXT:
-                        nmc_free(p->u.text);
+                        nmc_free(((struct text_node *)p)->text);
                         break;
                 case NODE_AUXILIARY: {
                         struct auxiliary_node *as = (struct auxiliary_node *)p;
@@ -163,7 +163,7 @@ node_free(struct node *node)
                                 while (last->next != NULL)
                                         last = last->next;
                         } else
-                                nmc_free(p->u.text);
+                                nmc_free(((struct text_node *)p)->text);
                         break;
                 }
                 struct node *next = p->next;
@@ -258,7 +258,7 @@ xml_enter(struct node *node, struct xml_closure *closure)
 
         if (node->type == NODE_TEXT) {
         text:
-                escape(node->u.text, nmc_lengthof(text_entities), text_entities);
+                escape(((struct text_node *)node)->text, nmc_lengthof(text_entities), text_entities);
                 return;
         }
 

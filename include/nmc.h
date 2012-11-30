@@ -34,8 +34,13 @@ struct node
         enum node_type type;
         union {
                 struct node *children;
-                char *text;
         } u;
+};
+
+struct text_node
+{
+        struct node node;
+        char *text;
 };
 
 struct auxiliary_node_attribute

@@ -511,28 +511,34 @@ node(enum node_type type)
 }
 
 static struct node *
-text(enum node_type type, struct nmc_string *string)
+text_node(enum node_type type, char *text)
 {
-        struct node *n = node(type);
-        n->u.children = node(NODE_TEXT);
-        n->u.children->u.text = nmc_string_str_free(string);
-        return n;
+        struct text_node *n = nmc_new(struct text_node);
+        n->node.next = NULL;
+        n->node.type = type;
+        n->text = text;
+        return (struct node *)n;
 }
 
 static struct node *
 content(enum node_type type, struct nmc_string *string)
 {
+        return text_node(type, nmc_string_str_free(string));
+}
+
+
+static struct node *
+text(enum node_type type, struct nmc_string *string)
+{
         struct node *n = node(type);
-        n->u.text = nmc_string_str_free(string);
+        n->u.children = content(NODE_TEXT, string);
         return n;
 }
 
 static struct node *
 scontent(enum node_type type, const char *string, int length)
 {
-        struct node *n = node(type);
-        n->u.text = strndup(string, length);
-        return n;
+        return text_node(type, strndup(string, length));
 }
 
 static inline struct nodes
