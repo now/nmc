@@ -32,9 +32,12 @@ struct node
 {
         struct node *next;
         enum node_type type;
-        union {
-                struct node *children;
-        } u;
+};
+
+struct parent_node
+{
+        struct node node;
+        struct node *children;
 };
 
 struct text_node
@@ -51,7 +54,7 @@ struct auxiliary_node_attribute
 
 struct auxiliary_node
 {
-        struct node node;
+        struct parent_node node;
         const char *name;
         struct auxiliary_node_attribute *attributes;
 };

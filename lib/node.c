@@ -101,7 +101,7 @@ nmc_node_traverse(struct node *node, traversefn enter, traversefn leave, void *c
                         if (types[n->type].nested) {
                                 actions = action_new(&used, actions, false, n);
                                 if (!types[n->type].text)
-                                        actions = action_new(&used, actions, true, n->u.children);
+                                        actions = action_new(&used, actions, true, ((struct parent_node *)n)->children);
                         }
                 } else {
                         leave(actions->nodes, closure);
@@ -119,7 +119,7 @@ nmc_node_traverse_r(struct node *node, traversefn enter, traversefn leave, void 
                 enter(p, closure);
                 if (types[p->type].nested) {
                         if (!types[p->type].text)
-                                nmc_node_traverse_r(p->u.children, enter, leave, closure);
+                                nmc_node_traverse_r(((struct parent_node *)p)->children, enter, leave, closure);
                         leave(p, closure);
                 }
         }
@@ -139,7 +139,7 @@ node_free(struct node *node)
                 switch (p->type) {
                 case NODE_ANCHOR:
                         anchor_node_free1((struct anchor_node *)p);
-                        last->next = p->u.children;
+                        last->next = ((struct parent_node *)p)->children;
                         while (last->next != NULL)
                                 last = last->next;
                         break;
@@ -159,7 +159,7 @@ node_free(struct node *node)
                 default:
                         /* TODO Gheesh, add free function to types already. */
                         if (!types[p->type].text) {
-                                last->next = p->u.children;
+                                last->next = ((struct parent_node *)p)->children;
                                 while (last->next != NULL)
                                         last = last->next;
                         } else

@@ -63,7 +63,7 @@ anchor_free1(struct anchor *anchor)
 
 struct anchor_node
 {
-        struct node node;
+        struct parent_node node;
         union {
                 struct {
                         const char *name;
@@ -227,9 +227,9 @@ definition_element(const char *name, const char *buffer, regmatch_t *matches, co
         for (const char **p = attributes; *p != NULL; p++)
                 n++;
         struct auxiliary_node *d = nmc_new(struct auxiliary_node);
-        d->node.next = NULL;
-        d->node.type = NODE_AUXILIARY;
-        d->node.u.children = NULL;
+        d->node.node.next = NULL;
+        d->node.node.type = NODE_AUXILIARY;
+        d->node.children = NULL;
         d->name = name;
         d->attributes = nmc_new_n(struct auxiliary_node_attribute, n + 1);
         regmatch_t *m = &matches[1];
@@ -502,15 +502,6 @@ nmc_grammar_error(YYLTYPE *location,
 }
 
 static struct node *
-node(enum node_type type)
-{
-        struct node *n = nmc_new(struct node);
-        n->next = NULL;
-        n->type = type;
-        return n;
-}
-
-static struct node *
 text_node(enum node_type type, char *text)
 {
         struct text_node *n = nmc_new(struct text_node);
@@ -524,15 +515,6 @@ static struct node *
 content(enum node_type type, struct nmc_string *string)
 {
         return text_node(type, nmc_string_str_free(string));
-}
-
-
-static struct node *
-text(enum node_type type, struct nmc_string *string)
-{
-        struct node *n = node(type);
-        n->u.children = content(NODE_TEXT, string);
-        return n;
 }
 
 static struct node *
@@ -571,9 +553,11 @@ nibling(struct node *sibling, struct nodes siblings)
 static inline struct node *
 wrap1(enum node_type type, struct node *children)
 {
-        struct node *n = node(type);
-        n->u.children = children;
-        return n;
+        struct parent_node *n = nmc_new(struct parent_node);
+        n->node.next = NULL;
+        n->node.type = type;
+        n->children = children;
+        return (struct node *)n;
 }
 
 static inline struct node *
@@ -593,7 +577,7 @@ static void
 update_anchors(struct anchor *anchors, struct auxiliary_node *node)
 {
         list_for_each_safe(struct anchor, p, n, anchors) {
-                p->node->node.type = node->node.type;
+                p->node->node.node.type = node->node.node.type;
                 p->node->u.auxiliary.name = node->name;
                 p->node->u.auxiliary.attributes = node->attributes;
                 p->node = NULL;
@@ -644,10 +628,8 @@ static struct node *
 definition(const char *string, int length, struct node *item)
 {
         struct node *n = scontent(NODE_TERM, string, length);
-        n->next = node(NODE_DEFINITION);
-        n->next->u.children = item->u.children;
-        item->u.children = n;
-
+        n->next = wrap1(NODE_DEFINITION, ((struct parent_node *)item)->children);
+        ((struct parent_node *)item)->children = n;
         return item;
 }
 
@@ -662,15 +644,15 @@ anchor(struct nmc_parser *parser, struct node *atom, struct sigil *sigils)
                 anchor->location = p->location;
                 anchor->id = strdup(p->id);
                 anchor->node = nmc_new(struct anchor_node);
-                anchor->node->node.next = NULL;
-                anchor->node->node.type = NODE_ANCHOR;
+                anchor->node->node.node.next = NULL;
+                anchor->node->node.node.type = NODE_ANCHOR;
                 anchor->node->u.anchor = anchor;
                 if (outermost == atom) {
-                        anchor->node->node.u.children = atom;
+                        anchor->node->node.children = atom;
                         outermost = (struct node *)anchor->node;
                 } else {
-                        anchor->node->node.u.children = outermost->u.children;
-                        outermost->u.children = (struct node *)anchor->node;
+                        anchor->node->node.children = ((struct parent_node *)outermost)->children;
+                        ((struct parent_node *)outermost)->children = (struct node *)anchor->node;
                 }
 
                 parser->anchors = anchors_cons(parser->anchors, anchor);
@@ -758,7 +740,7 @@ append_spaced_word(struct nmc_parser *parser, struct nodes inlines, const char *
 %%
 
 nmc: TITLE oblockssections0 {
-        parser->doc = wrap_children(NODE_DOCUMENT, text(NODE_TITLE, $1), $2);
+        parser->doc = wrap_children(NODE_DOCUMENT, wrap1(NODE_TITLE, content(NODE_TEXT, $1)), $2);
         report_remaining_anchors(parser);
 };
 
