@@ -514,13 +514,13 @@ text_node(enum node_type type, char *text)
 }
 
 static struct node *
-content(enum node_type type, struct nmc_string *string)
+text(enum node_type type, struct nmc_string *string)
 {
         return text_node(type, nmc_string_str_free(string));
 }
 
 static struct node *
-scontent(enum node_type type, const char *string, int length)
+ctext(enum node_type type, const char *string, int length)
 {
         return text_node(type, strndup(string, length));
 }
@@ -553,7 +553,7 @@ nibling(struct node *sibling, struct nodes siblings)
 }
 
 static inline struct node *
-wrap1(enum node_type type, struct node *children)
+parent1(enum node_type type, struct node *children)
 {
         struct parent_node *n = node_new(struct parent_node, type);
         n->children = children;
@@ -561,16 +561,16 @@ wrap1(enum node_type type, struct node *children)
 }
 
 static inline struct node *
-wrap(enum node_type type, struct nodes children)
+parent(enum node_type type, struct nodes children)
 {
-        return wrap1(type, children.first);
+        return parent1(type, children.first);
 }
 
 static inline struct node *
-wrap_children(enum node_type type, struct node *first, struct nodes rest)
+parent_children(enum node_type type, struct node *first, struct nodes rest)
 {
         first->next = rest.first;
-        return wrap1(type, first);
+        return parent1(type, first);
 }
 
 static void
@@ -627,8 +627,8 @@ fibling(struct nmc_parser *parser, struct footnote *footnotes, struct footnote *
 static struct node *
 definition(const char *string, int length, struct node *item)
 {
-        struct node *n = scontent(NODE_TERM, string, length);
-        n->next = wrap1(NODE_DEFINITION, ((struct parent_node *)item)->children);
+        struct node *n = ctext(NODE_TERM, string, length);
+        n->next = parent1(NODE_DEFINITION, ((struct parent_node *)item)->children);
         ((struct parent_node *)item)->children = n;
         return item;
 }
@@ -673,7 +673,7 @@ word(struct nmc_parser *parser, const char *string, int length, struct sigil *si
 {
         if (sigils == NULL)
                 return buffer(string, length);
-        return anchor(parser, scontent(NODE_TEXT, string, length), sigils);
+        return anchor(parser, ctext(NODE_TEXT, string, length), sigils);
 }
 
 static inline struct nodes
@@ -736,7 +736,7 @@ append_spaced_word(struct nmc_parser *parser, struct nodes inlines, const char *
 %%
 
 nmc: TITLE oblockssections0 {
-        parser->doc = wrap_children(NODE_DOCUMENT, wrap1(NODE_TITLE, content(NODE_TEXT, $1)), $2);
+        parser->doc = parent_children(NODE_DOCUMENT, parent1(NODE_TITLE, text(NODE_TEXT, $1)), $2);
         report_remaining_anchors(parser);
 };
 
@@ -756,7 +756,7 @@ block: paragraph
 | enumeration
 | definitions
 | quote
-| CODEBLOCK { $$ = content(NODE_CODEBLOCK, $1); }
+| CODEBLOCK { $$ = text(NODE_CODEBLOCK, $1); }
 | table;
 
 sections: footnotedsection { $$ = nodes($1); }
@@ -768,9 +768,9 @@ footnotedsection: section
 oblockseparator: /* empty */
 | BLOCKSEPARATOR;
 
-section: SECTION { parser->want = INDENT; } title oblockssections { $$ = wrap_children(NODE_SECTION, $3, $4); };
+section: SECTION { parser->want = INDENT; } title oblockssections { $$ = parent_children(NODE_SECTION, $3, $4); };
 
-title: inlines { $$ = wrap(NODE_TITLE, $1); };
+title: inlines { $$ = parent(NODE_TITLE, $1); };
 
 oblockssections: /* empty */ { $$ = nodes(NULL); }
 | INDENT blockssections DEDENT { $$ = $2; };
@@ -780,54 +780,54 @@ footnotes: footnote
 
 footnote: FOOTNOTE { $$ = footnote_new(parser, &@$, $1.id, $1.string); };
 
-paragraph: PARAGRAPH inlines { $$ = wrap(NODE_PARAGRAPH, $2); };
+paragraph: PARAGRAPH inlines { $$ = parent(NODE_PARAGRAPH, $2); };
 
-itemization: itemizationitems { $$ = wrap(NODE_ITEMIZATION, $1); };
+itemization: itemizationitems { $$ = parent(NODE_ITEMIZATION, $1); };
 
 itemizationitems: itemizationitem { $$ = nodes($1); }
 | itemizationitems itemizationitem { $$ = sibling($1, $2); };
 
 itemizationitem: ITEMIZATION item { $$ = $2; };
 
-enumeration: enumerationitems { $$ = wrap(NODE_ENUMERATION, $1); };
+enumeration: enumerationitems { $$ = parent(NODE_ENUMERATION, $1); };
 
 enumerationitems: enumerationitem { $$ = nodes($1); }
 | enumerationitems enumerationitem { $$ = sibling($1, $2); };
 
 enumerationitem: ENUMERATION item { $$ = $2; };
 
-definitions: definitionitems { $$ = wrap(NODE_DEFINITIONS, $1); };
+definitions: definitionitems { $$ = parent(NODE_DEFINITIONS, $1); };
 
 definitionitems: definition { $$ = nodes($1); }
 | definitionitems definition { $$ = sibling($1, $2); };
 
 definition: DEFINITION item { $$ = definition($1.string, $1.length, $2); };
 
-quote: lines attribution { $$ = wrap(NODE_QUOTE, sibling($1, $2)); };
+quote: lines attribution { $$ = parent(NODE_QUOTE, sibling($1, $2)); };
 
 lines: line { $$ = nodes($1); }
 | lines line { $$ = sibling($1, $2); };
 
-line: QUOTE inlines { $$ = wrap(NODE_LINE, $2); };
+line: QUOTE inlines { $$ = parent(NODE_LINE, $2); };
 
 attribution: /* empty */ { $$ = NULL; }
-| ATTRIBUTION inlines { $$ = wrap(NODE_ATTRIBUTION, $2); };
+| ATTRIBUTION inlines { $$ = parent(NODE_ATTRIBUTION, $2); };
 
-table: headbody { $$ = wrap(NODE_TABLE, $1); }
+table: headbody { $$ = parent(NODE_TABLE, $1); }
 
-headbody: row { $$ = nodes(wrap1(NODE_BODY, $1)); }
-| row TABLESEPARATOR body { $$ = sibling(nodes(wrap1(NODE_HEAD, $1)), wrap(NODE_BODY, $3)); }
-| row body { $$ = nodes(wrap(NODE_BODY, sibling(nodes($1), $2.first))); };
+headbody: row { $$ = nodes(parent1(NODE_BODY, $1)); }
+| row TABLESEPARATOR body { $$ = sibling(nodes(parent1(NODE_HEAD, $1)), parent(NODE_BODY, $3)); }
+| row body { $$ = nodes(parent(NODE_BODY, sibling(nodes($1), $2.first))); };
 
 body: row { $$ = nodes($1); }
 | body row { $$ = sibling($1, $2); };
 
-row: ROW entries ENTRYSEPARATOR { $$ = wrap(NODE_ROW, $2); };
+row: ROW entries ENTRYSEPARATOR { $$ = parent(NODE_ROW, $2); };
 
 entries: entry { $$ = nodes($1); }
 | entries ENTRYSEPARATOR entry { $$ = sibling($1, $3); };
 
-entry: inlines { $$ = wrap(NODE_ENTRY, $1); };
+entry: inlines { $$ = parent(NODE_ENTRY, $1); };
 
 inlines: ospace sinlines ospace { $$ = textify($2); };
 
@@ -840,9 +840,9 @@ sinlines: WORD sigils { $$ = nodes(word(parser, $1.string, $1.length, $2)); }
 
 anchoredinline: inline sigils { $$ = anchor(parser, $1, $2); };
 
-inline: CODE { $$ = scontent(NODE_CODE, $1.string, $1.length); }
-| EMPHASIS { $$ = scontent(NODE_EMPHASIS, $1.string, $1.length); }
-| BEGINGROUP sinlines ENDGROUP { $$ = wrap(NODE_GROUP, textify($2)); };
+inline: CODE { $$ = ctext(NODE_CODE, $1.string, $1.length); }
+| EMPHASIS { $$ = ctext(NODE_EMPHASIS, $1.string, $1.length); }
+| BEGINGROUP sinlines ENDGROUP { $$ = parent(NODE_GROUP, textify($2)); };
 
 sigils: /* empty */ { $$ = NULL; }
 | sigil
@@ -859,7 +859,7 @@ spaces: spacecontinuation
 spacecontinuation: SPACE
 | CONTINUATION;
 
-item: { parser->want = INDENT; } inlines oblocks { $$ = wrap_children(NODE_ITEM, wrap(NODE_PARAGRAPH, $2), $3); };
+item: { parser->want = INDENT; } inlines oblocks { $$ = parent_children(NODE_ITEM, parent(NODE_PARAGRAPH, $2), $3); };
 
 oblocks: /* empty */ { $$ = nodes(NULL); }
 | INDENT blocks DEDENT { $$ = $2; };
