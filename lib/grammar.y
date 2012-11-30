@@ -3,6 +3,14 @@
 #define YYLTYPE struct nmc_location
 struct nmc_parser;
 
+#include <stddef.h>
+
+struct substring
+{
+        const char *string;
+        size_t length;
+};
+
 struct nodes
 {
         struct node *first;
@@ -459,10 +467,7 @@ report_remaining_anchors(struct nmc_parser *parser)
 %type <nodes> oblocks
 
 %union {
-        struct {
-                const char *string;
-                int length;
-        } substring;
+        struct substring substring;
         struct {
                 char *id;
                 struct nmc_string *string;
@@ -474,7 +479,7 @@ report_remaining_anchors(struct nmc_parser *parser)
         struct sigil *sigil;
 }
 
-%printer { fprintf(yyoutput, "%.*s", $$.length, $$.string); } <substring>
+%printer { fprintf(yyoutput, "%.*s", (int)$$.length, $$.string); } <substring>
 %printer { fprintf(yyoutput, "%s %s", $$.id, nmc_string_str($$.string)); } <raw_footnote>
 %printer { fprintf(yyoutput, "%s", nmc_string_str($$)); } <string>
 
@@ -520,9 +525,9 @@ text(enum node_type type, struct nmc_string *string)
 }
 
 static struct node *
-ctext(enum node_type type, const char *string, int length)
+subtext(enum node_type type, struct substring substring)
 {
-        return text_node(type, strndup(string, length));
+        return text_node(type, strndup(substring.string, substring.length));
 }
 
 static inline struct nodes
@@ -625,9 +630,9 @@ fibling(struct nmc_parser *parser, struct footnote *footnotes, struct footnote *
 }
 
 static struct node *
-definition(const char *string, int length, struct node *item)
+definition(struct substring substring, struct node *item)
 {
-        struct node *n = ctext(NODE_TERM, string, length);
+        struct node *n = subtext(NODE_TERM, substring);
         n->next = parent1(NODE_DEFINITION, ((struct parent_node *)item)->children);
         ((struct parent_node *)item)->children = n;
         return item;
@@ -661,36 +666,36 @@ anchor(struct nmc_parser *parser, struct node *atom, struct sigil *sigils)
 }
 
 static struct node *
-buffer(const char *string, int length)
+buffer(struct substring substring)
 {
         struct buffer_node *n = node_new(struct buffer_node, NODE_BUFFER);
-        n->u.buffer = nmc_string_new(string, length);
+        n->u.buffer = nmc_string_new(substring.string, substring.length);
         return (struct node *)n;
 }
 
 static inline struct node *
-word(struct nmc_parser *parser, const char *string, int length, struct sigil *sigils)
+word(struct nmc_parser *parser, struct substring substring, struct sigil *sigils)
 {
         if (sigils == NULL)
-                return buffer(string, length);
-        return anchor(parser, ctext(NODE_TEXT, string, length), sigils);
+                return buffer(substring);
+        return anchor(parser, subtext(NODE_TEXT, substring), sigils);
 }
 
 static inline struct nodes
-append_text(struct nodes inlines, const char *string, int length)
+append_text(struct nodes inlines, struct substring substring)
 {
         if (inlines.last->type == NODE_BUFFER) {
-                nmc_string_append(((struct buffer_node *)inlines.last)->u.buffer, string, length);
+                nmc_string_append(((struct buffer_node *)inlines.last)->u.buffer, substring.string, substring.length);
                 return inlines;
         }
 
-        return sibling(inlines, buffer(string, length));
+        return sibling(inlines, buffer(substring));
 }
 
 static inline struct nodes
 append_space(struct nodes inlines)
 {
-        return append_text(inlines, " ", 1);
+        return append_text(inlines, (struct substring){ " ", 1 });
 }
 
 static inline struct nodes
@@ -717,19 +722,19 @@ append_inline(struct nodes inlines, struct node *node)
 }
 
 static inline struct nodes
-append_word(struct nmc_parser *parser, struct nodes inlines, const char *string, int length, struct sigil *sigils)
+append_word(struct nmc_parser *parser, struct nodes inlines, struct substring substring, struct sigil *sigils)
 {
         return (sigils != NULL) ?
-                inline_sibling(inlines, word(parser, string, length, sigils)) :
-                append_text(inlines, string, length);
+                inline_sibling(inlines, word(parser, substring, sigils)) :
+                append_text(inlines, substring);
 }
 
 static inline struct nodes
-append_spaced_word(struct nmc_parser *parser, struct nodes inlines, const char *string, int length, struct sigil *sigils)
+append_spaced_word(struct nmc_parser *parser, struct nodes inlines, struct substring substring, struct sigil *sigils)
 {
         return (sigils != NULL) ?
-                append_inline(inlines, word(parser, string, length, sigils)) :
-                append_text(append_space(inlines), string, length);
+                append_inline(inlines, word(parser, substring, sigils)) :
+                append_text(append_space(inlines), substring);
 }
 }
 
@@ -801,7 +806,7 @@ definitions: definitionitems { $$ = parent(NODE_DEFINITIONS, $1); };
 definitionitems: definition { $$ = nodes($1); }
 | definitionitems definition { $$ = sibling($1, $2); };
 
-definition: DEFINITION item { $$ = definition($1.string, $1.length, $2); };
+definition: DEFINITION item { $$ = definition($1, $2); };
 
 quote: lines attribution { $$ = parent(NODE_QUOTE, sibling($1, $2)); };
 
@@ -831,17 +836,17 @@ entry: inlines { $$ = parent(NODE_ENTRY, $1); };
 
 inlines: ospace sinlines ospace { $$ = textify($2); };
 
-sinlines: WORD sigils { $$ = nodes(word(parser, $1.string, $1.length, $2)); }
+sinlines: WORD sigils { $$ = nodes(word(parser, $1, $2)); }
 | anchoredinline { $$ = nodes($1); }
-| sinlines WORD sigils { $$ = append_word(parser, $1, $2.string, $2.length, $3); }
+| sinlines WORD sigils { $$ = append_word(parser, $1, $2, $3); }
 | sinlines anchoredinline { $$ = sibling($1, $2); }
-| sinlines spaces WORD sigils { $$ = append_spaced_word(parser, $1, $3.string, $3.length, $4); }
+| sinlines spaces WORD sigils { $$ = append_spaced_word(parser, $1, $3, $4); }
 | sinlines spaces anchoredinline { $$ = append_inline($1, $3); };
 
 anchoredinline: inline sigils { $$ = anchor(parser, $1, $2); };
 
-inline: CODE { $$ = ctext(NODE_CODE, $1.string, $1.length); }
-| EMPHASIS { $$ = ctext(NODE_EMPHASIS, $1.string, $1.length); }
+inline: CODE { $$ = subtext(NODE_CODE, $1); }
+| EMPHASIS { $$ = subtext(NODE_EMPHASIS, $1); }
 | BEGINGROUP sinlines ENDGROUP { $$ = parent(NODE_GROUP, textify($2)); };
 
 sigils: /* empty */ { $$ = NULL; }
