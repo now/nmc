@@ -500,12 +500,9 @@ nmc_grammar_lex(YYSTYPE *value, YYLTYPE *location, struct nmc_parser *parser)
 }
 
 static void
-nmc_grammar_error(YYLTYPE *location,
-                  struct nmc_parser *parser,
-                  const char *message)
+nmc_grammar_error(YYLTYPE *location, struct nmc_parser *parser, const char *message)
 {
-        nmc_parser_error(parser, location,
-                         "%s", message);
+        nmc_parser_error(parser, location, "%s", message);
 }
 
 static struct node *
