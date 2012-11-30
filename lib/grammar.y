@@ -684,12 +684,11 @@ word(struct nmc_parser *parser, struct substring substring, struct sigil *sigils
 static inline struct nodes
 append_text(struct nodes inlines, struct substring substring)
 {
-        if (inlines.last->type == NODE_BUFFER) {
-                nmc_string_append(((struct buffer_node *)inlines.last)->u.buffer, substring.string, substring.length);
-                return inlines;
-        }
+        if (inlines.last->type != NODE_BUFFER)
+                return sibling(inlines, buffer(substring));
 
-        return sibling(inlines, buffer(substring));
+        nmc_string_append(((struct buffer_node *)inlines.last)->u.buffer, substring.string, substring.length);
+        return inlines;
 }
 
 static inline struct nodes
