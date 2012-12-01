@@ -125,53 +125,6 @@ nmc_node_traverse_r(struct node *node, traversefn enter, traversefn leave, void 
         }
 }
 
-void
-node_free(struct node *node)
-{
-        if (node == NULL)
-                return;
-        struct node *p = node;
-        struct node *last = p;
-        while (last->next != NULL)
-                last = last->next;
-        while (p != NULL) {
-                /* TODO Add free function to types? */
-                switch (p->name) {
-                case NODE_ANCHOR:
-                        anchor_node_free1((struct anchor_node *)p);
-                        last->next = ((struct parent_node *)p)->children;
-                        while (last->next != NULL)
-                                last = last->next;
-                        break;
-                case NODE_BUFFER:
-                        buffer_node_free1((struct buffer_node *)p);
-                        break;
-                case NODE_TEXT:
-                        nmc_free(((struct text_node *)p)->text);
-                        break;
-                case NODE_AUXILIARY: {
-                        struct auxiliary_node *as = (struct auxiliary_node *)p;
-                        for (struct auxiliary_node_attribute *a = as->attributes; a->name != NULL; a++)
-                                nmc_free(a->value);
-                        nmc_free(as->attributes);
-                }
-                        /* fall through */
-                default:
-                        /* TODO Gheesh, add free function to types already. */
-                        if (NODE_HAS_CHILDREN(p)) {
-                                last->next = ((struct parent_node *)p)->children;
-                                while (last->next != NULL)
-                                        last = last->next;
-                        } else
-                                nmc_free(((struct text_node *)p)->text);
-                        break;
-                }
-                struct node *next = p->next;
-                nmc_free(p);
-                p = next;
-        }
-}
-
 struct xml_closure
 {
         int indent;
