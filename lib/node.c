@@ -18,36 +18,36 @@ enum node_level
 static struct {
         const char *name;
         enum node_level level;
-        bool text;
-        bool nested;
 } types[] = {
-        [NODE_DOCUMENT] = { "nml", INDENTING_BLOCK, false, true },
-        [NODE_TITLE] = { "title", BLOCK, false, true },
-        [NODE_PARAGRAPH] = { "p", BLOCK, false, true },
-        [NODE_ITEMIZATION] = { "itemization", INDENTING_BLOCK, false, true },
-        [NODE_ENUMERATION] = { "enumeration", INDENTING_BLOCK, false, true },
-        [NODE_DEFINITIONS] = { "definitions", INDENTING_BLOCK, false, true },
-        [NODE_DEFINITION] = { "definition", INDENTING_BLOCK, false, true },
-        [NODE_TERM] = { "term", BLOCK, true, true },
-        [NODE_ITEM] = { "item", INDENTING_BLOCK, false, true },
-        [NODE_QUOTE] = { "quote", INDENTING_BLOCK, false, true },
-        [NODE_LINE] = { "line", BLOCK, false, true },
-        [NODE_ATTRIBUTION] = { "attribution", BLOCK, false, true },
-        [NODE_CODEBLOCK] = { "code", BLOCK, true, true },
-        [NODE_TABLE] = { "table", INDENTING_BLOCK, false, true },
-        [NODE_HEAD] = { "head", INDENTING_BLOCK, false, true },
-        [NODE_BODY] = { "body", INDENTING_BLOCK, false, true },
-        [NODE_ROW] = { "row", INDENTING_BLOCK, false, true },
-        [NODE_ENTRY] = { "entry", BLOCK, false, true },
-        [NODE_SECTION] = { "section", INDENTING_BLOCK, false, true },
-        [NODE_CODE] = { "code", INLINE, true, true },
-        [NODE_EMPHASIS] = { "emphasis", INLINE, true, true },
-        [NODE_GROUP] = { NULL, INLINE, false, true },
-        [NODE_BUFFER] = { NULL, ILLEGAL, false, false },
-        [NODE_TEXT] = { NULL, INLINE, true, false },
-        [NODE_ANCHOR] = { NULL, ILLEGAL, false, false },
-        [NODE_AUXILIARY] = { NULL, INLINE, false, true }
+        [NODE_DOCUMENT] = { "nml", INDENTING_BLOCK },
+        [NODE_TITLE] = { "title", BLOCK },
+        [NODE_PARAGRAPH] = { "p", BLOCK },
+        [NODE_ITEMIZATION] = { "itemization", INDENTING_BLOCK },
+        [NODE_ENUMERATION] = { "enumeration", INDENTING_BLOCK },
+        [NODE_DEFINITIONS] = { "definitions", INDENTING_BLOCK },
+        [NODE_DEFINITION] = { "definition", INDENTING_BLOCK },
+        [NODE_TERM] = { "term", BLOCK },
+        [NODE_ITEM] = { "item", INDENTING_BLOCK },
+        [NODE_QUOTE] = { "quote", INDENTING_BLOCK },
+        [NODE_LINE] = { "line", BLOCK },
+        [NODE_ATTRIBUTION] = { "attribution", BLOCK },
+        [NODE_CODEBLOCK] = { "code", BLOCK },
+        [NODE_TABLE] = { "table", INDENTING_BLOCK },
+        [NODE_HEAD] = { "head", INDENTING_BLOCK },
+        [NODE_BODY] = { "body", INDENTING_BLOCK },
+        [NODE_ROW] = { "row", INDENTING_BLOCK },
+        [NODE_ENTRY] = { "entry", BLOCK },
+        [NODE_SECTION] = { "section", INDENTING_BLOCK },
+        [NODE_CODE] = { "code", INLINE },
+        [NODE_EMPHASIS] = { "emphasis", INLINE },
+        [NODE_GROUP] = { NULL, INLINE },
+        [NODE_AUXILIARY] = { NULL, INLINE },
+        [NODE_TEXT] = { NULL, INLINE },
+        [NODE_BUFFER] = { NULL, ILLEGAL },
+        [NODE_ANCHOR] = { NULL, ILLEGAL },
 };
+
+#define NODE_IS_NESTED(n) ((n)->name <= NODE_AUXILIARY)
 
 void nmc_node_traverse_null(UNUSED(struct node *node), UNUSED(void *closure))
 {
@@ -98,9 +98,9 @@ nmc_node_traverse(struct node *node, traversefn enter, traversefn leave, void *c
                                 move_to_used(&actions, &used);
                         enter(n, closure);
 
-                        if (types[n->name].nested) {
+                        if (NODE_IS_NESTED(n)) {
                                 actions = action_new(&used, actions, false, n);
-                                if (!types[n->name].text)
+                                if (NODE_HAS_CHILDREN(n))
                                         actions = action_new(&used, actions, true, ((struct parent_node *)n)->children);
                         }
                 } else {
@@ -117,8 +117,8 @@ nmc_node_traverse_r(struct node *node, traversefn enter, traversefn leave, void 
 {
         list_for_each(struct node, p, node) {
                 enter(p, closure);
-                if (types[p->name].nested) {
-                        if (!types[p->name].text)
+                if (NODE_IS_NESTED(p)) {
+                        if (NODE_HAS_CHILDREN(p))
                                 nmc_node_traverse_r(((struct parent_node *)p)->children, enter, leave, closure);
                         leave(p, closure);
                 }
@@ -158,7 +158,7 @@ node_free(struct node *node)
                         /* fall through */
                 default:
                         /* TODO Gheesh, add free function to types already. */
-                        if (!types[p->name].text) {
+                        if (NODE_HAS_CHILDREN(p)) {
                                 last->next = ((struct parent_node *)p)->children;
                                 while (last->next != NULL)
                                         last = last->next;
@@ -264,7 +264,7 @@ xml_enter(struct node *node, struct xml_closure *closure)
 
         element(node, true);
 
-        if (types[node->name].text)
+        if (node->type == TEXT)
                 goto text;
 
         if (types[node->name].level == INDENTING_BLOCK)

@@ -1,3 +1,11 @@
+enum node_type
+{
+        PARENT,
+        AUXILIARY,
+        TEXT,
+        PRIVATE,
+};
+
 enum node_name
 {
         NODE_DOCUMENT,
@@ -22,15 +30,16 @@ enum node_name
         NODE_CODE,
         NODE_EMPHASIS,
         NODE_GROUP,
-        NODE_BUFFER,
+        NODE_AUXILIARY,
         NODE_TEXT,
+        NODE_BUFFER,
         NODE_ANCHOR,
-        NODE_AUXILIARY
 };
 
 struct node
 {
         struct node *next;
+        enum node_type type;
         enum node_name name;
 };
 
@@ -58,6 +67,8 @@ struct auxiliary_node
         const char *name;
         struct auxiliary_node_attribute *attributes;
 };
+
+#define NODE_HAS_CHILDREN(node) ((node)->type < TEXT)
 
 typedef void (*traversefn)(struct node *node, void *closure);
 
