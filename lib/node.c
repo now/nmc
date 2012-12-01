@@ -98,9 +98,9 @@ nmc_node_traverse(struct node *node, traversefn enter, traversefn leave, void *c
                                 move_to_used(&actions, &used);
                         enter(n, closure);
 
-                        if (types[n->type].nested) {
+                        if (types[n->name].nested) {
                                 actions = action_new(&used, actions, false, n);
-                                if (!types[n->type].text)
+                                if (!types[n->name].text)
                                         actions = action_new(&used, actions, true, ((struct parent_node *)n)->children);
                         }
                 } else {
@@ -117,8 +117,8 @@ nmc_node_traverse_r(struct node *node, traversefn enter, traversefn leave, void 
 {
         list_for_each(struct node, p, node) {
                 enter(p, closure);
-                if (types[p->type].nested) {
-                        if (!types[p->type].text)
+                if (types[p->name].nested) {
+                        if (!types[p->name].text)
                                 nmc_node_traverse_r(((struct parent_node *)p)->children, enter, leave, closure);
                         leave(p, closure);
                 }
@@ -136,7 +136,7 @@ node_free(struct node *node)
                 last = last->next;
         while (p != NULL) {
                 /* TODO Add free function to types? */
-                switch (p->type) {
+                switch (p->name) {
                 case NODE_ANCHOR:
                         anchor_node_free1((struct anchor_node *)p);
                         last->next = ((struct parent_node *)p)->children;
@@ -158,7 +158,7 @@ node_free(struct node *node)
                         /* fall through */
                 default:
                         /* TODO Gheesh, add free function to types already. */
-                        if (!types[p->type].text) {
+                        if (!types[p->name].text) {
                                 last->next = ((struct parent_node *)p)->children;
                                 while (last->next != NULL)
                                         last = last->next;
@@ -228,16 +228,16 @@ escape(const char *string, size_t n_entities, const char * const *entities)
 static void
 element(struct node *node, bool enter)
 {
-        if (node->type == NODE_GROUP)
+        if (node->name == NODE_GROUP)
                 return;
 
-        struct auxiliary_node *a = (node->type == NODE_AUXILIARY) ?
+        struct auxiliary_node *a = (node->name == NODE_AUXILIARY) ?
                 (struct auxiliary_node *)node : NULL;
 
         putchar('<');
         if (!enter)
                 putchar('/');
-        fputs(a != NULL ? a->name : types[node->type].name, stdout);
+        fputs(a != NULL ? a->name : types[node->name].name, stdout);
         if (enter && a != NULL)
                 for (struct auxiliary_node_attribute *p = a->attributes; p->name != NULL; p++) {
                         putchar(' ');
@@ -253,10 +253,10 @@ element(struct node *node, bool enter)
 static void
 xml_enter(struct node *node, struct xml_closure *closure)
 {
-        if (types[node->type].level != INLINE)
+        if (types[node->name].level != INLINE)
                 indent(closure->indent);
 
-        if (node->type == NODE_TEXT) {
+        if (node->name == NODE_TEXT) {
         text:
                 escape(((struct text_node *)node)->text, nmc_lengthof(text_entities), text_entities);
                 return;
@@ -264,17 +264,17 @@ xml_enter(struct node *node, struct xml_closure *closure)
 
         element(node, true);
 
-        if (types[node->type].text)
+        if (types[node->name].text)
                 goto text;
 
-        if (types[node->type].level == INDENTING_BLOCK)
+        if (types[node->name].level == INDENTING_BLOCK)
                 closure->indent++;
 }
 
 static void
 xml_leave(struct node *node, struct xml_closure *closure)
 {
-        if (types[node->type].level == INDENTING_BLOCK) {
+        if (types[node->name].level == INDENTING_BLOCK) {
                 closure->indent--;
                 indent(closure->indent);
         }

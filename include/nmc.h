@@ -1,4 +1,4 @@
-enum node_type
+enum node_name
 {
         NODE_DOCUMENT,
         NODE_TITLE,
@@ -31,7 +31,7 @@ enum node_type
 struct node
 {
         struct node *next;
-        enum node_type type;
+        enum node_name name;
 };
 
 struct parent_node

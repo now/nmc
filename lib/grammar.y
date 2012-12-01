@@ -166,7 +166,7 @@ anchors_cons(struct anchors *anchors, struct anchor *anchor)
 static void
 anchor_unlink(struct node *node, struct nmc_parser *parser)
 {
-        if (node->type != NODE_ANCHOR)
+        if (node->name != NODE_ANCHOR)
                 return;
         struct anchors *anchors = anchors_find(parser->anchors, ((struct anchor_node *)node)->u.anchor->id);
         struct anchor *p = NULL;
@@ -229,13 +229,13 @@ definitions_push(const char *pattern, definefn define)
 }
 
 static inline struct node *
-node_init(struct node *node, enum node_type type)
+node_init(struct node *node, enum node_name name)
 {
         node->next = NULL;
-        node->type = type;
+        node->name = name;
         return node;
 }
-#define node_new(stype, type) ((stype *)node_init((struct node *)nmc_new(stype), type))
+#define node_new(stype, name) ((stype *)node_init((struct node *)nmc_new(stype), name))
 
 static struct auxiliary_node *
 definition_element(const char *name, const char *buffer, regmatch_t *matches, const char **attributes)
@@ -511,23 +511,23 @@ nmc_grammar_error(YYLTYPE *location, struct nmc_parser *parser, const char *mess
 }
 
 static struct node *
-text_node(enum node_type type, char *text)
+text_node(enum node_name name, char *text)
 {
-        struct text_node *n = node_new(struct text_node, type);
+        struct text_node *n = node_new(struct text_node, name);
         n->text = text;
         return (struct node *)n;
 }
 
 static struct node *
-text(enum node_type type, struct nmc_string *string)
+text(enum node_name name, struct nmc_string *string)
 {
-        return text_node(type, nmc_string_str_free(string));
+        return text_node(name, nmc_string_str_free(string));
 }
 
 static struct node *
-subtext(enum node_type type, struct substring substring)
+subtext(enum node_name name, struct substring substring)
 {
-        return text_node(type, strndup(substring.string, substring.length));
+        return text_node(name, strndup(substring.string, substring.length));
 }
 
 static inline struct nodes
@@ -558,31 +558,31 @@ nibling(struct node *sibling, struct nodes siblings)
 }
 
 static inline struct node *
-parent1(enum node_type type, struct node *children)
+parent1(enum node_name name, struct node *children)
 {
-        struct parent_node *n = node_new(struct parent_node, type);
+        struct parent_node *n = node_new(struct parent_node, name);
         n->children = children;
         return (struct node *)n;
 }
 
 static inline struct node *
-parent(enum node_type type, struct nodes children)
+parent(enum node_name name, struct nodes children)
 {
-        return parent1(type, children.first);
+        return parent1(name, children.first);
 }
 
 static inline struct node *
-parent_children(enum node_type type, struct node *first, struct nodes rest)
+parent_children(enum node_name name, struct node *first, struct nodes rest)
 {
         first->next = rest.first;
-        return parent1(type, first);
+        return parent1(name, first);
 }
 
 static void
 update_anchors(struct anchor *anchors, struct auxiliary_node *node)
 {
         list_for_each_safe(struct anchor, p, n, anchors) {
-                p->node->node.node.type = node->node.node.type;
+                p->node->node.node.name = node->node.node.name;
                 p->node->u.auxiliary.name = node->name;
                 p->node->u.auxiliary.attributes = node->attributes;
                 p->node = NULL;
@@ -684,7 +684,7 @@ word(struct nmc_parser *parser, struct substring substring, struct sigil *sigils
 static inline struct nodes
 append_text(struct nodes inlines, struct substring substring)
 {
-        if (inlines.last->type != NODE_BUFFER)
+        if (inlines.last->name != NODE_BUFFER)
                 return sibling(inlines, buffer(substring));
 
         nmc_string_append(((struct buffer_node *)inlines.last)->u.buffer, substring.string, substring.length);
@@ -700,9 +700,9 @@ append_space(struct nodes inlines)
 static inline struct nodes
 textify(struct nodes inlines)
 {
-        if (inlines.last->type == NODE_BUFFER) {
+        if (inlines.last->name == NODE_BUFFER) {
                 struct buffer_node *buffer = (struct buffer_node *)inlines.last;
-                buffer->node.type = NODE_TEXT;
+                buffer->node.name = NODE_TEXT;
                 buffer->u.text = nmc_string_str_free(buffer->u.buffer);
         }
         return inlines;
