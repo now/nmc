@@ -7,46 +7,6 @@
 #include <nmc.h>
 #include <nmc/list.h>
 
-enum node_level
-{
-        ILLEGAL,
-        INLINE,
-        BLOCK,
-        INDENTING_BLOCK
-};
-
-static struct {
-        const char *name;
-        enum node_level level;
-} types[] = {
-        [NODE_DOCUMENT] = { "nml", INDENTING_BLOCK },
-        [NODE_TITLE] = { "title", BLOCK },
-        [NODE_PARAGRAPH] = { "p", BLOCK },
-        [NODE_ITEMIZATION] = { "itemization", INDENTING_BLOCK },
-        [NODE_ENUMERATION] = { "enumeration", INDENTING_BLOCK },
-        [NODE_DEFINITIONS] = { "definitions", INDENTING_BLOCK },
-        [NODE_DEFINITION] = { "definition", INDENTING_BLOCK },
-        [NODE_TERM] = { "term", BLOCK },
-        [NODE_ITEM] = { "item", INDENTING_BLOCK },
-        [NODE_QUOTE] = { "quote", INDENTING_BLOCK },
-        [NODE_LINE] = { "line", BLOCK },
-        [NODE_ATTRIBUTION] = { "attribution", BLOCK },
-        [NODE_CODEBLOCK] = { "code", BLOCK },
-        [NODE_TABLE] = { "table", INDENTING_BLOCK },
-        [NODE_HEAD] = { "head", INDENTING_BLOCK },
-        [NODE_BODY] = { "body", INDENTING_BLOCK },
-        [NODE_ROW] = { "row", INDENTING_BLOCK },
-        [NODE_ENTRY] = { "entry", BLOCK },
-        [NODE_SECTION] = { "section", INDENTING_BLOCK },
-        [NODE_CODE] = { "code", INLINE },
-        [NODE_EMPHASIS] = { "emphasis", INLINE },
-        [NODE_GROUP] = { NULL, INLINE },
-        [NODE_AUXILIARY] = { NULL, INLINE },
-        [NODE_TEXT] = { NULL, INLINE },
-        [NODE_BUFFER] = { NULL, ILLEGAL },
-        [NODE_ANCHOR] = { NULL, ILLEGAL },
-};
-
 #define NODE_IS_NESTED(n) ((n)->name <= NODE_AUXILIARY)
 
 void nmc_node_traverse_null(UNUSED(struct node *node), UNUSED(void *closure))
@@ -125,11 +85,6 @@ nmc_node_traverse_r(struct node *node, traversefn enter, traversefn leave, void 
         }
 }
 
-struct xml_closure
-{
-        int indent;
-};
-
 static void
 indent(int n)
 {
@@ -179,60 +134,153 @@ escape(const char *string, size_t n_entities, const char * const *entities)
 }
 
 static void
-element(struct node *node, bool enter)
+element_start(const char *name)
 {
-        if (node->name == NODE_GROUP)
-                return;
-
-        struct auxiliary_node *a = (node->name == NODE_AUXILIARY) ?
-                (struct auxiliary_node *)node : NULL;
-
         putchar('<');
-        if (!enter)
-                putchar('/');
-        fputs(a != NULL ? a->name : types[node->name].name, stdout);
-        if (enter && a != NULL)
-                for (struct auxiliary_node_attribute *p = a->attributes; p->name != NULL; p++) {
-                        putchar(' ');
-                        fputs(p->name, stdout);
-                        putchar('=');
-                        putchar('"');
-                        escape(p->value, nmc_lengthof(attribute_entities), attribute_entities);
-                        putchar('"');
-                }
+        fputs(name, stdout);
         putchar('>');
 }
 
 static void
+element_end(const char *name)
+{
+        putchar('<');
+        putchar('/');
+        fputs(name, stdout);
+        putchar('>');
+}
+
+struct xml_closure
+{
+        int indent;
+};
+
+static void
+text_enter(struct node *node, UNUSED(struct xml_closure *closure))
+{
+        escape(((struct text_node *)node)->text, nmc_lengthof(text_entities), text_entities);
+}
+
+typedef void (*xmltraversefn)(struct node *, struct xml_closure *);
+
+static struct xml_types {
+        const char *name;
+        xmltraversefn enter;
+        xmltraversefn leave;
+} types[];
+
+static void
+inline_enter(struct node *node, UNUSED(struct xml_closure *closure))
+{
+        element_start(types[node->name].name);
+        text_enter(node, closure);
+}
+
+static void
+block_enter(struct node *node, struct xml_closure *closure)
+{
+        indent(closure->indent);
+        element_start(types[node->name].name);
+}
+
+static void
+auxiliary_enter(struct auxiliary_node *node, UNUSED(struct xml_closure *closure))
+{
+        putchar('<');
+        fputs(node->name, stdout);
+        for (struct auxiliary_node_attribute *p = node->attributes; p->name != NULL; p++) {
+                putchar(' ');
+                fputs(p->name, stdout);
+                putchar('=');
+                putchar('"');
+                escape(p->value, nmc_lengthof(attribute_entities), attribute_entities);
+                putchar('"');
+        }
+        putchar('>');
+}
+
+static void
+auxiliary_leave(struct auxiliary_node *node, UNUSED(struct xml_closure *closure))
+{
+        element_end(node->name);
+}
+
+static void
+text_block_enter(struct node *node, struct xml_closure *closure)
+{
+        block_enter(node, closure);
+        text_enter(node, closure);
+}
+
+static void
+indenting_block_enter(struct node *node, struct xml_closure *closure)
+{
+        block_enter(node, closure);
+        closure->indent++;
+}
+
+static void
+leave(struct node *node, UNUSED(struct xml_closure *closure))
+{
+        element_end(types[node->name].name);
+}
+
+static void
+indenting_block_leave(struct node *node, struct xml_closure *closure)
+{
+        closure->indent--;
+        indent(closure->indent);
+        leave(node, closure);
+}
+
+static struct xml_types types[] = {
+#define indenting_block indenting_block_enter, indenting_block_leave
+#define text_block text_block_enter, leave
+#define block block_enter, leave
+#define inline inline_enter, leave
+        [NODE_DOCUMENT] = { "nml", indenting_block },
+        [NODE_TITLE] = { "title", text_block },
+        [NODE_PARAGRAPH] = { "p", block },
+        [NODE_ITEMIZATION] = { "itemization", indenting_block },
+        [NODE_ENUMERATION] = { "enumeration", indenting_block },
+        [NODE_DEFINITIONS] = { "definitions", indenting_block },
+        [NODE_DEFINITION] = { "definition", indenting_block },
+        [NODE_TERM] = { "term", text_block },
+        [NODE_ITEM] = { "item", indenting_block },
+        [NODE_QUOTE] = { "quote", indenting_block },
+        [NODE_LINE] = { "line", block },
+        [NODE_ATTRIBUTION] = { "attribution", block },
+        [NODE_CODEBLOCK] = { "code", text_block },
+        [NODE_TABLE] = { "table", indenting_block },
+        [NODE_HEAD] = { "head", indenting_block },
+        [NODE_BODY] = { "body", indenting_block },
+        [NODE_ROW] = { "row", indenting_block },
+        [NODE_ENTRY] = { "entry", block },
+        [NODE_SECTION] = { "section", indenting_block },
+        [NODE_CODE] = { "code", inline },
+        [NODE_EMPHASIS] = { "emphasis", inline },
+        [NODE_GROUP] = { NULL, (xmltraversefn)nmc_node_traverse_null, (xmltraversefn)nmc_node_traverse_null },
+        [NODE_AUXILIARY] = { NULL, (xmltraversefn)auxiliary_enter, (xmltraversefn)auxiliary_leave },
+        /* TODO Could have assertions for the NULLs here instead. */
+        [NODE_TEXT] = { NULL, text_enter, NULL },
+        [NODE_BUFFER] = { NULL, NULL, NULL },
+        [NODE_ANCHOR] = { NULL, NULL, NULL },
+#undef indenting_block
+#undef text_block
+#undef block
+#undef inline
+};
+
+static void
 xml_enter(struct node *node, struct xml_closure *closure)
 {
-        if (types[node->name].level != INLINE)
-                indent(closure->indent);
-
-        if (node->name == NODE_TEXT) {
-        text:
-                escape(((struct text_node *)node)->text, nmc_lengthof(text_entities), text_entities);
-                return;
-        }
-
-        element(node, true);
-
-        if (node->type == TEXT)
-                goto text;
-
-        if (types[node->name].level == INDENTING_BLOCK)
-                closure->indent++;
+        types[node->name].enter(node, closure);
 }
 
 static void
 xml_leave(struct node *node, struct xml_closure *closure)
 {
-        if (types[node->name].level == INDENTING_BLOCK) {
-                closure->indent--;
-                indent(closure->indent);
-        }
-
-        element(node, false);
+        types[node->name].leave(node, closure);
 }
 
 void
