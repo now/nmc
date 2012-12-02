@@ -150,8 +150,7 @@ element_end(const char *name)
         putchar('>');
 }
 
-struct xml_closure
-{
+struct xml_closure {
         int indent;
 };
 

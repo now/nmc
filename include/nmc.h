@@ -36,33 +36,28 @@ enum node_name
         NODE_ANCHOR,
 };
 
-struct node
-{
+struct node {
         struct node *next;
         enum node_type type;
         enum node_name name;
 };
 
-struct parent_node
-{
+struct parent_node {
         struct node node;
         struct node *children;
 };
 
-struct text_node
-{
+struct text_node {
         struct node node;
         char *text;
 };
 
-struct auxiliary_node_attribute
-{
+struct auxiliary_node_attribute {
         const char *name;
         char *value;
 };
 
-struct auxiliary_node
-{
+struct auxiliary_node {
         struct parent_node node;
         const char *name;
         struct auxiliary_node_attribute *attributes;
@@ -78,8 +73,7 @@ void nmc_node_traverse_r(struct node *node, traversefn enter, traversefn leave, 
 void node_free(struct node *node);
 void nmc_node_to_xml(struct node *node);
 
-struct nmc_location
-{
+struct nmc_location {
         int first_line;
         int last_line;
         int first_column;
@@ -91,8 +85,7 @@ char *nmc_location_str(const struct nmc_location *location);
 void nmc_grammar_initialize(void);
 void nmc_grammar_finalize(void);
 
-struct nmc_parser_error
-{
+struct nmc_parser_error {
         struct nmc_parser_error *next;
         struct nmc_location location;
         char *message;

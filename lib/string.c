@@ -7,8 +7,7 @@
 #include <nmc/list.h>
 #include "string.h"
 
-struct nmc_string
-{
+struct nmc_string {
         size_t allocated;
         size_t length;
         char *content;

@@ -1,8 +1,7 @@
 #ifndef SRC_PARSER_H
 #define SRC_PARSER_H
 
-struct nmc_parser
-{
+struct nmc_parser {
         const char *p;
         YYLTYPE location;
         size_t indent;

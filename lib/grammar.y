@@ -5,14 +5,12 @@ struct nmc_parser;
 
 #include <stddef.h>
 
-struct substring
-{
+struct substring {
         const char *string;
         size_t length;
 };
 
-struct nodes
-{
+struct nodes {
         struct node *first;
         struct node *last;
 };
@@ -42,8 +40,7 @@ void anchors_free(struct anchors *anchors);
 #include "parser.h"
 #include "string.h"
 
-struct anchor
-{
+struct anchor {
         struct anchor *next;
         struct nmc_location location;
         char *id;
@@ -59,8 +56,7 @@ anchor_free1(struct anchor *anchor)
         nmc_free(anchor);
 }
 
-struct anchor_node
-{
+struct anchor_node {
         struct parent_node node;
         union {
                 struct {
@@ -175,8 +171,7 @@ node_unlink_and_free(struct nmc_parser *parser, struct node *node)
         node_free(node);
 }
 
-struct buffer_node
-{
+struct buffer_node {
         struct node node;
         union {
                 char *text;
@@ -186,8 +181,7 @@ struct buffer_node
 
 typedef struct auxiliary_node *(*definefn)(const char *, regmatch_t *);
 
-struct definition
-{
+struct definition {
         struct definition *next;
         regex_t regex;
         definefn define;
@@ -369,8 +363,7 @@ nmc_location_str(const struct nmc_location *l)
         return s;
 }
 
-struct footnote
-{
+struct footnote {
         struct footnote *next;
         YYLTYPE location;
         char *id;
@@ -401,8 +394,7 @@ footnote_free(struct footnote *footnote)
         nmc_free(footnote);
 }
 
-struct sigil
-{
+struct sigil {
         struct sigil *next;
         YYLTYPE location;
         char *id;
