@@ -38,7 +38,7 @@ void anchors_free(struct anchors *anchors);
 #include <nmc.h>
 #include <nmc/list.h>
 #include "parser.h"
-#include "string.h"
+#include "buffer.h"
 
 struct anchor {
         struct anchor *next;
@@ -175,7 +175,7 @@ struct buffer_node {
         struct node node;
         union {
                 char *text;
-                struct nmc_string *buffer;
+                struct buffer *buffer;
         } u;
 };
 
@@ -308,7 +308,7 @@ private_node_free(struct node *node)
 {
         switch (node->name) {
         case NODE_BUFFER:
-                nmc_string_free(((struct buffer_node *)node)->u.buffer);
+                buffer_free(((struct buffer_node *)node)->u.buffer);
                 return NULL;
         case NODE_ANCHOR:
                 anchor_free1(((struct anchor_node *)node)->u.anchor);
@@ -459,7 +459,7 @@ report_remaining_anchors(struct nmc_parser *parser)
 %token END 0 "end of file"
 %token ERROR
 %token AGAIN
-%token <string> TITLE
+%token <buffer> TITLE
 %token <substring> WORD
 %token PARAGRAPH
 %token <substring> SPACE
@@ -473,7 +473,7 @@ report_remaining_anchors(struct nmc_parser *parser)
 %token TABLESEPARATOR
 %token ROW
 %token ENTRYSEPARATOR "entry separator"
-%token <string> CODEBLOCK
+%token <buffer> CODEBLOCK
 %token <raw_footnote> FOOTNOTE
 %token SECTION
 %token INDENT
@@ -509,9 +509,9 @@ report_remaining_anchors(struct nmc_parser *parser)
         struct substring substring;
         struct {
                 char *id;
-                struct nmc_string *string;
+                struct buffer *buffer;
         } raw_footnote;
-        struct nmc_string *string;
+        struct buffer *buffer;
         struct nodes nodes;
         struct node *node;
         struct footnote *footnote;
@@ -519,11 +519,11 @@ report_remaining_anchors(struct nmc_parser *parser)
 }
 
 %printer { fprintf(yyoutput, "%.*s", (int)$$.length, $$.string); } <substring>
-%printer { fprintf(yyoutput, "%s %s", $$.id, nmc_string_str($$.string)); } <raw_footnote>
-%printer { fprintf(yyoutput, "%s", nmc_string_str($$)); } <string>
+%printer { fprintf(yyoutput, "%s %s", $$.id, buffer_str($$.buffer)); } <raw_footnote>
+%printer { fprintf(yyoutput, "%s", buffer_str($$)); } <buffer>
 
-%destructor { free($$.id); nmc_string_free($$.string); } <raw_footnote>
-%destructor { nmc_string_free($$); } <string>
+%destructor { free($$.id); buffer_free($$.buffer); } <raw_footnote>
+%destructor { buffer_free($$); } <buffer>
 %destructor { node_unlink_and_free(parser, $$.first); } <nodes>
 %destructor { node_unlink_and_free(parser, $$); } <node>
 %destructor { footnote_free($$); } <footnote>
@@ -558,9 +558,9 @@ text_node(enum node_name name, char *text)
 }
 
 static struct node *
-text(enum node_name name, struct nmc_string *string)
+text(enum node_name name, struct buffer *buffer)
 {
-        return text_node(name, nmc_string_str_free(string));
+        return text_node(name, buffer_str_free(buffer));
 }
 
 static struct node *
@@ -709,7 +709,7 @@ static struct node *
 buffer(struct substring substring)
 {
         struct buffer_node *n = node_new(struct buffer_node, PRIVATE, NODE_BUFFER);
-        n->u.buffer = nmc_string_new(substring.string, substring.length);
+        n->u.buffer = buffer_new(substring.string, substring.length);
         return (struct node *)n;
 }
 
@@ -727,7 +727,7 @@ append_text(struct nodes inlines, struct substring substring)
         if (inlines.last->name != NODE_BUFFER)
                 return sibling(inlines, buffer(substring));
 
-        nmc_string_append(((struct buffer_node *)inlines.last)->u.buffer, substring.string, substring.length);
+        buffer_append(((struct buffer_node *)inlines.last)->u.buffer, substring.string, substring.length);
         return inlines;
 }
 
@@ -744,7 +744,7 @@ textify(struct nodes inlines)
                 struct buffer_node *buffer = (struct buffer_node *)inlines.last;
                 buffer->node.type = TEXT;
                 buffer->node.name = NODE_TEXT;
-                buffer->u.text = nmc_string_str_free(buffer->u.buffer);
+                buffer->u.text = buffer_str_free(buffer->u.buffer);
         }
         return inlines;
 }
@@ -823,7 +823,7 @@ oblockssections: /* empty */ { $$ = nodes(NULL); }
 footnotes: footnote
 | footnotes footnote { $$ = fibling(parser, $1, $2); };
 
-footnote: FOOTNOTE { $$ = footnote_new(parser, &@$, $1.id, $1.string); };
+footnote: FOOTNOTE { $$ = footnote_new(parser, &@$, $1.id, $1.buffer); };
 
 paragraph: PARAGRAPH inlines { $$ = parent(NODE_PARAGRAPH, $2); };
 

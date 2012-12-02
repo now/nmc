@@ -13,7 +13,7 @@
 #include <nmc.h>
 #include <nmc/list.h>
 #include "parser.h"
-#include "string.h"
+#include "buffer.h"
 #include "unicode.h"
 
 void
@@ -210,7 +210,7 @@ is_space_or_end(const char *end)
 }
 
 static int
-string(struct nmc_parser *parser, YYLTYPE *location, struct nmc_string *string, const char *begin, int type)
+buffer(struct nmc_parser *parser, YYLTYPE *location, struct buffer *buffer, const char *begin, int type)
 {
         while (*begin == ' ')
                 begin++;
@@ -227,7 +227,7 @@ again:
                         send++;
                 size_t spaces = send - (end + 1);
                 if (!is_end(send) && spaces >= parser->indent + 2) {
-                        nmc_string_append(string, begin, end - begin);
+                        buffer_append(buffer, begin, end - begin);
                         begin = end + parser->indent + 2;
                         end = send;
                         parser->location.last_line++;
@@ -237,7 +237,7 @@ again:
         }
         case ' ':
                 end++;
-                nmc_string_append(string, begin, end - begin);
+                buffer_append(buffer, begin, end - begin);
                 while (*end == ' ')
                         end++;
                 begin = end;
@@ -246,7 +246,7 @@ again:
                 end++;
                 goto again;
         }
-        nmc_string_append(string, begin, end - begin);
+        buffer_append(buffer, begin, end - begin);
 
         return token(parser, location, end, type);
 }
@@ -266,11 +266,11 @@ static int
 footnote(struct nmc_parser *parser, YYLTYPE *location, YYSTYPE *value, size_t length)
 {
         value->raw_footnote.id = strndup(parser->p, length);
-        value->raw_footnote.string = nmc_string_new_empty();
+        value->raw_footnote.buffer = buffer_new_empty();
 
-        return string(parser,
+        return buffer(parser,
                       location,
-                      value->raw_footnote.string,
+                      value->raw_footnote.buffer,
                       parser->p + length + bol_space(parser, length),
                       FOOTNOTE);
 }
@@ -280,7 +280,7 @@ codeblock(struct nmc_parser *parser, YYLTYPE *location, YYSTYPE *value)
 {
         const char *begin = parser->p + 4;
         const char *end = begin;
-        value->string = nmc_string_new_empty();
+        value->buffer = buffer_new_empty();
 
 again:
         while (!is_end(end))
@@ -298,16 +298,16 @@ again:
                 }
                 size_t spaces = bse - bss;
                 if (spaces >= parser->indent + 4) {
-                        nmc_string_append(value->string, begin, end - begin);
+                        buffer_append(value->buffer, begin, end - begin);
                         for (size_t i = 0; i < lines; i++)
-                                nmc_string_append(value->string, "\n", 1);
+                                buffer_append(value->buffer, "\n", 1);
                         begin = bss + parser->indent + 4;
                         end = bse;
                         parser->location.last_line += lines;
                         goto again;
                 }
         }
-        nmc_string_append(value->string, begin, end - begin);
+        buffer_append(value->buffer, begin, end - begin);
 
         return token(parser, location, end, CODEBLOCK);
 }
@@ -549,8 +549,8 @@ nmc_parser_lex(struct nmc_parser *parser, YYLTYPE *location, YYSTYPE *value)
 
         if (parser->want == TITLE) {
                 parser->want = ERROR;
-                value->string = nmc_string_new_empty();
-                return string(parser, location, value->string, end, TITLE);
+                value->buffer = buffer_new_empty();
+                return buffer(parser, location, value->buffer, end, TITLE);
         }
 
         size_t length;

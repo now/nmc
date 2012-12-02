@@ -20,14 +20,14 @@ lib_LIBRARIES = \
 
 lib_libnmc_a_SOURCES = \
 	common/private.h \
+	lib/buffer.c \
+	lib/buffer.h \
 	lib/ext.c \
 	lib/ext.h \
 	lib/grammar.y \
 	lib/node.c \
 	lib/node.h \
 	lib/parser.c \
-	lib/string.c \
-	lib/string.h \
 	lib/ucategory.h \
 	lib/unicode.c \
 	lib/unicode.h
