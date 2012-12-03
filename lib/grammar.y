@@ -168,24 +168,25 @@ node_init(struct node *node, enum node_type type, enum node_name name)
 #define node_new(stype, type, name) ((stype *)node_init((struct node *)nmc_new(stype), type, name))
 
 static struct auxiliary_node *
-definition_element(const char *name, const char *buffer, regmatch_t *matches, const char **attributes)
+auxiliary_node_new_matches(const char *name, const char *buffer,
+                           regmatch_t *matches, int n, ...)
 {
-        int n = 0;
-        for (const char **p = attributes; *p != NULL; p++)
-                n++;
         struct auxiliary_node *d = node_new(struct auxiliary_node, AUXILIARY, NODE_AUXILIARY);
         d->node.children = NULL;
         d->name = name;
         d->attributes = nmc_new_n(struct auxiliary_node_attribute, n + 1);
         regmatch_t *m = &matches[1];
         struct auxiliary_node_attribute *a = d->attributes;
-        for (const char **p = attributes; *p != NULL; p++) {
+        va_list args;
+        va_start(args, n);
+        for (int i = 0; i < n; i++) {
                 /* TODO Check that rm_so/rm_eo ≠ -1 */
-                a->name = *p;
+                a->name = va_arg(args, const char *);
                 a->value = strndup(buffer + m->rm_so, m->rm_eo - m->rm_so);
                 m++;
                 a++;
         }
+        va_end(args);
         a->name = NULL;
         a->value = NULL;
         return d;
@@ -194,15 +195,13 @@ definition_element(const char *name, const char *buffer, regmatch_t *matches, co
 static struct auxiliary_node *
 abbreviation(const char *buffer, regmatch_t *matches)
 {
-        return definition_element("abbreviation", buffer, matches,
-                                  (const char *[]){ "for", NULL });
+        return auxiliary_node_new_matches("abbreviation", buffer, matches, 1, "for");
 }
 
 static struct auxiliary_node *
 ref(const char *buffer, regmatch_t *matches)
 {
-        return definition_element("ref", buffer, matches,
-                                  (const char *[]){ "title", "uri", NULL });
+        return auxiliary_node_new_matches("ref", buffer, matches, 2, "title", "uri");
 }
 
 void
