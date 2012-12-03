@@ -93,11 +93,11 @@ anchor_free(struct anchor *anchor)
 struct anchor_node {
         struct parent_node node;
         union {
+                struct anchor *anchor;
                 struct {
                         const char *name;
-                        struct auxiliary_node_attribute *attributes;
+                        struct auxiliary_node_attributes *attributes;
                 } auxiliary;
-                struct anchor *anchor;
         } u;
 };
 
@@ -174,9 +174,11 @@ auxiliary_node_new_matches(const char *name, const char *buffer,
         struct auxiliary_node *d = node_new(struct auxiliary_node, AUXILIARY, NODE_AUXILIARY);
         d->node.children = NULL;
         d->name = name;
-        d->attributes = nmc_new_n(struct auxiliary_node_attribute, n + 1);
+        d->attributes = malloc(sizeof(struct auxiliary_node_attributes) +
+                               sizeof(struct auxiliary_node_attribute) * (n + 1));
+        d->attributes->references = 1;
         regmatch_t *m = &matches[1];
-        struct auxiliary_node_attribute *a = d->attributes;
+        struct auxiliary_node_attribute *a = d->attributes->items;
         va_list args;
         va_start(args, n);
         for (int i = 0; i < n; i++) {
@@ -246,9 +248,11 @@ parent_node_free(struct parent_node *node)
 static struct node *
 auxiliary_node_free(struct auxiliary_node *node)
 {
-        for (struct auxiliary_node_attribute *a = node->attributes; a->name != NULL; a++)
-                nmc_free(a->value);
-        nmc_free(node->attributes);
+        if (--node->attributes->references == 0) {
+                for (struct auxiliary_node_attribute *a = node->attributes->items; a->name != NULL; a++)
+                        free(a->value);
+                free(node->attributes);
+        }
         return parent_node_free((struct parent_node *)node);
 }
 
@@ -585,6 +589,7 @@ update_anchors(struct nmc_parser *parser, struct footnote *footnote)
                                 c->node->node.node.name = footnote->node->node.node.name;
                                 c->node->u.auxiliary.name = footnote->node->name;
                                 c->node->u.auxiliary.attributes = footnote->node->attributes;
+                                footnote->node->attributes->references++;
                                 c->node = NULL;
                         } else
                                 c->node->u.anchor = NULL;

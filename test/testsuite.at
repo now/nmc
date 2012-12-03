@@ -452,6 +452,35 @@ AT_NMC_CHECK([title],
 
 AT_CLEANUP
 
+AT_SETUP([Reused footnotes])
+
+AT_DATA([title],
+[[Title
+
+§ Section
+
+    Abbr¹
+
+  § Sub-section
+
+      Abbr¹
+
+  ¹ Abbreviation for Abbreviation
+]])
+
+AT_NMC_CHECK([title],
+[[  <title>Title</title>
+  <section>
+    <title>Section</title>
+    <p><abbreviation for="Abbreviation">Abbr</abbreviation></p>
+    <section>
+      <title>Sub-section</title>
+      <p><abbreviation for="Abbreviation">Abbr</abbreviation></p>
+    </section>
+  </section>]])
+
+AT_CLEANUP
+
 AT_SETUP([Document consisting of a title followed by a paragraph with a long footnote])
 
 AT_DATA([title],

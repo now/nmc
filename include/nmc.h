@@ -57,10 +57,15 @@ struct auxiliary_node_attribute {
         char *value;
 };
 
+struct auxiliary_node_attributes {
+        unsigned int references;
+        struct auxiliary_node_attribute items[];
+};
+
 struct auxiliary_node {
         struct parent_node node;
         const char *name;
-        struct auxiliary_node_attribute *attributes;
+        struct auxiliary_node_attributes *attributes;
 };
 
 #define NODE_HAS_CHILDREN(node) ((node)->type < TEXT)

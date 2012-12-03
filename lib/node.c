@@ -187,7 +187,7 @@ auxiliary_enter(struct auxiliary_node *node, UNUSED(struct xml_closure *closure)
 {
         putchar('<');
         fputs(node->name, stdout);
-        for (struct auxiliary_node_attribute *p = node->attributes; p->name != NULL; p++) {
+        for (struct auxiliary_node_attribute *p = node->attributes->items; p->name != NULL; p++) {
                 putchar(' ');
                 fputs(p->name, stdout);
                 putchar('=');
