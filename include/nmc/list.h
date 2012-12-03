@@ -1,6 +1,3 @@
-#ifndef SRC_LIST_H
-#define SRC_LIST_H
-
 #define list_cons(item, list) (item->next = list, item)
 
 #define list_shift(item, list) (item = list, list = list->next)
@@ -25,5 +22,3 @@ list_reverse_(void *list)
         }
         return reverse;
 }
-
-#endif

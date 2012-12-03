@@ -1,6 +1,3 @@
-#ifndef SRC_PARSER_H
-#define SRC_PARSER_H
-
 struct nmc_parser {
         const char *p;
         YYLTYPE location;
@@ -23,5 +20,3 @@ void nmc_parser_error(struct nmc_parser *parser,
                       YYLTYPE *location, const char *message, ...) PRINTF(3, 4);
 
 int nmc_parser_lex(struct nmc_parser *parser, YYLTYPE *location, YYSTYPE *value);
-
-#endif
