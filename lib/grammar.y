@@ -1,7 +1,9 @@
 %code requires
 {
 #define YYLTYPE struct nmc_location
+struct nmc_location;
 struct nmc_parser;
+struct nmc_parser_error;
 
 #include <stddef.h>
 
@@ -20,6 +22,9 @@ struct nodes {
 {
 struct anchor;
 void anchor_free(struct anchor *anchor);
+
+struct footnote *footnote_new(YYLTYPE *location, char *id, const char *content,
+                              struct nmc_parser_error **error);
 }
 
 %code
@@ -322,19 +327,18 @@ struct footnote {
         struct auxiliary_node *node;
 };
 
-static struct footnote *
-footnote_new(struct nmc_parser *parser, YYLTYPE *location, char *id, struct buffer *buffer)
+struct footnote *
+footnote_new(YYLTYPE *location, char *id, const char *content, struct nmc_parser_error **error)
 {
         struct footnote *footnote = nmc_new(struct footnote);
         footnote->next = NULL;
         footnote->location = *location;
         footnote->id = id_new(id);
-        footnote->node = define(buffer_str(buffer));
+        footnote->node = define(content);
         if (footnote->node == NULL)
-                nmc_parser_error(parser, location,
-                                 "unrecognized footnote content: %s",
-                                 buffer_str(buffer));
-        buffer_free(buffer);
+                *error = nmc_parser_error_new(location,
+                                              "unrecognized footnote content: %s",
+                                              content);
         return footnote;
 }
 
@@ -424,7 +428,7 @@ report_remaining_anchors(struct nmc_parser *parser)
 %token ROW
 %token ENTRYSEPARATOR "entry separator"
 %token <buffer> CODEBLOCK
-%token <raw_footnote> FOOTNOTE
+%token <footnote> FOOTNOTE
 %token SECTION
 %token INDENT
 %token DEDENT
@@ -437,7 +441,7 @@ report_remaining_anchors(struct nmc_parser *parser)
 
 %type <nodes> oblockssections0 blockssections blocks sections oblockssections
 %type <node> block footnotedsection section title
-%type <footnote> footnotes footnote
+%type <footnote> footnotes
 %type <node> paragraph
 %type <node> itemization itemizationitem
 %type <nodes> itemizationitems
@@ -457,10 +461,6 @@ report_remaining_anchors(struct nmc_parser *parser)
 
 %union {
         struct substring substring;
-        struct {
-                char *id;
-                struct buffer *buffer;
-        } raw_footnote;
         struct buffer *buffer;
         struct nodes nodes;
         struct node *node;
@@ -469,10 +469,8 @@ report_remaining_anchors(struct nmc_parser *parser)
 }
 
 %printer { fprintf(yyoutput, "%.*s", (int)$$.length, $$.string); } <substring>
-%printer { fprintf(yyoutput, "%s %s", $$.id, buffer_str($$.buffer)); } <raw_footnote>
 %printer { fprintf(yyoutput, "%s", buffer_str($$)); } <buffer>
 
-%destructor { free($$.id); buffer_free($$.buffer); } <raw_footnote>
 %destructor { buffer_free($$); } <buffer>
 %destructor { node_unlink_and_free(parser, $$.first); } <nodes>
 %destructor { node_unlink_and_free(parser, $$); } <node>
@@ -777,10 +775,8 @@ title: inlines { $$ = parent(NODE_TITLE, $1); };
 oblockssections: /* empty */ { $$ = nodes(NULL); }
 | INDENT blockssections DEDENT { $$ = $2; };
 
-footnotes: footnote
-| footnotes footnote { $$ = fibling(parser, $1, $2); };
-
-footnote: FOOTNOTE { $$ = footnote_new(parser, &@$, $1.id, $1.buffer); };
+footnotes: FOOTNOTE
+| footnotes FOOTNOTE { $$ = fibling(parser, $1, $2); };
 
 paragraph: PARAGRAPH inlines { $$ = parent(NODE_PARAGRAPH, $2); };
 

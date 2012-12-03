@@ -8,10 +8,12 @@
 #include <string.h>
 
 #include <private.h>
-#include "ext.h"
-#include "grammar.h"
+
 #include <nmc.h>
 #include <nmc/list.h>
+
+#include "ext.h"
+#include "grammar.h"
 #include "parser.h"
 #include "buffer.h"
 #include "unicode.h"
@@ -265,14 +267,16 @@ bol_space(struct nmc_parser *parser, size_t offset)
 static int
 footnote(struct nmc_parser *parser, YYLTYPE *location, YYSTYPE *value, size_t length)
 {
-        value->raw_footnote.id = strndup(parser->p, length);
-        value->raw_footnote.buffer = buffer_new_empty();
-
-        return buffer(parser,
-                      location,
-                      value->raw_footnote.buffer,
-                      parser->p + length + bol_space(parser, length),
-                      FOOTNOTE);
+        char *id = strndup(parser->p, length);
+        struct buffer *b = buffer_new_empty();
+        int type = buffer(parser, location, b,
+                          parser->p + length + bol_space(parser, length), FOOTNOTE);
+        struct nmc_parser_error *error = NULL;
+        value->footnote = footnote_new(location, id, buffer_str(b), &error);
+        if (error != NULL)
+                nmc_parser_errors(parser, error, error);
+        buffer_free(b);
+        return type;
 }
 
 static int
