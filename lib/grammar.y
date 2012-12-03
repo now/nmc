@@ -470,6 +470,15 @@ report_remaining_anchors(struct nmc_parser *parser)
 
 %printer { fprintf(yyoutput, "%.*s", (int)$$.length, $$.string); } <substring>
 %printer { fprintf(yyoutput, "%s", buffer_str($$)); } <buffer>
+%printer { fprintf(yyoutput, "%d, %d", $$.first->name, $$.last->name); } <nodes>
+%printer { fprintf(yyoutput, "%d", $$->name); } <node>
+%printer {
+        if ($$->node != NULL)
+                fprintf(yyoutput, "%s %d", $$->id.string, $$->node->node.node.name);
+        else
+                fprintf(yyoutput, "%s (unrecognized)", $$->id.string);
+} <footnote>
+%printer { fprintf(yyoutput, "%s", $$->id); } <sigil>
 
 %destructor { buffer_free($$); } <buffer>
 %destructor { node_unlink_and_free(parser, $$.first); } <nodes>
