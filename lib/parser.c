@@ -113,7 +113,7 @@ token(struct nmc_parser *parser, YYLTYPE *location, const char *end, int type)
 
 static int
 trimmed_substring(struct nmc_parser *parser, YYLTYPE *location, YYSTYPE *value,
-                  const char *end, int left, int right, int type)
+                  const char *end, size_t left, size_t right, int type)
 {
         value->substring.string = parser->p + left;
         value->substring.length = end - value->substring.string - right;
@@ -136,7 +136,7 @@ dedent(struct nmc_parser *parser, YYLTYPE *location, const char *end)
 }
 
 static int
-dedents(struct nmc_parser *parser, YYLTYPE *location, const char *end, int spaces)
+dedents(struct nmc_parser *parser, YYLTYPE *location, const char *end, size_t spaces)
 {
         parser->dedents = (parser->indent - spaces) / 2;
         parser->indent -= 2 * parser->dedents;

@@ -353,7 +353,7 @@ struct sigil {
 };
 
 static struct sigil *
-sigil_new(YYLTYPE *location, const char *string, int length)
+sigil_new(YYLTYPE *location, const char *string, size_t length)
 {
         struct sigil *sigil = nmc_new(struct sigil);
         sigil->next = NULL;

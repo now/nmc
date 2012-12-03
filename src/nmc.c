@@ -44,9 +44,9 @@ usage(void)
                 "\n"
                 "Options:\n",
                 PACKAGE_NAME);
-        int longest = 0;
+        size_t longest = 0;
         for (size_t i = 0; i < nmc_lengthof(options); i++) {
-                int length = options[i].argument == NULL ? 0 : strlen(options[i].argument);
+                size_t length = options[i].argument == NULL ? 0 : strlen(options[i].argument);
                 switch (options[i].has_arg) {
                 case required_argument:
                         length += 1;
@@ -62,10 +62,10 @@ usage(void)
                 fprintf(stdout, "  -%c, --%s", options[i].c, options[i].name);
                 switch (options[i].has_arg) {
                 case required_argument:
-                        fprintf(stdout, "=%-*s", longest, options[i].argument);
+                        fprintf(stdout, "=%-*s", (int)longest, options[i].argument);
                         break;
                 case optional_argument:
-                        fprintf(stdout, "[=%s]%*s", options[i].argument, longest, " ");
+                        fprintf(stdout, "[=%s]%*s", options[i].argument, (int)longest, " ");
                         break;
                 }
                 fprintf(stdout, "  %s\n", options[i].help);
@@ -75,7 +75,7 @@ usage(void)
 int
 main(int argc, char *const *argv)
 {
-        int length = nmc_lengthof(options);
+        size_t length = nmc_lengthof(options);
         for (size_t i = 0; i < nmc_lengthof(options); i++) {
                 switch (options[i].has_arg) {
                 case required_argument:
