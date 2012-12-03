@@ -18,9 +18,8 @@ struct nodes {
 
 %code provides
 {
-struct anchors;
-
-void anchors_free(struct anchors *anchors);
+struct anchor;
+void anchor_free(struct anchor *anchor);
 }
 
 %code
@@ -71,10 +70,19 @@ struct anchor {
 static void
 anchor_free1(struct anchor *anchor)
 {
+        if (anchor == NULL)
+                return;
         free(anchor->id.string);
         /* NOTE anchor->node is either on the stack or in the tree, so we don’t
          * need to free it here. */
         nmc_free(anchor);
+}
+
+void
+anchor_free(struct anchor *anchor)
+{
+        list_for_each_safe(struct anchor, p, n, anchor)
+                anchor_free1(p);
 }
 
 struct anchor_node {
@@ -88,93 +96,16 @@ struct anchor_node {
         } u;
 };
 
-struct anchors {
-        struct anchors *next;
-        struct id id;
-        struct anchor *anchors;
-};
-
-static void
-anchors_free1(struct anchors *anchors)
-{
-        free(anchors->id.string);
-        nmc_free(anchors);
-}
-
-void
-anchors_free(struct anchors *anchors)
-{
-        list_for_each(struct anchors, p, anchors)
-                anchors_free1(anchors);
-}
-
-static struct anchors *
-anchors_find_prim(struct anchors *anchors, const struct id *id,
-                  struct anchors **previous, struct anchors **next)
-{
-        *previous = *next = NULL;
-        struct anchors *p = NULL;
-        list_for_each_safe(struct anchors, c, n, anchors) {
-                if (id_eq(&c->id, id)) {
-                        *previous = p;
-                        *next = n;
-                        return c;
-                }
-                p = c;
-        }
-        return NULL;
-}
-
-static struct anchors *
-anchors_find(struct anchors *anchors, const struct id *id)
-{
-        struct anchors *p, *n;
-        return anchors_find_prim(anchors, id, &p, &n);
-}
-
-static struct anchor *
-anchors_remove(struct anchors **anchors, const struct id *id)
-{
-        struct anchors *p, *n, *c = anchors_find_prim(*anchors, id, &p, &n);
-        if (c == NULL)
-                return NULL;
-        if (p == NULL)
-                *anchors = n;
-        else
-                p->next = n;
-        struct anchor *a = c->anchors;
-        anchors_free1(c);
-        return a;
-}
-
-static struct anchors *
-anchors_cons(struct anchors *anchors, struct anchor *anchor)
-{
-        list_for_each(struct anchors, p, anchors) {
-                if (id_eq(&p->id, &anchor->id)) {
-                        anchor->next = p->anchors;
-                        p->anchors = anchor;
-                        return anchors;
-                }
-        }
-        struct anchors *a = nmc_new(struct anchors);
-        a->next = anchors;
-        a->id = id_new(strdup(anchor->id.string));
-        a->anchors = anchor;
-        return a;
-}
-
 static void
 anchor_unlink(struct node *node, struct nmc_parser *parser)
 {
         if (node->name != NODE_ANCHOR)
                 return;
-        struct anchors *anchors = anchors_find(parser->anchors, &((struct anchor_node *)node)->u.anchor->id);
         struct anchor *p = NULL;
-        list_for_each_safe(struct anchor, c, n, anchors->anchors) {
+        list_for_each_safe(struct anchor, c, n, parser->anchors) {
                 if (c->node == (struct anchor_node *)node) {
                         if (p == NULL)
-                                anchors->anchors = n;
+                                parser->anchors = n;
                         else
                                 p->next = n;
                         break;
@@ -449,19 +380,17 @@ static void
 report_remaining_anchors(struct nmc_parser *parser)
 {
         struct nmc_parser_error *first = NULL, *previous = NULL, *last = NULL;
-        /* TODO Sort these by location */
-        list_for_each_safe(struct anchors, p, n, parser->anchors) {
-                list_for_each(struct anchor, q, p->anchors) {
-                        first = nmc_parser_error_new(&q->location,
-                                                     "reference to undefined footnote: %s",
-                                                     q->id.string);
-                        if (last == NULL)
-                                last = first;
-                        if (previous != NULL)
-                                first->next = previous;
-                        previous = first;
-                }
-                anchors_free1(p);
+        list_for_each_safe(struct anchor, p, n, parser->anchors) {
+                first = nmc_parser_error_new(&p->location,
+                                             "reference to undefined footnote: %s",
+                                             p->id.string);
+                if (last == NULL)
+                        last = first;
+                if (previous != NULL)
+                        first->next = previous;
+                previous = first;
+                p->node->u.anchor = NULL;
+                anchor_free1(p);
         }
         parser->anchors = NULL;
         nmc_parser_errors(parser, first, last);
@@ -639,34 +568,42 @@ parent_children(enum node_name name, struct node *first, struct nodes rest)
 }
 
 static void
-update_anchors(struct anchor *anchors, struct auxiliary_node *node)
+update_anchors(struct nmc_parser *parser, struct footnote *footnote)
 {
-        list_for_each_safe(struct anchor, p, n, anchors) {
-                p->node->node.node.type = node->node.node.type;
-                p->node->node.node.name = node->node.node.name;
-                p->node->u.auxiliary.name = node->name;
-                p->node->u.auxiliary.attributes = node->attributes;
-                p->node = NULL;
-                anchor_free1(p);
+        bool found = false;
+        struct anchor *p = NULL;
+        list_for_each_safe(struct anchor, c, n, parser->anchors) {
+                if (id_eq(&c->id, &footnote->id)) {
+                        if (footnote->node != NULL) {
+                                c->node->node.node.type = footnote->node->node.node.type;
+                                c->node->node.node.name = footnote->node->node.node.name;
+                                c->node->u.auxiliary.name = footnote->node->name;
+                                c->node->u.auxiliary.attributes = footnote->node->attributes;
+                                c->node = NULL;
+                        } else
+                                c->node->u.anchor = NULL;
+                        if (p == NULL)
+                                parser->anchors = n;
+                        else
+                                p->next = n;
+                        anchor_free1(c);
+                        found = true;
+                } else
+                        p = c;
         }
+        if (found)
+                footnote->node = NULL;
+        else
+                nmc_parser_error(parser,
+                                 &footnote->location,
+                                 "unreferenced footnote: %s", footnote->id.string);
 }
 
 static void
 footnote(struct nmc_parser *parser, struct footnote *footnotes)
 {
         list_for_each_safe(struct footnote, p, n, footnotes) {
-                struct anchor *anchors = anchors_remove(&parser->anchors, &p->id);
-                if (anchors == NULL) {
-                        nmc_parser_error(parser,
-                                         &p->location,
-                                         "unreferenced footnote: %s", p->id.string);
-                        continue;
-                }
-
-                if (p->node != NULL) {
-                        update_anchors(anchors, p->node);
-                        p->node = NULL;
-                }
+                update_anchors(parser, p);
                 footnote_free(p);
         }
 }
@@ -706,7 +643,8 @@ anchor(struct nmc_parser *parser, struct node *atom, struct sigil *sigils)
         struct node *outermost = atom;
         list_for_each(struct sigil, p, sigils) {
                 struct anchor *anchor = nmc_new(struct anchor);
-                anchor->next = NULL;
+                anchor->next = parser->anchors;
+                parser->anchors = anchor;
                 anchor->location = p->location;
                 anchor->id = id_new(strdup(p->id));
                 anchor->node = node_new(struct anchor_node, PRIVATE, NODE_ANCHOR);
@@ -718,8 +656,6 @@ anchor(struct nmc_parser *parser, struct node *atom, struct sigil *sigils)
                         anchor->node->node.children = ((struct parent_node *)outermost)->children;
                         ((struct parent_node *)outermost)->children = (struct node *)anchor->node;
                 }
-
-                parser->anchors = anchors_cons(parser->anchors, anchor);
 
                 sigil_free1(p);
         }
