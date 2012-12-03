@@ -61,6 +61,10 @@ fi
 
 AC_PROG_YACC
 AC_CHECK_PROGS([VALGRIND], [valgrind])
+case $VALGRIND:$host_os in
+  '':*) ;;
+  *:darwin*) VALGRIND+=' --suppressions=$(abs_top_srcdir)/build/darwin.supp' ;;
+esac
 
 AC_CHECK_HEADERS([getopt.h])
 AC_CHECK_FUNCS([getopt_long],,

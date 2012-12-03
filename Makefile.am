@@ -94,8 +94,8 @@ $(TESTSUITE): $(testdir)/testsuite.at $(testdir)/package.m4 $(TESTSUITE_AT)
 maintainer-check-valgrind: $(BUILT_SOURCES) all-am $(testdir)/atconfig $(testdir)/atlocal $(TESTSUITE)
 	if test -n '$(VALGRIND)'; then \
 	  echo '$(TESTSUITE): Entering directory `$(testdir)'\'; \
-	  VALGRIND_OPTS='--leak-check=full --show-reachable=yes --suppressions=../../valgrind.supp' \
-	  $(SHELL) '$(TESTSUITE)' -C '$(testdir)' $(TESTSUITEFLAGS) PRENMC='$(VALGRIND) -q'; \
+	  $(SHELL) '$(TESTSUITE)' -C '$(testdir)' $(TESTSUITEFLAGS) PRENMC='$(VALGRIND) -q' \
+	    VALGRIND_OPTS='--leak-check=full --show-reachable=yes' \
 	  echo '$(TESTSUITE): Leaving directory `$(testdir)'\'; \
 	fi
 
