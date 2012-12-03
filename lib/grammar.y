@@ -349,23 +349,23 @@ footnote_free(struct footnote *footnote)
 struct sigil {
         struct sigil *next;
         YYLTYPE location;
-        char *id;
+        char id[];
 };
 
 static struct sigil *
 sigil_new(YYLTYPE *location, const char *string, size_t length)
 {
-        struct sigil *sigil = nmc_new(struct sigil);
+        struct sigil *sigil = malloc(sizeof(struct sigil) + length + 1);
         sigil->next = NULL;
         sigil->location = *location;
-        sigil->id = strndup(string, length);
+        memcpy(sigil->id, string, length);
+        sigil->id[length] = '\0';
         return sigil;
 }
 
 static void
 sigil_free1(struct sigil *sigil)
 {
-        free(sigil->id);
         nmc_free(sigil);
 }
 
