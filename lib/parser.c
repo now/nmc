@@ -12,10 +12,10 @@
 #include <nmc.h>
 #include <nmc/list.h>
 
+#include "buffer.h"
 #include "ext.h"
 #include "grammar.h"
 #include "parser.h"
-#include "buffer.h"
 #include "unicode.h"
 
 void

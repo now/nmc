@@ -1,10 +1,14 @@
+#include <config.h>
+
 #include <stdbool.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include <private.h>
+
 #include <nmc/list.h>
+
 #include "buffer.h"
 
 struct buffer {

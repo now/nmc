@@ -29,20 +29,24 @@ struct footnote *footnote_new(YYLTYPE *location, char *id, const char *content,
 
 %code
 {
+#include <config.h>
+
 #include <sys/types.h>
 #include <regex.h>
 #include <stdarg.h>
-#include <stdio.h>
 #include <stdbool.h>
+#include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include <private.h>
-#include "ext.h"
+
 #include <nmc.h>
 #include <nmc/list.h>
-#include "parser.h"
+
 #include "buffer.h"
+#include "ext.h"
+#include "parser.h"
 
 struct id {
         unsigned long hash;
