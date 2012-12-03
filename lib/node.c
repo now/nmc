@@ -3,7 +3,7 @@
 #include <stdlib.h>
 
 #include <private.h>
-#include "grammar.h"
+
 #include <nmc.h>
 #include <nmc/list.h>
 
