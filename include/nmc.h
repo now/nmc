@@ -87,6 +87,8 @@ struct nmc_location {
 
 char *nmc_location_str(const struct nmc_location *location);
 
+extern int nmc_grammar_debug;
+
 void nmc_grammar_initialize(void);
 void nmc_grammar_finalize(void);
 

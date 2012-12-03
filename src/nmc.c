@@ -13,8 +13,6 @@
 #include <nmc.h>
 #include <nmc/list.h>
 
-extern int nmc_grammar_debug;
-
 struct {
         char c;
         const char *name;
