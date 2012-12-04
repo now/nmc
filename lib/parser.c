@@ -22,15 +22,15 @@ void
 nmc_parser_error_free(struct nmc_parser_error *error)
 {
         list_for_each_safe(struct nmc_parser_error, p, n, error) {
-                nmc_free(p->message);
-                nmc_free(p);
+                free(p->message);
+                free(p);
         }
 }
 
 struct nmc_parser_error *
 nmc_parser_error_newv(YYLTYPE *location, const char *message, va_list args)
 {
-        struct nmc_parser_error *error = nmc_new(struct nmc_parser_error);
+        struct nmc_parser_error *error = malloc(sizeof(struct nmc_parser_error));
         error->next = NULL;
         error->location = *location;
         nmc_vasprintf(&error->message, message, args);

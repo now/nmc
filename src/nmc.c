@@ -32,7 +32,7 @@ report_nmc_parser_error(const struct nmc_parser_error *error)
 {
         char *s = nmc_location_str(&error->location);
         fprintf(stderr, "%s: %s\n", s, error->message);
-        nmc_free(s);
+        free(s);
 
         return 1;
 }
@@ -143,7 +143,7 @@ main(int argc, char *const *argv)
 
         int result = EXIT_SUCCESS;
 
-        char *buffer = nmc_new_n(char, 2000000);
+        char *buffer = malloc(2000000);
         ssize_t bytes = read(STDIN_FILENO, buffer, 2000000);
         buffer[bytes] = '\0';
 
@@ -167,7 +167,7 @@ main(int argc, char *const *argv)
 
         nmc_grammar_finalize();
 
-        nmc_free(buffer);
+        free(buffer);
 
         return result;
 }

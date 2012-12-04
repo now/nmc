@@ -20,7 +20,7 @@ struct buffer {
 struct buffer *
 buffer_new(const char *string, size_t length)
 {
-        struct buffer *n = nmc_new(struct buffer);
+        struct buffer *n = malloc(sizeof(struct buffer));
         n->length = n->allocated = 0;
         n->content = NULL;
         return buffer_append(n, string, length);
@@ -35,8 +35,8 @@ buffer_new_empty(void)
 void
 buffer_free(struct buffer *buffer)
 {
-        nmc_free(buffer->content);
-        nmc_free(buffer);
+        free(buffer->content);
+        free(buffer);
 }
 
 struct buffer *
@@ -82,7 +82,7 @@ buffer_str_free(struct buffer *buffer)
 {
         char *s = buffer_str(buffer);
         size_t l = buffer->length;
-        nmc_free(buffer);
+        free(buffer);
         char *t = realloc(s, l + 1);
         return t == NULL ? s : t;
 }

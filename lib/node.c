@@ -29,7 +29,7 @@ action_new(struct action **used, struct action *next, bool enter, struct node *n
                 n = *used;
                 *used = (*used)->next;
         } else
-                n = nmc_new(struct action);
+                n = malloc(sizeof(struct action));
         n->next = next;
         n->enter = enter;
         n->nodes = nodes;
@@ -71,7 +71,7 @@ nmc_node_traverse(struct node *node, traversefn enter, traversefn leave, void *c
                 }
         }
         list_for_each_safe(struct action, p, n, used)
-                nmc_free(p);
+                free(p);
 }
 
 void

@@ -15,7 +15,7 @@ nmc_vasprintf(char **output, const char *format, va_list args)
         va_copy(saved, args);
         char buf[1];
         int size = vsnprintf(buf, sizeof(buf), format, args);
-        char *result = nmc_new_n(char, size + 1);
+        char *result = malloc(size + 1);
         vsnprintf(result, size + 1, format, saved);
         va_end(saved);
         *output = result;

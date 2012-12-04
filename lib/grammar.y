@@ -89,7 +89,7 @@ anchor_free1(struct anchor *anchor)
         free(anchor->id.string);
         /* NOTE anchor->node is either on the stack or in the tree, so we don’t
          * need to free it here. */
-        nmc_free(anchor);
+        free(anchor);
 }
 
 void
@@ -158,7 +158,7 @@ static struct definition *definitions;
 static void
 definitions_push(const char *pattern, definefn define)
 {
-        struct definition *definition = nmc_new(struct definition);
+        struct definition *definition = malloc(sizeof(struct definition));
         /* TODO Error-check here */
         regcomp(&definition->regex, pattern, REG_EXTENDED);
         definition->define = define;
@@ -174,7 +174,7 @@ node_init(struct node *node, enum node_type type, enum node_name name)
         node->name = name;
         return node;
 }
-#define node_new(stype, type, name) ((stype *)node_init((struct node *)nmc_new(stype), type, name))
+#define node_new(stype, type, name) ((stype *)node_init(malloc(sizeof(stype)), type, name))
 
 static struct auxiliary_node *
 auxiliary_node_new_matches(const char *name, const char *buffer,
@@ -229,7 +229,7 @@ nmc_grammar_finalize(void)
 {
         list_for_each_safe(struct definition, p, n, definitions) {
                 regfree(&p->regex);
-                nmc_free(p);
+                free(p);
         }
         definitions = NULL;
 }
@@ -276,7 +276,7 @@ text_node_new(enum node_name name, char *text)
 static struct node *
 text_node_free(struct text_node *node)
 {
-        nmc_free(node->text);
+        free(node->text);
         return NULL;
 }
 
@@ -321,7 +321,7 @@ node_free(struct node *node)
                                 last = last->next;
                 }
                 struct node *next = p->next;
-                nmc_free(p);
+                free(p);
                 p = next;
         }
 }
@@ -350,7 +350,7 @@ struct footnote {
 struct footnote *
 footnote_new(YYLTYPE *location, char *id, const char *content, struct nmc_parser_error **error)
 {
-        struct footnote *footnote = nmc_new(struct footnote);
+        struct footnote *footnote = malloc(sizeof(struct footnote));
         footnote->next = NULL;
         footnote->location = *location;
         footnote->id = id_new(id);
@@ -367,7 +367,7 @@ footnote_free(struct footnote *footnote)
 {
         free(footnote->id.string);
         node_free((struct node *)footnote->node);
-        nmc_free(footnote);
+        free(footnote);
 }
 
 struct sigil {
@@ -390,7 +390,7 @@ sigil_new(YYLTYPE *location, const char *string, size_t length)
 static void
 sigil_free1(struct sigil *sigil)
 {
-        nmc_free(sigil);
+        free(sigil);
 }
 
 static void
@@ -646,7 +646,7 @@ anchor(struct nmc_parser *parser, struct node *atom, struct sigil *sigils)
 {
         struct node *outermost = atom;
         list_for_each(struct sigil, p, sigils) {
-                struct anchor *anchor = nmc_new(struct anchor);
+                struct anchor *anchor = malloc(sizeof(struct anchor));
                 anchor->next = parser->anchors;
                 parser->anchors = anchor;
                 anchor->location = p->location;
