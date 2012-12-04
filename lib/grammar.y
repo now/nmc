@@ -479,7 +479,6 @@ report_remaining_anchors(struct nmc_parser *parser)
 
 %union {
         struct substring substring;
-        struct buffer *buffer;
         struct nodes nodes;
         struct node *node;
         struct footnote *footnote;
@@ -487,7 +486,6 @@ report_remaining_anchors(struct nmc_parser *parser)
 }
 
 %printer { fprintf(yyoutput, "%.*s", (int)$$.length, $$.string); } <substring>
-%printer { fprintf(yyoutput, "%s", buffer_str($$)); } <buffer>
 %printer { fprintf(yyoutput, "%d, %d", $$.first->name, $$.last->name); } <nodes>
 %printer { fprintf(yyoutput, "%d", $$->name); } <node>
 %printer {
@@ -498,7 +496,6 @@ report_remaining_anchors(struct nmc_parser *parser)
 } <footnote>
 %printer { fprintf(yyoutput, "%s", $$->id); } <sigil>
 
-%destructor { buffer_free($$); } <buffer>
 %destructor { node_unlink_and_free(parser, $$.first); } <nodes>
 %destructor { node_unlink_and_free(parser, $$); } <node>
 %destructor { footnote_free($$); } <footnote>
