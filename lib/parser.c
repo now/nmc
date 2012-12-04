@@ -211,12 +211,13 @@ is_space_or_end(const char *end)
         return is_end(end) || *end == ' ';
 }
 
-static int
-buffer(struct nmc_parser *parser, YYLTYPE *location, struct buffer *buffer, const char *begin, int type)
+static char *
+buffer(struct nmc_parser *parser, YYLTYPE *location, const char *begin)
 {
         while (*begin == ' ')
                 begin++;
 
+        struct buffer *b = buffer_new_empty();
         const char *end = begin;
 
 again:
@@ -229,7 +230,7 @@ again:
                         send++;
                 size_t spaces = send - (end + 1);
                 if (!is_end(send) && spaces >= parser->indent + 2) {
-                        buffer_append(buffer, begin, end - begin);
+                        buffer_append(b, begin, end - begin);
                         begin = end + parser->indent + 2;
                         end = send;
                         parser->location.last_line++;
@@ -239,7 +240,7 @@ again:
         }
         case ' ':
                 end++;
-                buffer_append(buffer, begin, end - begin);
+                buffer_append(b, begin, end - begin);
                 while (*end == ' ')
                         end++;
                 begin = end;
@@ -248,9 +249,12 @@ again:
                 end++;
                 goto again;
         }
-        buffer_append(buffer, begin, end - begin);
+        buffer_append(b, begin, end - begin);
 
-        return token(parser, location, end, type);
+        // NOTE We use a throwaway type here; caller must return actual type.
+        token(parser, location, end, ERROR);
+
+        return buffer_str_free(b);
 }
 
 static size_t
@@ -268,15 +272,14 @@ static int
 footnote(struct nmc_parser *parser, YYLTYPE *location, YYSTYPE *value, size_t length)
 {
         char *id = strndup(parser->p, length);
-        struct buffer *b = buffer_new_empty();
-        int type = buffer(parser, location, b,
-                          parser->p + length + bol_space(parser, length), FOOTNOTE);
         struct nmc_parser_error *error = NULL;
-        value->footnote = footnote_new(location, id, buffer_str(b), &error);
+        value->footnote = footnote_new(location, id,
+                                       buffer(parser, location,
+                                              parser->p + length + bol_space(parser, length)),
+                                       &error);
         if (error != NULL)
                 nmc_parser_errors(parser, error, error);
-        buffer_free(b);
-        return type;
+        return FOOTNOTE;
 }
 
 static int
@@ -553,8 +556,8 @@ nmc_parser_lex(struct nmc_parser *parser, YYLTYPE *location, YYSTYPE *value)
 
         if (parser->want == TITLE) {
                 parser->want = ERROR;
-                value->buffer = buffer_new_empty();
-                return buffer(parser, location, value->buffer, end, TITLE);
+                value->node = text_node_new(NODE_TEXT, buffer(parser, location, end));
+                return TITLE;
         }
 
         size_t length;

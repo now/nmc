@@ -4,6 +4,7 @@
 struct nmc_location;
 struct nmc_parser;
 struct nmc_parser_error;
+enum node_name;
 
 #include <stddef.h>
 
@@ -22,6 +23,8 @@ struct nodes {
 {
 struct anchor;
 void anchor_free(struct anchor *anchor);
+
+struct node *text_node_new(enum node_name name, char *text);
 
 struct footnote *footnote_new(YYLTYPE *location, char *id, const char *content,
                               struct nmc_parser_error **error);
@@ -260,6 +263,14 @@ auxiliary_node_free(struct auxiliary_node *node)
         return parent_node_free((struct parent_node *)node);
 }
 
+struct node *
+text_node_new(enum node_name name, char *text)
+{
+        struct text_node *n = node_new(struct text_node, TEXT, name);
+        n->text = text;
+        return (struct node *)n;
+}
+
 static struct node *
 text_node_free(struct text_node *node)
 {
@@ -420,7 +431,7 @@ report_remaining_anchors(struct nmc_parser *parser)
 %token END 0 "end of file"
 %token ERROR
 %token AGAIN
-%token <buffer> TITLE
+%token <node> TITLE
 %token <substring> WORD
 %token PARAGRAPH
 %token <substring> SPACE
@@ -514,23 +525,15 @@ nmc_grammar_error(YYLTYPE *location, struct nmc_parser *parser, const char *mess
 }
 
 static struct node *
-text_node(enum node_name name, char *text)
-{
-        struct text_node *n = node_new(struct text_node, TEXT, name);
-        n->text = text;
-        return (struct node *)n;
-}
-
-static struct node *
 text(enum node_name name, struct buffer *buffer)
 {
-        return text_node(name, buffer_str_free(buffer));
+        return text_node_new(name, buffer_str_free(buffer));
 }
 
 static struct node *
 subtext(enum node_name name, struct substring substring)
 {
-        return text_node(name, strndup(substring.string, substring.length));
+        return text_node_new(name, strndup(substring.string, substring.length));
 }
 
 static inline struct nodes
@@ -753,7 +756,7 @@ append_spaced_word(struct nmc_parser *parser, struct nodes inlines, struct subst
 %%
 
 nmc: TITLE oblockssections0 {
-        parser->doc = parent_children(NODE_DOCUMENT, parent1(NODE_TITLE, text(NODE_TEXT, $1)), $2);
+        parser->doc = parent_children(NODE_DOCUMENT, parent1(NODE_TITLE, $1), $2);
         report_remaining_anchors(parser);
 };
 
