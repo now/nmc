@@ -583,9 +583,13 @@ nmc_parser_lex(struct nmc_parser *parser, YYLTYPE *location, YYSTYPE *value)
 
         if (is_group_end(end))
                 return token(parser, location, parser->p + 1, ENDGROUP);
-        else if ((length = superscript(parser)) > 0)
+        else if ((length = superscript(parser)) > 0) {
                 // TODO Only catch this if followed by is_inline_end().
-                return substring(parser, location, value, parser->p + length, SIGIL);
+                const char *begin = parser->p;
+                int r = token(parser, location, parser->p + length, SIGIL);
+                value->sigil = sigil_new(location, begin, length);
+                return r;
+        }
 
         while (!is_inline_end(end))
                 end++;

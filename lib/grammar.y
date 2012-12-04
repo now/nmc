@@ -26,6 +26,8 @@ void anchor_free(struct anchor *anchor);
 
 struct node *text_node_new(enum node_name name, char *text);
 
+struct sigil *sigil_new(YYLTYPE *location, const char *string, size_t length);
+
 struct footnote *footnote_new(YYLTYPE *location, char *id, const char *content,
                               struct nmc_parser_error **error);
 }
@@ -374,7 +376,7 @@ struct sigil {
         char id[];
 };
 
-static struct sigil *
+struct sigil *
 sigil_new(YYLTYPE *location, const char *string, size_t length)
 {
         struct sigil *sigil = malloc(sizeof(struct sigil) + length + 1);
@@ -452,7 +454,7 @@ report_remaining_anchors(struct nmc_parser *parser)
 %token DEDENT
 %token <node> CODE
 %token <node> EMPHASIS
-%token <substring> SIGIL
+%token <sigil> SIGIL
 %token SIGILSEPARATOR
 %token BEGINGROUP
 %token ENDGROUP
@@ -473,7 +475,7 @@ report_remaining_anchors(struct nmc_parser *parser)
 %type <nodes> headbody body entries
 %type <nodes> inlines sinlines
 %type <node> anchoredinline inline
-%type <sigil> sigils sigil
+%type <sigil> sigils
 %type <node> item
 %type <nodes> oblocks
 
@@ -847,10 +849,8 @@ inline: CODE
 | BEGINGROUP sinlines ENDGROUP { $$ = parent(NODE_GROUP, textify($2)); };
 
 sigils: /* empty */ { $$ = NULL; }
-| sigil
-| sigils SIGILSEPARATOR sigil { $$ = $3; $$->next = $1; };
-
-sigil: SIGIL { $$ = sigil_new(&@$, $1.string, $1.length); };
+| SIGIL
+| sigils SIGILSEPARATOR SIGIL { $$ = $3; $$->next = $1; };
 
 ospace: /* empty */
 | SPACE;
