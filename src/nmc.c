@@ -13,7 +13,7 @@
 #include <nmc.h>
 #include <nmc/list.h>
 
-struct {
+struct nmc_option {
         char c;
         const char *name;
         int has_arg;
@@ -21,8 +21,11 @@ struct {
         const char *help;
 } options[] = {
         { 'h', "help", no_argument, NULL, "Display this help" },
-        { 'v', "version", no_argument, NULL, "Display version string" }
+        { 'v', "version", no_argument, NULL, "Display version string" },
+        { '\0', NULL, no_argument, NULL, NULL }
 };
+#define options_for_each(item) \
+        for (struct nmc_option *item = options; item->c != '\0'; item++)
 
 static int
 report_nmc_parser_error(const struct nmc_parser_error *error)
@@ -44,9 +47,9 @@ usage(void)
                 "Options:\n",
                 PACKAGE_NAME);
         size_t longest = 0;
-        for (size_t i = 0; i < nmc_lengthof(options); i++) {
-                size_t length = options[i].argument == NULL ? 0 : strlen(options[i].argument);
-                switch (options[i].has_arg) {
+        options_for_each(p) {
+                size_t length = p->argument == NULL ? 0 : strlen(p->argument);
+                switch (p->has_arg) {
                 case required_argument:
                         length += 1;
                         break;
@@ -57,52 +60,52 @@ usage(void)
                 if (length > longest)
                         longest = length;
         }
-        for (size_t i = 0; i < nmc_lengthof(options); i++) {
-                fprintf(stdout, "  -%c, --%s", options[i].c, options[i].name);
-                switch (options[i].has_arg) {
+        options_for_each(p) {
+                fprintf(stdout, "  -%c, --%s", p->c, p->name);
+                switch (p->has_arg) {
                 case required_argument:
-                        fprintf(stdout, "=%-*s", (int)longest, options[i].argument);
+                        fprintf(stdout, "=%-*s", (int)longest, p->argument);
                         break;
                 case optional_argument:
-                        fprintf(stdout, "[=%s]%*s", options[i].argument, (int)longest, " ");
+                        fprintf(stdout, "[=%s]%*s", p->argument, (int)longest, " ");
                         break;
                 }
-                fprintf(stdout, "  %s\n", options[i].help);
+                fprintf(stdout, "  %s\n", p->help);
         }
 }
 
 int
 main(int argc, char *const *argv)
 {
-        size_t length = nmc_lengthof(options);
-        for (size_t i = 0; i < nmc_lengthof(options); i++) {
-                switch (options[i].has_arg) {
-                case required_argument:
-                        length += 1;
-                        break;
-                case optional_argument:
-                        length += 2;
-                        break;
+        size_t n = 0, length = 0;
+        options_for_each(p) {
+                n++;
+                switch (p->has_arg) {
+                case required_argument: length += 1; break;
+                case optional_argument: length += 2; break;
                 }
         }
+        length += n;
         char shorts[length + 1];
-        struct option longs[nmc_lengthof(options) + 1];
-        for (size_t i = 0, j = 0; i < nmc_lengthof(options); i++, j++) {
-                longs[i].name = options[i].name;
-                longs[i].has_arg = options[i].has_arg;
-                longs[i].flag = NULL;
-                longs[i].val = shorts[j] = options[i].c;
-                switch (options[i].has_arg) {
+        struct option longs[n + 1];
+        char *q = shorts;
+        struct option *r = longs;
+        options_for_each(p) {
+                *q++ = p->c;
+                switch (p->has_arg) {
                 case optional_argument:
-                        j += 1;
-                        shorts[j] = ':';
+                        *q++ = ':';
                 case required_argument:
-                        j += 1;
-                        shorts[j] = ':';
+                        *q++ = ':';
                 }
+                r->name = p->name;
+                r->has_arg = p->has_arg;
+                r->flag = NULL;
+                r->val = p->c;
+                r++;
         }
         shorts[length] = '\0';
-        memset(&longs[nmc_lengthof(options)], 0, sizeof(longs[0]));
+        memset(q, 0, sizeof(*q));
 
         opterr = 0;
         int index;
@@ -119,11 +122,11 @@ main(int argc, char *const *argv)
                                 PACKAGE_NAME, argv[optind - 1]);
                         return EXIT_FAILURE;
                 }
-                for (size_t i = 0; i < nmc_lengthof(options); i++) {
-                        if (options[i].c == optopt) {
+                options_for_each(p) {
+                        if (p->c == optopt) {
                                 fprintf(stderr,
                                         "%s: option --%s requires an argument\n",
-                                        PACKAGE_NAME, options[i].name);
+                                        PACKAGE_NAME, p->name);
                                 return EXIT_FAILURE;
                         }
                 }
