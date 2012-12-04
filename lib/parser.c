@@ -114,19 +114,12 @@ token(struct nmc_parser *parser, YYLTYPE *location, const char *end, int type)
 }
 
 static int
-trimmed_substring(struct nmc_parser *parser, YYLTYPE *location, YYSTYPE *value,
-                  const char *end, size_t left, size_t right, int type)
-{
-        value->substring.string = parser->p + left;
-        value->substring.length = end - value->substring.string - right;
-        return token(parser, location, end, type);
-}
-
-static int
 substring(struct nmc_parser *parser, YYLTYPE *location, YYSTYPE *value,
           const char *end, int type)
 {
-        return trimmed_substring(parser, location, value, end, 0, 0, type);
+        value->substring.string = parser->p;
+        value->substring.length = end - value->substring.string;
+        return token(parser, location, end, type);
 }
 
 static int
