@@ -529,17 +529,19 @@ code(struct nmc_parser *parser, YYLTYPE *location, YYSTYPE *value)
 static int
 emphasis(struct nmc_parser *parser, YYLTYPE *location, YYSTYPE *value)
 {
-        const char *end = parser->p + 1;
+        const char *begin = parser->p + 1;
+        const char *end = begin;
         while (!is_end(end) &&
                (*end != '/' || !is_inline_end(end + 1)))
                 end++;
+        const char *send = end;
         if (is_end(end)) {
                 nmc_parser_error(parser, &parser->location,
                                  "missing ending ‘/’ for emphasis inline");
-                return trimmed_substring(parser, location, value, end, 1, 0, EMPHASIS);
-        }
-        end++;
-        return trimmed_substring(parser, location, value, end, 1, 1, EMPHASIS);
+        } else
+                end++;
+        value->node = text_node_new(NODE_EMPHASIS, strndup(begin, send - begin));
+        return token(parser, location, end, EMPHASIS);
 }
 
 #define U_SINGLE_LEFT_POINTING_ANGLE_QUOTATION_MARK ((uchar)0x2039)
