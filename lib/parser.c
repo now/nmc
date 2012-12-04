@@ -322,7 +322,8 @@ again:
 static int
 definition(struct nmc_parser *parser, YYLTYPE *location, YYSTYPE *value)
 {
-        const char *end = parser->p + 1 + bol_space(parser, 1);
+        const char *begin = parser->p + 1 + bol_space(parser, 1);
+        const char *end = begin;
 
         while (!is_end(end)) {
                 if (*end == '.') {
@@ -330,14 +331,10 @@ definition(struct nmc_parser *parser, YYLTYPE *location, YYSTYPE *value)
                         end++;
                         while (*end == ' ')
                                 end++;
-                        if (*end == '/' && is_space_or_end(end + 1))
-                                return trimmed_substring(parser,
-                                                         location,
-                                                         value,
-                                                         end + 1,
-                                                         2,
-                                                         end - send + 1,
-                                                         DEFINITION);
+                        if (*end == '/' && is_space_or_end(end + 1)) {
+                                value->node = text_node_new(NODE_TERM, strndup(begin, send - begin));
+                                return token(parser, location, end + 1, TERM);
+                        }
                 }
                 end++;
         }

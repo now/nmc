@@ -439,7 +439,7 @@ report_remaining_anchors(struct nmc_parser *parser)
 %token <substring> BLOCKSEPARATOR
 %token ITEMIZATION
 %token ENUMERATION
-%token <substring> DEFINITION
+%token <node> TERM
 %token QUOTE
 %token ATTRIBUTION
 %token TABLESEPARATOR
@@ -646,11 +646,10 @@ fibling(struct nmc_parser *parser, struct footnote *footnotes, struct footnote *
 }
 
 static struct node *
-definition(struct substring substring, struct node *item)
+definition(struct node *term, struct node *item)
 {
-        struct node *n = subtext(NODE_TERM, substring);
-        n->next = parent1(NODE_DEFINITION, ((struct parent_node *)item)->children);
-        ((struct parent_node *)item)->children = n;
+        term->next = parent1(NODE_DEFINITION, ((struct parent_node *)item)->children);
+        ((struct parent_node *)item)->children = term;
         return item;
 }
 
@@ -819,7 +818,7 @@ definitions: definitionitems { $$ = parent(NODE_DEFINITIONS, $1); };
 definitionitems: definition { $$ = nodes($1); }
 | definitionitems definition { $$ = sibling($1, $2); };
 
-definition: DEFINITION item { $$ = definition($1, $2); };
+definition: TERM item { $$ = definition($1, $2); };
 
 quote: lines attribution { $$ = parent(NODE_QUOTE, sibling($1, $2)); };
 
