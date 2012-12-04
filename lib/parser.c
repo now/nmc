@@ -7,7 +7,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <nmc.h>
 #include <nmc/list.h>
 
 #include <private.h>

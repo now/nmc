@@ -1,12 +1,10 @@
 %code requires
 {
 #define YYLTYPE struct nmc_location
-struct nmc_location;
 struct nmc_parser;
-struct nmc_error;
-enum node_name;
 
 #include <stddef.h>
+#include <nmc.h>
 
 struct substring {
         const char *string;
@@ -44,7 +42,6 @@ struct footnote *footnote_new(YYLTYPE *location, char *id, const char *content,
 #include <stdlib.h>
 #include <string.h>
 
-#include <nmc.h>
 #include <nmc/list.h>
 
 #include <private.h>
