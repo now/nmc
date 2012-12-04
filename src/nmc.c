@@ -26,7 +26,7 @@ struct nmc_option {
         for (struct nmc_option *item = options; item->c != '\0'; item++)
 
 static int
-report_nmc_parser_error(const struct nmc_parser_error *error)
+report_nmc_error(const struct nmc_error *error)
 {
         char *s = nmc_location_str(&error->location);
         fprintf(stderr, "%s: %s\n", s, error->message);
@@ -150,13 +150,13 @@ main(int argc, char *const *argv)
 
         nmc_grammar_initialize();
 
-        struct nmc_parser_error *errors;
+        struct nmc_error *errors;
         struct node *doc = nmc_parse(buffer, &errors);
         if (errors != NULL)
                 result = EXIT_FAILURE;
-        list_for_each(struct nmc_parser_error, p, errors)
-                report_nmc_parser_error(p);
-        nmc_parser_error_free(errors);
+        list_for_each(struct nmc_error, p, errors)
+                report_nmc_error(p);
+        nmc_error_free(errors);
 
         if (result == EXIT_SUCCESS)
                 nmc_node_to_xml(doc);

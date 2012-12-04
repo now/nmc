@@ -92,12 +92,12 @@ extern int nmc_grammar_debug;
 void nmc_grammar_initialize(void);
 void nmc_grammar_finalize(void);
 
-struct nmc_parser_error {
-        struct nmc_parser_error *next;
+struct nmc_error {
+        struct nmc_error *next;
         struct nmc_location location;
         char *message;
 };
 
-void nmc_parser_error_free(struct nmc_parser_error *error);
+void nmc_error_free(struct nmc_error *error);
 
-struct node *nmc_parse(const char *input, struct nmc_parser_error **errors);
+struct node *nmc_parse(const char *input, struct nmc_error **errors);

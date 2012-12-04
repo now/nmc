@@ -3,7 +3,7 @@
 #define YYLTYPE struct nmc_location
 struct nmc_location;
 struct nmc_parser;
-struct nmc_parser_error;
+struct nmc_error;
 enum node_name;
 
 #include <stddef.h>
@@ -29,7 +29,7 @@ struct node *text_node_new(enum node_name name, char *text);
 struct sigil *sigil_new(YYLTYPE *location, const char *string, size_t length);
 
 struct footnote *footnote_new(YYLTYPE *location, char *id, const char *content,
-                              struct nmc_parser_error **error);
+                              struct nmc_error **error);
 }
 
 %code
@@ -348,7 +348,7 @@ struct footnote {
 };
 
 struct footnote *
-footnote_new(YYLTYPE *location, char *id, const char *content, struct nmc_parser_error **error)
+footnote_new(YYLTYPE *location, char *id, const char *content, struct nmc_error **error)
 {
         struct footnote *footnote = malloc(sizeof(struct footnote));
         footnote->next = NULL;
@@ -356,9 +356,9 @@ footnote_new(YYLTYPE *location, char *id, const char *content, struct nmc_parser
         footnote->id = id_new(id);
         footnote->node = define(content);
         if (footnote->node == NULL)
-                *error = nmc_parser_error_new(location,
-                                              "unrecognized footnote content: %s",
-                                              content);
+                *error = nmc_error_new(location,
+                                       "unrecognized footnote content: %s",
+                                       content);
         return footnote;
 }
 
@@ -403,11 +403,11 @@ sigil_free(struct sigil *sigil)
 static void
 report_remaining_anchors(struct nmc_parser *parser)
 {
-        struct nmc_parser_error *first = NULL, *previous = NULL, *last = NULL;
+        struct nmc_error *first = NULL, *previous = NULL, *last = NULL;
         list_for_each_safe(struct anchor, p, n, parser->anchors) {
-                first = nmc_parser_error_new(&p->location,
-                                             "reference to undefined footnote: %s",
-                                             p->id.string);
+                first = nmc_error_new(&p->location,
+                                      "reference to undefined footnote: %s",
+                                      p->id.string);
                 if (last == NULL)
                         last = first;
                 if (previous != NULL)

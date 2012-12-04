@@ -19,37 +19,37 @@
 #include "unicode.h"
 
 void
-nmc_parser_error_free(struct nmc_parser_error *error)
+nmc_error_free(struct nmc_error *error)
 {
-        list_for_each_safe(struct nmc_parser_error, p, n, error) {
+        list_for_each_safe(struct nmc_error, p, n, error) {
                 free(p->message);
                 free(p);
         }
 }
 
-struct nmc_parser_error *
-nmc_parser_error_newv(YYLTYPE *location, const char *message, va_list args)
+struct nmc_error *
+nmc_error_newv(YYLTYPE *location, const char *message, va_list args)
 {
-        struct nmc_parser_error *error = malloc(sizeof(struct nmc_parser_error));
+        struct nmc_error *error = malloc(sizeof(struct nmc_error));
         error->next = NULL;
         error->location = *location;
         nmc_vasprintf(&error->message, message, args);
         return error;
 }
 
-struct nmc_parser_error *
-nmc_parser_error_new(YYLTYPE *location, const char *message, ...)
+struct nmc_error *
+nmc_error_new(YYLTYPE *location, const char *message, ...)
 {
         va_list args;
         va_start(args, message);
-        struct nmc_parser_error *error = nmc_parser_error_newv(location, message, args);
+        struct nmc_error *error = nmc_error_newv(location, message, args);
         va_end(args);
         return error;
 }
 
 void
 nmc_parser_errors(struct nmc_parser *parser,
-                  struct nmc_parser_error *first, struct nmc_parser_error *last)
+                  struct nmc_error *first, struct nmc_error *last)
 {
         if (parser->errors.first == NULL)
                 parser->errors.first = first;
@@ -63,13 +63,13 @@ nmc_parser_error(struct nmc_parser *parser, YYLTYPE *location, const char *messa
 {
         va_list args;
         va_start(args, message);
-        struct nmc_parser_error *error = nmc_parser_error_newv(location, message, args);
+        struct nmc_error *error = nmc_error_newv(location, message, args);
         va_end(args);
         nmc_parser_errors(parser, error, error);
 }
 
 struct node *
-nmc_parse(const char *input, struct nmc_parser_error **errors)
+nmc_parse(const char *input, struct nmc_error **errors)
 {
         struct nmc_parser parser;
         parser.p = input;
@@ -265,7 +265,7 @@ static int
 footnote(struct nmc_parser *parser, YYLTYPE *location, YYSTYPE *value, size_t length)
 {
         char *id = strndup(parser->p, length);
-        struct nmc_parser_error *error = NULL;
+        struct nmc_error *error = NULL;
         value->footnote = footnote_new(location, id,
                                        buffer(parser, location,
                                               parser->p + length + bol_space(parser, length)),
