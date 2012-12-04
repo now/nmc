@@ -6,6 +6,7 @@
 
 #include <private.h>
 
+#include <nmc.h>
 #include "ext.h"
 
 int
