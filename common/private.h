@@ -24,4 +24,4 @@
 
 #define nmc_free(value) free(value)
 
-#define nmc_lengthof(array) (sizeof(array) / sizeof((array)[0]))
+#define lengthof(array) (sizeof(array) / sizeof((array)[0]))

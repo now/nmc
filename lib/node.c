@@ -159,7 +159,7 @@ struct xml_closure {
 static void
 text_enter(struct node *node, UNUSED(struct xml_closure *closure))
 {
-        escape(((struct text_node *)node)->text, nmc_lengthof(text_entities), text_entities);
+        escape(((struct text_node *)node)->text, lengthof(text_entities), text_entities);
 }
 
 typedef void (*xmltraversefn)(struct node *, struct xml_closure *);
@@ -194,7 +194,7 @@ auxiliary_enter(struct auxiliary_node *node, UNUSED(struct xml_closure *closure)
                 fputs(p->name, stdout);
                 putchar('=');
                 putchar('"');
-                escape(p->value, nmc_lengthof(attribute_entities), attribute_entities);
+                escape(p->value, lengthof(attribute_entities), attribute_entities);
                 putchar('"');
         }
         putchar('>');
