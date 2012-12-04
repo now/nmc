@@ -445,7 +445,7 @@ report_remaining_anchors(struct nmc_parser *parser)
 %token TABLESEPARATOR
 %token ROW
 %token ENTRYSEPARATOR "entry separator"
-%token <buffer> CODEBLOCK
+%token <node> CODEBLOCK
 %token <footnote> FOOTNOTE
 %token SECTION
 %token INDENT
@@ -522,12 +522,6 @@ static void
 nmc_grammar_error(YYLTYPE *location, struct nmc_parser *parser, const char *message)
 {
         nmc_parser_error(parser, location, "%s", message);
-}
-
-static struct node *
-text(enum node_name name, struct buffer *buffer)
-{
-        return text_node_new(name, buffer_str_free(buffer));
 }
 
 static struct node *
@@ -775,7 +769,7 @@ block: paragraph
 | enumeration
 | definitions
 | quote
-| CODEBLOCK { $$ = text(NODE_CODEBLOCK, $1); }
+| CODEBLOCK
 | table;
 
 sections: footnotedsection { $$ = nodes($1); }
