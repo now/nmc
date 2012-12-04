@@ -521,12 +521,6 @@ nmc_grammar_error(YYLTYPE *location, struct nmc_parser *parser, const char *mess
         nmc_parser_error(parser, location, "%s", message);
 }
 
-static struct node *
-subtext(enum node_name name, struct substring substring)
-{
-        return text_node_new(name, strndup(substring.string, substring.length));
-}
-
 static inline struct nodes
 nodes(struct node *node)
 {
@@ -682,7 +676,7 @@ static inline struct node *
 word(struct nmc_parser *parser, struct substring substring, struct sigil *sigils)
 {
         return (sigils != NULL) ?
-                anchor(parser, subtext(NODE_TEXT, substring), sigils) :
+                anchor(parser, text_node_new(NODE_TEXT, strndup(substring.string, substring.length)), sigils) :
                 buffer(substring);
 }
 
