@@ -44,10 +44,10 @@ struct footnote *footnote_new(YYLTYPE *location, char *id, const char *content,
 #include <stdlib.h>
 #include <string.h>
 
-#include <private.h>
-
 #include <nmc.h>
 #include <nmc/list.h>
+
+#include <private.h>
 
 #include "buffer.h"
 #include "ext.h"

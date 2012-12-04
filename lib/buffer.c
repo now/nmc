@@ -5,9 +5,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include <private.h>
-
 #include <nmc/list.h>
+
+#include <private.h>
 
 #include "buffer.h"
 

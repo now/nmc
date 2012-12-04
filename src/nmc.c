@@ -8,8 +8,6 @@
 #include <string.h>
 #include <unistd.h>
 
-#include <private.h>
-
 #include <nmc.h>
 #include <nmc/list.h>
 

@@ -4,10 +4,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include <private.h>
-
 #include <nmc.h>
 #include <nmc/list.h>
+
+#include <private.h>
 
 #define NODE_IS_NESTED(n) ((n)->name <= NODE_AUXILIARY)
 
