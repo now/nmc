@@ -450,7 +450,7 @@ report_remaining_anchors(struct nmc_parser *parser)
 %token SECTION
 %token INDENT
 %token DEDENT
-%token <substring> CODE
+%token <node> CODE
 %token <substring> EMPHASIS
 %token <substring> SIGIL
 %token SIGILSEPARATOR
@@ -851,7 +851,7 @@ sinlines: WORD sigils { $$ = nodes(word(parser, $1, $2)); }
 
 anchoredinline: inline sigils { $$ = anchor(parser, $1, $2); };
 
-inline: CODE { $$ = subtext(NODE_CODE, $1); }
+inline: CODE
 | EMPHASIS { $$ = subtext(NODE_EMPHASIS, $1); }
 | BEGINGROUP sinlines ENDGROUP { $$ = parent(NODE_GROUP, textify($2)); };
 

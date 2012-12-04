@@ -507,19 +507,23 @@ is_inline_end(const char *end)
 static int
 code(struct nmc_parser *parser, YYLTYPE *location, YYSTYPE *value)
 {
-        const char *end = parser->p + 3;
+        const char *begin = parser->p + 3;
+        const char *end = begin;
         size_t length;
         while (!is_end(end) &&
                u_lref(end, &length) != U_SINGLE_RIGHT_POINTING_ANGLE_QUOTATION_MARK)
                 end += length;
+        const char *send = end;
         if (is_end(end)) {
                 nmc_parser_error(parser, &parser->location,
                                  "missing ending ‘›’ for code inline");
-                return trimmed_substring(parser, location, value, end, 3, 0, CODE);
+        } else {
+                while (u_dref(end) == U_SINGLE_RIGHT_POINTING_ANGLE_QUOTATION_MARK)
+                        end += length;
+                send = end - length;
         }
-        while (u_dref(end) == U_SINGLE_RIGHT_POINTING_ANGLE_QUOTATION_MARK)
-                end += length;
-        return trimmed_substring(parser, location, value, end, 3, length, CODE);
+        value->node = text_node_new(NODE_CODE, strndup(begin, send - begin));
+        return token(parser, location, end, CODE);
 }
 
 static int
