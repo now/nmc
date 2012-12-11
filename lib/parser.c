@@ -280,10 +280,12 @@ codeblock(struct nmc_parser *parser, YYLTYPE *location, YYSTYPE *value)
         const char *end = begin;
         struct buffer b = BUFFER_INIT;
 
-again:
-        while (!is_end(end))
-                end++;
-        if (*end == '\n') {
+        while (*end != '\0') {
+                while (!is_end(end))
+                        end++;
+                buffer_append(&b, begin, end - begin);
+                if (*end != '\n')
+                        break;
                 size_t lines = 1;
                 const char *bss = end + 1;
                 const char *bse = bss;
@@ -294,18 +296,14 @@ again:
                         }
                         bse++;
                 }
-                size_t spaces = bse - bss;
-                if (spaces >= parser->indent + 4) {
-                        buffer_append(&b, begin, end - begin);
-                        for (size_t i = 0; i < lines; i++)
-                                buffer_append(&b, "\n", 1);
-                        begin = bss + parser->indent + 4;
-                        end = bse;
-                        parser->location.last_line += lines;
-                        goto again;
-                }
+                if ((size_t)(bse - bss) < parser->indent + 4)
+                        break;
+                for (size_t i = 0; i < lines; i++)
+                        buffer_append(&b, "\n", 1);
+                begin = bss + parser->indent + 4;
+                end = bse;
+                parser->location.last_line += lines;
         }
-        buffer_append(&b, begin, end - begin);
 
         value->node = text_node_new(NODE_CODEBLOCK, buffer_str(&b));
         return token(parser, location, end, CODEBLOCK);
