@@ -671,14 +671,6 @@ buffer(struct substring substring)
         return (struct node *)n;
 }
 
-static inline struct node *
-word(struct nmc_parser *parser, struct substring substring, struct sigil *sigils)
-{
-        return (sigils != NULL) ?
-                anchor(parser, text_node_new(NODE_TEXT, strndup(substring.string, substring.length)), sigils) :
-                buffer(substring);
-}
-
 static inline struct nodes
 append_text(struct nodes inlines, struct substring substring)
 {
@@ -709,34 +701,6 @@ textify(struct nodes inlines)
                 buffer_free(b);
         }
         return inlines;
-}
-
-static inline struct nodes
-inline_sibling(struct nodes inlines, struct node *node)
-{
-        return sibling(textify(inlines), node);
-}
-
-static inline struct nodes
-append_inline(struct nodes inlines, struct node *node)
-{
-        return inline_sibling(append_space(inlines), node);
-}
-
-static inline struct nodes
-append_word(struct nmc_parser *parser, struct nodes inlines, struct substring substring, struct sigil *sigils)
-{
-        return (sigils != NULL) ?
-                inline_sibling(inlines, word(parser, substring, sigils)) :
-                append_text(inlines, substring);
-}
-
-static inline struct nodes
-append_spaced_word(struct nmc_parser *parser, struct nodes inlines, struct substring substring, struct sigil *sigils)
-{
-        return (sigils != NULL) ?
-                append_inline(inlines, word(parser, substring, sigils)) :
-                append_text(append_space(inlines), substring);
 }
 }
 
@@ -839,21 +803,23 @@ entry: inlines { $$ = parent(NODE_ENTRY, $1); };
 
 inlines: ospace sinlines ospace { $$ = textify($2); };
 
-sinlines: WORD sigils { $$ = nodes(word(parser, $1, $2)); }
+sinlines: WORD { $$ = nodes(buffer($1)); }
 | anchoredinline { $$ = nodes($1); }
-| sinlines WORD sigils { $$ = append_word(parser, $1, $2, $3); }
-| sinlines anchoredinline { $$ = sibling($1, $2); }
-| sinlines spaces WORD sigils { $$ = append_spaced_word(parser, $1, $3, $4); }
-| sinlines spaces anchoredinline { $$ = append_inline($1, $3); };
+/* TODO $1.last can, if I see it correctly, never be NODE_BUFFER, so append_text may be unnecessary here. */
+| sinlines WORD { $$ = append_text($1, $2); }
+| sinlines anchoredinline { $$ = sibling(textify($1), $2); }
+| sinlines spaces WORD { $$ = append_text(append_space($1), $3); }
+| sinlines spaces anchoredinline { $$ = sibling(textify(append_space($1)), $3); };
 
-anchoredinline: inline sigils { $$ = anchor(parser, $1, $2); };
+anchoredinline: inline
+| inline sigils { $$ = anchor(parser, $1, $2); }
+| WORD sigils { $$ = anchor(parser, text_node_new(NODE_TEXT, strndup($1.string, $1.length)), $2); };
 
 inline: CODE
 | EMPHASIS
 | BEGINGROUP sinlines ENDGROUP { $$ = parent(NODE_GROUP, textify($2)); };
 
-sigils: /* empty */ { $$ = NULL; }
-| SIGIL
+sigils: SIGIL
 | sigils SIGILSEPARATOR SIGIL { $$ = $3; $$->next = $1; };
 
 ospace: /* empty */
