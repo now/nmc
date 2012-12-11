@@ -208,9 +208,8 @@ buffer(struct nmc_parser *parser, YYLTYPE *location, const char *begin)
 {
         while (*begin == ' ')
                 begin++;
-
-        struct buffer b = BUFFER_INIT;
         const char *end = begin;
+        struct buffer b = BUFFER_INIT;
 
 again:
         switch (*end) {
