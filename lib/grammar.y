@@ -393,11 +393,18 @@ footnote_new(YYLTYPE *location, char *id, const char *content, struct nmc_error 
 }
 
 static void
-footnote_free(struct footnote *footnote)
+footnote_free1(struct footnote *footnote)
 {
         free(footnote->id.string);
         node_free((struct node *)footnote->node);
         free(footnote);
+}
+
+static void
+footnote_free(struct footnote *footnote)
+{
+        list_for_each_safe(struct footnote, p, n, footnote)
+                footnote_free1(p);
 }
 
 struct sigil {
@@ -632,7 +639,7 @@ footnote(struct nmc_parser *parser, struct footnote *footnotes)
 {
         list_for_each_safe(struct footnote, p, n, footnotes) {
                 update_anchors(parser, p);
-                footnote_free(p);
+                footnote_free1(p);
         }
 }
 #define footnote(parser, result, footnotes) (footnote(parser, footnotes), result)
@@ -651,7 +658,7 @@ fibling(struct nmc_parser *parser, struct footnote *footnotes, struct footnote *
                         nmc_parser_error(parser, &footnote->location,
                                          "footnote %s already defined at %s", p->id.string, s);
                         free(s);
-                        footnote_free(footnote);
+                        footnote_free1(footnote);
                         return footnotes;
                 }
                 last = p;
