@@ -3,6 +3,7 @@
 #define YYLTYPE struct nmc_location
 struct nmc_parser;
 
+#include <stdbool.h>
 #include <stddef.h>
 #include <nmc.h>
 
@@ -152,15 +153,39 @@ struct definition {
 
 static struct definition *definitions;
 
-static void
-definitions_push(const char *pattern, definefn define)
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+static struct nmc_error *
+nmc_regerror(int errcode, const regex_t *regex, const char *message)
+{
+        size_t l = regerror(errcode, regex, NULL, 0);
+        char *s = malloc(l);
+        if (s == NULL)
+                return &nmc_oom_error;
+        regerror(errcode, regex, s, l);
+        struct nmc_error *e = nmc_error_newu(message, s);
+        free(s);
+        return e == NULL ? &nmc_oom_error : e;
+}
+#pragma GCC diagnostic warning "-Wformat-nonliteral"
+
+static bool
+definitions_push(const char *pattern, definefn define, struct nmc_error **error)
 {
         struct definition *definition = malloc(sizeof(struct definition));
-        /* TODO Error-check here */
-        regcomp(&definition->regex, pattern, REG_EXTENDED);
+        if (definition == NULL) {
+                *error = &nmc_oom_error;
+                return false;
+        }
+        int r = regcomp(&definition->regex, pattern, REG_EXTENDED);
+        if (r != 0) {
+                *error = nmc_regerror(r, &definition->regex,
+                                      "definition regex compilation failed: %s");
+                free(definition);
+                return false;
+        }
         definition->define = define;
-
         definitions = list_cons(definition, definitions);
+        return true;
 }
 
 static inline struct node *
@@ -212,13 +237,13 @@ ref(const char *buffer, regmatch_t *matches)
         return auxiliary_node_new_matches("ref", buffer, matches, 2, "title", "uri");
 }
 
-void
-nmc_grammar_initialize(void)
+bool
+nmc_grammar_initialize(struct nmc_error **error)
 {
         if (definitions != NULL)
-                return;
-        definitions_push("^(.+) +at +(.+)", ref);
-        definitions_push("^Abbreviation +for +(.+)", abbreviation);
+                return true;
+        return  definitions_push("^(.+) +at +(.+)", ref, error) &&
+                definitions_push("^Abbreviation +for +(.+)", abbreviation, error);
 }
 
 void

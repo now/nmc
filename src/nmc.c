@@ -148,10 +148,11 @@ main(int argc, char *const *argv)
         if (getenv("NMC_DEBUG"))
                 nmc_grammar_debug = 1;
 
-        nmc_grammar_initialize();
+        struct nmc_error *errors = NULL;
+        struct node *doc = NULL;
 
-        struct nmc_error *errors;
-        struct node *doc = nmc_parse(buffer, &errors);
+        if (nmc_grammar_initialize(&errors))
+                doc = nmc_parse(buffer, &errors);
         if (errors != NULL)
                 result = EXIT_FAILURE;
         list_for_each(struct nmc_error, p, errors)

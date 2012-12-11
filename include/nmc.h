@@ -87,11 +87,6 @@ struct nmc_location {
 
 char *nmc_location_str(const struct nmc_location *location);
 
-extern int nmc_grammar_debug;
-
-void nmc_grammar_initialize(void);
-void nmc_grammar_finalize(void);
-
 struct nmc_error {
         struct nmc_error *next;
         struct nmc_location location;
@@ -99,5 +94,10 @@ struct nmc_error {
 };
 
 void nmc_error_free(struct nmc_error *error);
+
+extern int nmc_grammar_debug;
+
+bool nmc_grammar_initialize(struct nmc_error **error);
+void nmc_grammar_finalize(void);
 
 struct node *nmc_parse(const char *input, struct nmc_error **errors);
