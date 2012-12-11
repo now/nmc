@@ -38,31 +38,42 @@ resize(struct buffer *buffer, size_t n)
         return true;
 }
 
+static bool
+available(struct buffer *buffer, size_t size)
+{
+        if (size <= buffer->allocated)
+                return true;
+        // TODO libxml2 uses 4096 as default size.  We might want something
+        // slightly larger here.
+        size_t n = buffer->allocated > 0 ? buffer->allocated * 2 : size + 32;
+        while (n < size) {
+                if (n > SIZE_MAX / 2)
+                        return false;
+                n *= 2;
+        }
+        return resize(buffer, n);
+}
+
 struct buffer *
 buffer_append(struct buffer *buffer, const char *string, size_t length)
 {
+        // TODO Is this check needed?
         if (string == NULL || length == 0)
                 return buffer;
-
-        size_t needed = buffer->length + length + 1;
-        if (needed > buffer->allocated) {
-                /* TODO libxml2 uses 4096 as default size.  We might want
-                   something slightly larger here. */
-                size_t n = buffer->allocated > 0 ? buffer->allocated * 2 : needed + 32;
-                while (n < needed) {
-                        if (n > SIZE_MAX / 2)
-                                /* TODO Report error */
-                                return buffer;
-                        n *= 2;
-                }
-                if (!resize(buffer, n))
-                        /* TODO Report error */
-                        return buffer;
-        }
-
+        if (!available(buffer, buffer->length + length + 1))
+                return buffer;
         memcpy(buffer->content + buffer->length, string, length);
         buffer->length += length;
+        return buffer;
+}
 
+struct buffer *
+buffer_append_c(struct buffer *buffer, char c, size_t n)
+{
+        if (!available(buffer, buffer->length + n + 1))
+                return buffer;
+        memset(buffer->content + buffer->length, c, n);
+        buffer->length += n;
         return buffer;
 }
 

@@ -298,8 +298,7 @@ codeblock(struct nmc_parser *parser, YYLTYPE *location, YYSTYPE *value)
                 }
                 if ((size_t)(send - sbegin) < parser->indent + 4)
                         break;
-                for (size_t i = 0; i < lines; i++)
-                        buffer_append(&b, "\n", 1);
+                buffer_append_c(&b, '\n', lines);
                 begin = sbegin + parser->indent + 4;
                 end = send;
                 parser->location.last_line += lines;
