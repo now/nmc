@@ -468,8 +468,8 @@ report_remaining_anchors(struct nmc_parser *parser)
 %type <nodes> definitionitems
 %type <node> quote line attribution
 %type <nodes> lines
-%type <node> table row entry
-%type <nodes> headbody body entries
+%type <node> table head body row entry
+%type <nodes> headbody rows entries
 %type <nodes> inlines sinlines
 %type <node> anchoredinline inline
 %type <sigil> sigils
@@ -820,12 +820,15 @@ attribution: /* empty */ { $$ = NULL; }
 
 table: headbody { $$ = parent(NODE_TABLE, $1); }
 
-headbody: row { $$ = nodes(parent1(NODE_BODY, $1)); }
-| row TABLESEPARATOR body { $$ = sibling(nodes(parent1(NODE_HEAD, $1)), parent(NODE_BODY, $3)); }
-| row body { $$ = nodes(parent(NODE_BODY, sibling(nodes($1), $2.first))); };
+headbody: head body { $$ = sibling(nodes($1), $2); }
+| body { $$ = nodes($1); };
 
-body: row { $$ = nodes($1); }
-| body row { $$ = sibling($1, $2); };
+head: row TABLESEPARATOR { $$ = parent1(NODE_HEAD, $1); };
+
+body: rows { $$ = parent(NODE_BODY, $1); };
+
+rows: row { $$ = nodes($1); }
+| rows row { $$ = sibling($1, $2); };
 
 row: ROW entries ENTRYSEPARATOR { $$ = parent(NODE_ROW, $2); };
 
