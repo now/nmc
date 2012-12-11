@@ -17,12 +17,20 @@
 #include "parser.h"
 #include "unicode.h"
 
+struct nmc_error nmc_oom_error = {
+        NULL,
+        { 0, 0, 0, 0 },
+        (char *)"memory exhausted"
+};
+
 void
 nmc_error_free(struct nmc_error *error)
 {
         list_for_each_safe(struct nmc_error, p, n, error) {
-                free(p->message);
-                free(p);
+                if (p != &nmc_oom_error) {
+                        free(p->message);
+                        free(p);
+                }
         }
 }
 
@@ -30,9 +38,14 @@ struct nmc_error *
 nmc_error_newv(YYLTYPE *location, const char *message, va_list args)
 {
         struct nmc_error *error = malloc(sizeof(struct nmc_error));
+        if (error == NULL)
+                return NULL;
         error->next = NULL;
         error->location = *location;
-        nmc_vasprintf(&error->message, message, args);
+        if (nmc_vasprintf(&error->message, message, args) == -1) {
+                free(error);
+                return NULL;
+        }
         return error;
 }
 
@@ -42,6 +55,16 @@ nmc_error_new(YYLTYPE *location, const char *message, ...)
         va_list args;
         va_start(args, message);
         struct nmc_error *error = nmc_error_newv(location, message, args);
+        va_end(args);
+        return error;
+}
+
+struct nmc_error *
+nmc_error_newu(const char *message, ...)
+{
+        va_list args;
+        va_start(args, message);
+        struct nmc_error *error = nmc_error_newv(&(YYLTYPE){ 0, 0, 0, 0 }, message, args);
         va_end(args);
         return error;
 }
