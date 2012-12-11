@@ -257,16 +257,22 @@ nmc_grammar_finalize(void)
 }
 
 static struct auxiliary_node *
-define(const char *content)
+define(const char *content, struct nmc_error **error)
 {
         list_for_each(struct definition, p, definitions) {
                 regmatch_t matches[p->regex.re_nsub + 1];
-
-                if (regexec(&p->regex, content,
-                            p->regex.re_nsub + 1, matches, 0) == 0)
+                int r = regexec(&p->regex, content,
+                                p->regex.re_nsub + 1, matches, 0);
+                if (r == 0)
                         return p->define(content, matches);
+                else if (r != REG_NOMATCH) {
+                        *error = nmc_regerror(r, &p->regex,
+                                              "definition regex execution failed: %s");
+                        return NULL;
+                }
         }
 
+        *error = nmc_error_newu("unrecognized footnote content: %s", content);
         return NULL;
 }
 
@@ -373,14 +379,17 @@ struct footnote *
 footnote_new(YYLTYPE *location, char *id, const char *content, struct nmc_error **error)
 {
         struct footnote *footnote = malloc(sizeof(struct footnote));
+        if (footnote == NULL) {
+                free(id);
+                *error = &nmc_oom_error;
+                return NULL;
+        }
         footnote->next = NULL;
         footnote->location = *location;
         footnote->id = id_new(id);
-        footnote->node = define(content);
+        footnote->node = define(content, error);
         if (footnote->node == NULL)
-                *error = nmc_error_new(location,
-                                       "unrecognized footnote content: %s",
-                                       content);
+                (*error)->location = *location;
         return footnote;
 }
 

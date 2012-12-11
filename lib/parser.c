@@ -285,12 +285,16 @@ bol_space(struct nmc_parser *parser, size_t offset)
 static int
 footnote(struct nmc_parser *parser, YYLTYPE *location, YYSTYPE *value, size_t length)
 {
-        char *id = strndup(parser->p, length);
+        const char *id = parser->p;
+        char *content = buffer(parser, location,
+                               parser->p + length + bol_space(parser, length));
+        if (content == NULL) {
+                value->footnote = NULL;
+                return FOOTNOTE;
+        }
         struct nmc_error *error = NULL;
-        value->footnote = footnote_new(location, id,
-                                       buffer(parser, location,
-                                              parser->p + length + bol_space(parser, length)),
-                                       &error);
+        value->footnote = footnote_new(location, strndup(id, length), content, &error);
+        free(content);
         if (error != NULL)
                 nmc_parser_errors(parser, error, error);
         return FOOTNOTE;
