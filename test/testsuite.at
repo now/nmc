@@ -523,7 +523,7 @@ AT_DATA([title],
 ¹ Abbreviation for Abbreviaton
 ]])
 
-AT_NMC_CHECK_FAIL([title], [6.1-31: footnote already defined at 5.1-31: ¹])
+AT_NMC_CHECK_FAIL([title], [6.1-31: footnote ¹ already defined at 5.1-31])
 
 AT_CLEANUP
 

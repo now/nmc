@@ -619,7 +619,7 @@ fibling(struct nmc_parser *parser, struct footnote *footnotes, struct footnote *
                 if (id_eq(&footnote->id, &p->id)) {
                         char *s = nmc_location_str(&p->location);
                         nmc_parser_error(parser, &footnote->location,
-                                         "footnote already defined at %s: %s", s, p->id.string);
+                                         "footnote %s already defined at %s", p->id.string, s);
                         free(s);
                         return footnotes;
                 }
