@@ -287,21 +287,21 @@ codeblock(struct nmc_parser *parser, YYLTYPE *location, YYSTYPE *value)
                 if (*end != '\n')
                         break;
                 size_t lines = 1;
-                const char *bss = end + 1;
-                const char *bse = bss;
-                while (*bse == ' ' || *bse == '\n') {
-                        if (*bse == '\n') {
+                const char *sbegin = end + 1;
+                const char *send = sbegin;
+                while (*send == ' ' || *send == '\n') {
+                        if (*send == '\n') {
                                 lines++;
-                                bss = bse + 1;
+                                sbegin = send + 1;
                         }
-                        bse++;
+                        send++;
                 }
-                if ((size_t)(bse - bss) < parser->indent + 4)
+                if ((size_t)(send - sbegin) < parser->indent + 4)
                         break;
                 for (size_t i = 0; i < lines; i++)
                         buffer_append(&b, "\n", 1);
-                begin = bss + parser->indent + 4;
-                end = bse;
+                begin = sbegin + parser->indent + 4;
+                end = send;
                 parser->location.last_line += lines;
         }
 
