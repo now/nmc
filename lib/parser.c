@@ -219,8 +219,8 @@ again:
                 const char *send = end + 1;
                 while (*send == ' ')
                         send++;
-                size_t spaces = send - (end + 1);
-                if (!is_end(send) && spaces >= parser->indent + 2) {
+                if (!is_end(send) &&
+                    (size_t)(send - (end + 1)) >= parser->indent + 2) {
                         buffer_append(&b, begin, end - begin);
                         begin = end + parser->indent + 2;
                         end = send;
