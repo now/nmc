@@ -540,13 +540,6 @@ siblings(struct nodes siblings, struct nodes rest)
         return (struct nodes){ siblings.first, rest.last };
 }
 
-static inline struct nodes
-nibling(struct node *sibling, struct nodes siblings)
-{
-        sibling->next = siblings.first;
-        return (struct nodes){ sibling, siblings.last };
-}
-
 static inline struct node *
 parent1(enum node_name name, struct node *children)
 {
