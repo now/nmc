@@ -69,10 +69,20 @@ nmc_error_newu(const char *message, ...)
         return error;
 }
 
+static inline bool
+nmc_parser_is_oom(struct nmc_parser *parser)
+{
+        return parser->errors.last == &nmc_oom_error;
+}
+
 void
 nmc_parser_errors(struct nmc_parser *parser,
                   struct nmc_error *first, struct nmc_error *last)
 {
+        if (nmc_parser_is_oom(parser)) {
+                nmc_error_free(first);
+                return;
+        }
         if (parser->errors.first == NULL)
                 parser->errors.first = first;
         if (parser->errors.last != NULL)
@@ -88,6 +98,12 @@ nmc_parser_error(struct nmc_parser *parser, YYLTYPE *location, const char *messa
         struct nmc_error *error = nmc_error_newv(location, message, args);
         va_end(args);
         nmc_parser_errors(parser, error, error);
+}
+
+void
+nmc_parser_oom(struct nmc_parser *parser)
+{
+        nmc_parser_errors(parser, &nmc_oom_error, &nmc_oom_error);
 }
 
 struct node *

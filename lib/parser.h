@@ -27,5 +27,6 @@ void nmc_parser_errors(struct nmc_parser *parser,
 void nmc_parser_error(struct nmc_parser *parser,
                       YYLTYPE *location,
                       const char *message, ...) NMC_PRINTF(3, 4);
+void nmc_parser_oom(struct nmc_parser *parser);
 
 int nmc_parser_lex(struct nmc_parser *parser, YYLTYPE *location, YYSTYPE *value);

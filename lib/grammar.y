@@ -381,7 +381,6 @@ footnote_new(YYLTYPE *location, char *id, const char *content, struct nmc_error 
         struct footnote *footnote = malloc(sizeof(struct footnote));
         if (footnote == NULL) {
                 free(id);
-                *error = &nmc_oom_error;
                 return NULL;
         }
         footnote->next = NULL;
@@ -641,13 +640,18 @@ footnote(struct nmc_parser *parser, struct footnote *footnotes)
 static inline struct footnote *
 fibling(struct nmc_parser *parser, struct footnote *footnotes, struct footnote *footnote)
 {
+        if (footnote == NULL)
+                return NULL;
         struct footnote *last;
         list_for_each(struct footnote, p, footnotes) {
                 if (id_eq(&footnote->id, &p->id)) {
                         char *s = nmc_location_str(&p->location);
+                        if (s == NULL)
+                                return NULL;
                         nmc_parser_error(parser, &footnote->location,
                                          "footnote %s already defined at %s", p->id.string, s);
                         free(s);
+                        footnote_free(footnote);
                         return footnotes;
                 }
                 last = p;
@@ -729,6 +733,8 @@ textify(struct nodes inlines)
         }
         return inlines;
 }
+
+#define M(n) do { if ((n) == NULL) { nmc_parser_oom(parser); YYABORT; } } while (0)
 }
 
 %%
@@ -773,8 +779,8 @@ title: inlines { $$ = parent(NODE_TITLE, $1); };
 oblockssections: /* empty */ { $$ = nodes(NULL); }
 | INDENT blockssections DEDENT { $$ = $2; };
 
-footnotes: FOOTNOTE
-| footnotes FOOTNOTE { $$ = fibling(parser, $1, $2); };
+footnotes: FOOTNOTE { M($$ = $1); }
+| footnotes FOOTNOTE { M($$ = fibling(parser, $1, $2)); };
 
 paragraph: PARAGRAPH inlines { $$ = parent(NODE_PARAGRAPH, $2); };
 
