@@ -702,7 +702,11 @@ textify(struct nodes inlines)
                 struct buffer_node *buffer = (struct buffer_node *)inlines.last;
                 buffer->node.type = TEXT;
                 buffer->node.name = NODE_TEXT;
-                buffer->u.text = buffer_str_free(buffer->u.buffer);
+                struct buffer *b = buffer->u.buffer;
+                buffer->u.text = buffer_str(b);
+                // TODO Hack until we reuse the buffer
+                b->content = NULL;
+                buffer_free(b);
         }
         return inlines;
 }

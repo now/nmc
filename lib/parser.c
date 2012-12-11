@@ -209,7 +209,7 @@ buffer(struct nmc_parser *parser, YYLTYPE *location, const char *begin)
         while (*begin == ' ')
                 begin++;
 
-        struct buffer *b = buffer_new_empty();
+        struct buffer b = BUFFER_INIT;
         const char *end = begin;
 
 again:
@@ -222,7 +222,7 @@ again:
                         send++;
                 size_t spaces = send - (end + 1);
                 if (!is_end(send) && spaces >= parser->indent + 2) {
-                        buffer_append(b, begin, end - begin);
+                        buffer_append(&b, begin, end - begin);
                         begin = end + parser->indent + 2;
                         end = send;
                         parser->location.last_line++;
@@ -232,7 +232,7 @@ again:
         }
         case ' ':
                 end++;
-                buffer_append(b, begin, end - begin);
+                buffer_append(&b, begin, end - begin);
                 while (*end == ' ')
                         end++;
                 begin = end;
@@ -241,12 +241,12 @@ again:
                 end++;
                 goto again;
         }
-        buffer_append(b, begin, end - begin);
+        buffer_append(&b, begin, end - begin);
 
         // NOTE We use a throwaway type here; caller must return actual type.
         token(parser, location, end, ERROR);
 
-        return buffer_str_free(b);
+        return buffer_str(&b);
 }
 
 static size_t
@@ -279,7 +279,7 @@ codeblock(struct nmc_parser *parser, YYLTYPE *location, YYSTYPE *value)
 {
         const char *begin = parser->p + 4;
         const char *end = begin;
-        struct buffer *b = buffer_new_empty();
+        struct buffer b = BUFFER_INIT;
 
 again:
         while (!is_end(end))
@@ -297,18 +297,18 @@ again:
                 }
                 size_t spaces = bse - bss;
                 if (spaces >= parser->indent + 4) {
-                        buffer_append(b, begin, end - begin);
+                        buffer_append(&b, begin, end - begin);
                         for (size_t i = 0; i < lines; i++)
-                                buffer_append(b, "\n", 1);
+                                buffer_append(&b, "\n", 1);
                         begin = bss + parser->indent + 4;
                         end = bse;
                         parser->location.last_line += lines;
                         goto again;
                 }
         }
-        buffer_append(b, begin, end - begin);
+        buffer_append(&b, begin, end - begin);
 
-        value->node = text_node_new(NODE_CODEBLOCK, buffer_str_free(b));
+        value->node = text_node_new(NODE_CODEBLOCK, buffer_str(&b));
         return token(parser, location, end, CODEBLOCK);
 }
 

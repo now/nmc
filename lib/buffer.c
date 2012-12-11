@@ -11,12 +11,6 @@
 
 #include "buffer.h"
 
-struct buffer {
-        size_t allocated;
-        size_t length;
-        char *content;
-};
-
 struct buffer *
 buffer_new(const char *string, size_t length)
 {
@@ -26,17 +20,22 @@ buffer_new(const char *string, size_t length)
         return buffer_append(n, string, length);
 }
 
-struct buffer *
-buffer_new_empty(void)
-{
-        return buffer_new(NULL, 0);
-}
-
 void
 buffer_free(struct buffer *buffer)
 {
         free(buffer->content);
         free(buffer);
+}
+
+static bool
+resize(struct buffer *buffer, size_t n)
+{
+        char *t = realloc(buffer->content, n);
+        if (t == NULL)
+                return false;
+        buffer->content = t;
+        buffer->allocated = n;
+        return true;
 }
 
 struct buffer *
@@ -56,12 +55,9 @@ buffer_append(struct buffer *buffer, const char *string, size_t length)
                                 return buffer;
                         n *= 2;
                 }
-                char *t = realloc(buffer->content, n);
-                if (t == NULL)
+                if (!resize(buffer, n))
                         /* TODO Report error */
                         return buffer;
-                buffer->content = t;
-                buffer->allocated = n;
         }
 
         memcpy(buffer->content + buffer->length, string, length);
@@ -73,16 +69,7 @@ buffer_append(struct buffer *buffer, const char *string, size_t length)
 char *
 buffer_str(struct buffer *buffer)
 {
+        resize(buffer, buffer->length + 1);
         buffer->content[buffer->length] = '\0';
         return buffer->content;
-}
-
-char *
-buffer_str_free(struct buffer *buffer)
-{
-        char *s = buffer_str(buffer);
-        size_t l = buffer->length;
-        free(buffer);
-        char *t = realloc(s, l + 1);
-        return t == NULL ? s : t;
 }
