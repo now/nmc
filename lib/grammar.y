@@ -821,7 +821,7 @@ block: paragraph
 | enumeration
 | definitions
 | quote
-| CODEBLOCK
+| CODEBLOCK { M($$ = $1); }
 | table;
 
 sections: footnotedsection { $$ = nodes($1); }

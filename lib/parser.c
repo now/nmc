@@ -333,7 +333,8 @@ codeblock(struct nmc_parser *parser, YYLTYPE *location, YYSTYPE *value)
         while (*end != '\0') {
                 while (!is_end(end))
                         end++;
-                buffer_append(&b, begin, end - begin);
+                if (!buffer_append(&b, begin, end - begin))
+                        goto oom;
                 if (*end != '\n')
                         break;
                 size_t lines = 1;
@@ -348,13 +349,18 @@ codeblock(struct nmc_parser *parser, YYLTYPE *location, YYSTYPE *value)
                 }
                 if ((size_t)(send - sbegin) < parser->indent + 4)
                         break;
-                buffer_append_c(&b, '\n', lines);
+                if (!buffer_append_c(&b, '\n', lines))
+                        goto oom;
                 begin = sbegin + parser->indent + 4;
                 end = send;
                 parser->location.last_line += lines;
         }
 
         value->node = text_node_new(NODE_CODEBLOCK, buffer_str(&b));
+        goto done;
+oom:
+        value->node = NULL;
+done:
         return token(parser, location, end, CODEBLOCK);
 }
 
