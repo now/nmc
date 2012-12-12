@@ -1,0 +1,23 @@
+{
+   Mac OS X initialization
+   Memcheck:Leak
+   fun:?alloc
+   ...
+   fun:*ImageLoader*
+}
+
+{
+   Mac OS X initialization
+   Memcheck:Leak
+   fun:?alloc
+   ...
+   fun:*dyld*
+}
+
+{
+   Mac OS X I/O buffer
+   Memcheck:Leak
+   fun:malloc
+   ...
+   fun:fwrite
+}

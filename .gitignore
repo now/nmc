@@ -1,7 +1,14 @@
 *.o
 .deps/
 *.dSYM/
-build/
+build/autom4te.cache/
+build/ar-lib
+build/compile
+build/depcomp
+build/install-sh
+build/missing
+build/ucategory
+build/ylwrap
 .dirstamp
 Makefile
 Makefile.in
