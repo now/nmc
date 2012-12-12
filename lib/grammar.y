@@ -860,15 +860,15 @@ definitionitems: definition { $$ = nodes($1); }
 
 definition: TERM item { M($$ = definition($1, $2)); };
 
-quote: lines attribution { $$ = parent(NODE_QUOTE, sibling($1, $2)); };
+quote: lines attribution { M($$ = parent(NODE_QUOTE, sibling($1, $2))); };
 
 lines: line { $$ = nodes($1); }
 | lines line { $$ = sibling($1, $2); };
 
-line: QUOTE inlines { $$ = parent(NODE_LINE, $2); };
+line: QUOTE inlines { M($$ = parent(NODE_LINE, $2)); };
 
 attribution: /* empty */ { $$ = NULL; }
-| ATTRIBUTION inlines { $$ = parent(NODE_ATTRIBUTION, $2); };
+| ATTRIBUTION inlines { M($$ = parent(NODE_ATTRIBUTION, $2)); };
 
 table: headbody { M($$ = parent(NODE_TABLE, $1)); }
 
