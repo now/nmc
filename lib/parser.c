@@ -553,14 +553,18 @@ code(struct nmc_parser *parser, YYLTYPE *location, YYSTYPE *value)
                 end += length;
         const char *send = end;
         if (is_end(end)) {
-                nmc_parser_error(parser, &parser->location,
-                                 "missing ending ‘›’ for code inline");
+                if (!nmc_parser_error(parser, &parser->location,
+                                      "missing ending ‘›’ for code inline")) {
+                        value->node = NULL;
+                        goto oom;
+                }
         } else {
                 while (u_dref(end) == U_SINGLE_RIGHT_POINTING_ANGLE_QUOTATION_MARK)
                         end += length;
                 send = end - length;
         }
-        value->node = text_node_new(NODE_CODE, strndup(begin, send - begin));
+        value->node = text_node_new_dup(NODE_CODE, begin, send - begin);
+oom:
         return token(parser, location, end, CODE);
 }
 

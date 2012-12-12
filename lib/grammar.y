@@ -906,7 +906,7 @@ anchoredinline: inline ANCHOR { M($$ = anchor(parser, $1, $2)); }
 | WORD ANCHOR { M($$ = wanchor(parser, $1, $2)); }
 | anchoredinline ANCHORSEPARATOR ANCHOR { M($$ = anchor(parser, $1, $3)); }
 
-inline: CODE
+inline: CODE { M($$ = $1); }
 | EMPHASIS
 | BEGINGROUP sinlines ENDGROUP { M($$ = parent(NODE_GROUP, textify($2))); };
 
