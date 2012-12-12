@@ -829,7 +829,7 @@ oblockseparator: /* empty */
 
 section: SECTION { parser->want = INDENT; } title oblockssections { M($$ = parent_children(NODE_SECTION, $3, $4)); };
 
-title: inlines { $$ = parent(NODE_TITLE, $1); };
+title: inlines { M($$ = parent(NODE_TITLE, $1)); };
 
 oblockssections: /* empty */ { $$ = nodes(NULL); }
 | INDENT blockssections DEDENT { $$ = $2; };
@@ -837,23 +837,23 @@ oblockssections: /* empty */ { $$ = nodes(NULL); }
 footnotes: FOOTNOTE { M($$ = $1); }
 | footnotes FOOTNOTE { M($$ = fibling(parser, $1, $2)); };
 
-paragraph: PARAGRAPH inlines { $$ = parent(NODE_PARAGRAPH, $2); };
+paragraph: PARAGRAPH inlines { M($$ = parent(NODE_PARAGRAPH, $2)); };
 
-itemization: itemizationitems { $$ = parent(NODE_ITEMIZATION, $1); };
+itemization: itemizationitems { M($$ = parent(NODE_ITEMIZATION, $1)); };
 
 itemizationitems: itemizationitem { $$ = nodes($1); }
 | itemizationitems itemizationitem { $$ = sibling($1, $2); };
 
 itemizationitem: ITEMIZATION item { $$ = $2; };
 
-enumeration: enumerationitems { $$ = parent(NODE_ENUMERATION, $1); };
+enumeration: enumerationitems { M($$ = parent(NODE_ENUMERATION, $1)); };
 
 enumerationitems: enumerationitem { $$ = nodes($1); }
 | enumerationitems enumerationitem { $$ = sibling($1, $2); };
 
 enumerationitem: ENUMERATION item { $$ = $2; };
 
-definitions: definitionitems { $$ = parent(NODE_DEFINITIONS, $1); };
+definitions: definitionitems { M($$ = parent(NODE_DEFINITIONS, $1)); };
 
 definitionitems: definition { $$ = nodes($1); }
 | definitionitems definition { $$ = sibling($1, $2); };
