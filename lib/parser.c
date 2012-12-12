@@ -90,14 +90,21 @@ nmc_parser_errors(struct nmc_parser *parser,
         parser->errors.last = last;
 }
 
-void
+bool
 nmc_parser_error(struct nmc_parser *parser, YYLTYPE *location, const char *message, ...)
 {
+        if (nmc_parser_is_oom(parser))
+                return false;
         va_list args;
         va_start(args, message);
         struct nmc_error *error = nmc_error_newv(location, message, args);
         va_end(args);
+        if (error == NULL) {
+                nmc_parser_oom(parser);
+                return false;
+        }
         nmc_parser_errors(parser, error, error);
+        return true;
 }
 
 void

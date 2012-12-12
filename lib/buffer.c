@@ -17,7 +17,11 @@ buffer_new(const char *string, size_t length)
         struct buffer *n = malloc(sizeof(struct buffer));
         n->length = n->allocated = 0;
         n->content = NULL;
-        return buffer_append(n, string, length);
+        if (!buffer_append(n, string, length)) {
+                free(n);
+                return NULL;
+        }
+        return n;
 }
 
 void
@@ -54,27 +58,29 @@ available(struct buffer *buffer, size_t size)
         return resize(buffer, n);
 }
 
-struct buffer *
+bool
 buffer_append(struct buffer *buffer, const char *string, size_t length)
 {
+        if (length == 0)
+                return true;
         // TODO Is this check needed?
-        if (string == NULL || length == 0)
-                return buffer;
+        if (string == NULL)
+                return false;
         if (!available(buffer, buffer->length + length + 1))
-                return buffer;
+                return false;
         memcpy(buffer->content + buffer->length, string, length);
         buffer->length += length;
-        return buffer;
+        return true;
 }
 
-struct buffer *
+bool
 buffer_append_c(struct buffer *buffer, char c, size_t n)
 {
         if (!available(buffer, buffer->length + n + 1))
-                return buffer;
+                return false;
         memset(buffer->content + buffer->length, c, n);
         buffer->length += n;
-        return buffer;
+        return true;
 }
 
 char *

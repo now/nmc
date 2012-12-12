@@ -670,8 +670,12 @@ fibling(struct nmc_parser *parser, struct footnote *footnotes, struct footnote *
                         char *s = nmc_location_str(&p->location);
                         if (s == NULL)
                                 return NULL;
-                        nmc_parser_error(parser, &footnote->location,
-                                         "footnote %s already defined at %s", p->id.string, s);
+                        if (!nmc_parser_error(parser, &footnote->location,
+                                              "footnote %s already defined at %s",
+                                              p->id.string, s)) {
+                                free(s);
+                                return NULL;
+                        }
                         free(s);
                         footnote_free1(footnote);
                         return footnotes;
@@ -728,10 +732,14 @@ buffer(struct substring substring)
 static inline struct nodes
 append_text(struct nodes inlines, struct substring substring)
 {
+        if (inlines.last == NULL)
+                return inlines;
         if (inlines.last->name != NODE_BUFFER)
                 return sibling(inlines, buffer(substring));
 
-        buffer_append(((struct buffer_node *)inlines.last)->u.buffer, substring.string, substring.length);
+        if (!buffer_append(((struct buffer_node *)inlines.last)->u.buffer,
+                           substring.string, substring.length))
+                return nodes(NULL);
         return inlines;
 }
 
@@ -758,6 +766,7 @@ textify(struct nodes inlines)
 }
 
 #define M(n) do { if ((n) == NULL) { nmc_parser_oom(parser); YYABORT; } } while (0)
+#define N(n) M((n).last)
 }
 
 %%
@@ -862,9 +871,9 @@ inlines: ospace sinlines ospace { $$ = textify($2); };
 sinlines: WORD { $$ = nodes(buffer($1)); }
 | oanchoredinline { $$ = nodes($1); }
 /* TODO $1.last can, if I see it correctly, never be NODE_BUFFER, so append_text may be unnecessary here. */
-| sinlines WORD { $$ = append_text($1, $2); }
+| sinlines WORD { N($$ = append_text($1, $2)); }
 | sinlines oanchoredinline { $$ = sibling(textify($1), $2); }
-| sinlines spaces WORD { $$ = append_text(append_space($1), $3); }
+| sinlines spaces WORD { N($$ = append_text(append_space($1), $3)); }
 | sinlines spaces oanchoredinline { $$ = sibling(textify(append_space($1)), $3); };
 
 oanchoredinline: inline

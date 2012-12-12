@@ -24,7 +24,7 @@ struct nmc_error *nmc_error_newu(const char *message, ...) NMC_PRINTF(1, 2);
 void nmc_parser_errors(struct nmc_parser *parser,
                        struct nmc_error *first,
                        struct nmc_error *last);
-void nmc_parser_error(struct nmc_parser *parser,
+bool nmc_parser_error(struct nmc_parser *parser,
                       YYLTYPE *location,
                       const char *message, ...) NMC_PRINTF(3, 4);
 void nmc_parser_oom(struct nmc_parser *parser);
