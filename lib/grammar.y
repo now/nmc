@@ -620,6 +620,8 @@ parent(enum node_name name, struct nodes children)
 static inline struct node *
 parent_children(enum node_name name, struct node *first, struct nodes rest)
 {
+        if (first == NULL)
+                return NULL;
         first->next = rest.first;
         return parent1(name, first);
 }
@@ -788,7 +790,7 @@ textify(struct nodes inlines)
 %%
 
 nmc: TITLE oblockssections0 {
-        parser->doc = parent_children(NODE_DOCUMENT, parent1(NODE_TITLE, $1), $2);
+        M(parser->doc = parent_children(NODE_DOCUMENT, parent1(NODE_TITLE, $1), $2));
         report_remaining_anchors(parser);
 };
 
@@ -820,7 +822,7 @@ footnotedsection: section
 oblockseparator: /* empty */
 | BLOCKSEPARATOR;
 
-section: SECTION { parser->want = INDENT; } title oblockssections { $$ = parent_children(NODE_SECTION, $3, $4); };
+section: SECTION { parser->want = INDENT; } title oblockssections { M($$ = parent_children(NODE_SECTION, $3, $4)); };
 
 title: inlines { $$ = parent(NODE_TITLE, $1); };
 
@@ -912,7 +914,7 @@ spaces: spacecontinuation
 spacecontinuation: SPACE
 | CONTINUATION;
 
-item: { parser->want = INDENT; } inlines oblocks { $$ = parent_children(NODE_ITEM, parent(NODE_PARAGRAPH, $2), $3); };
+item: { parser->want = INDENT; } inlines oblocks { M($$ = parent_children(NODE_ITEM, parent(NODE_PARAGRAPH, $2), $3)); };
 
 oblocks: /* empty */ { $$ = nodes(NULL); }
 | INDENT blocks DEDENT { $$ = $2; };
