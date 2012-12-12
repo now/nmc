@@ -23,9 +23,9 @@ struct nodes {
 struct anchor;
 void anchor_free(struct anchor *anchor);
 
-struct node *text_node_new(enum node_name name, char *text);
+struct node *anchor_node_new(YYLTYPE *location, const char *string, size_t length);
 
-struct sigil *sigil_new(YYLTYPE *location, const char *string, size_t length);
+struct node *text_node_new(enum node_name name, char *text);
 
 struct footnote *footnote_new(YYLTYPE *location, char *id, const char *content,
                               struct nmc_error **error);
@@ -308,6 +308,32 @@ text_node_free(struct text_node *node)
         return NULL;
 }
 
+struct node *
+anchor_node_new(YYLTYPE *location, const char *string, size_t length)
+{
+        struct anchor_node *n = node_new(struct anchor_node, PRIVATE, NODE_ANCHOR);
+        if (n == NULL)
+                return NULL;
+        n->u.anchor = malloc(sizeof(struct anchor));
+        if (n->u.anchor == NULL) {
+                free(n);
+                return NULL;
+        }
+        n->u.anchor->next = NULL;
+        n->u.anchor->location = *location;
+        char *id = malloc(length + 1);
+        if (id == NULL) {
+                free(n->u.anchor);
+                free(n);
+                return NULL;
+        }
+        memcpy(id, string, length);
+        id[length] = '\0';
+        n->u.anchor->id = id_new(id);
+        n->u.anchor->node = n;
+        return (struct node *)n;
+}
+
 static struct node *
 private_node_free(struct node *node)
 {
@@ -407,27 +433,6 @@ footnote_free(struct footnote *footnote)
                 footnote_free1(p);
 }
 
-struct sigil {
-        YYLTYPE location;
-        char id[];
-};
-
-struct sigil *
-sigil_new(YYLTYPE *location, const char *string, size_t length)
-{
-        struct sigil *sigil = malloc(sizeof(struct sigil) + length + 1);
-        sigil->location = *location;
-        memcpy(sigil->id, string, length);
-        sigil->id[length] = '\0';
-        return sigil;
-}
-
-static void
-sigil_free1(struct sigil *sigil)
-{
-        free(sigil);
-}
-
 static void
 report_remaining_anchors(struct nmc_parser *parser)
 {
@@ -482,8 +487,8 @@ report_remaining_anchors(struct nmc_parser *parser)
 %token DEDENT
 %token <node> CODE
 %token <node> EMPHASIS
-%token <sigil> SIGIL
-%token SIGILSEPARATOR
+%token <node> ANCHOR
+%token ANCHORSEPARATOR
 %token BEGINGROUP
 %token ENDGROUP
 
@@ -511,7 +516,6 @@ report_remaining_anchors(struct nmc_parser *parser)
         struct nodes nodes;
         struct node *node;
         struct footnote *footnote;
-        struct sigil *sigil;
 }
 
 %printer { fprintf(yyoutput, "%.*s", (int)$$.length, $$.string); } <substring>
@@ -523,12 +527,10 @@ report_remaining_anchors(struct nmc_parser *parser)
         else
                 fprintf(yyoutput, "%s (unrecognized)", $$->id.string);
 } <footnote>
-%printer { fprintf(yyoutput, "%s", $$->id); } <sigil>
 
 %destructor { node_unlink_and_free(parser, $$.first); } <nodes>
 %destructor { node_unlink_and_free(parser, $$); } <node>
 %destructor { footnote_free($$); } <footnote>
-%destructor { sigil_free1($$); } <sigil>
 
 %code
 {
@@ -665,19 +667,13 @@ definition(struct node *term, struct node *item)
         return item;
 }
 
-static struct node *
-anchor(struct nmc_parser *parser, struct node *atom, struct sigil *sigil)
+static inline struct node *
+anchor(struct nmc_parser *parser, struct node *atom, struct node *anchor)
 {
-        struct anchor *anchor = malloc(sizeof(struct anchor));
-        anchor->next = parser->anchors;
-        parser->anchors = anchor;
-        anchor->location = sigil->location;
-        anchor->id = id_new(strdup(sigil->id));
-        anchor->node = node_new(struct anchor_node, PRIVATE, NODE_ANCHOR);
-        anchor->node->u.anchor = anchor;
-        anchor->node->node.children = atom;
-        sigil_free1(sigil);
-        return (struct node *)anchor->node;
+        ((struct parent_node *)anchor)->children = atom;
+        ((struct anchor_node *)anchor)->u.anchor->next = parser->anchors;
+        parser->anchors = ((struct anchor_node *)anchor)->u.anchor;
+        return anchor;
 }
 
 static struct node *
@@ -833,9 +829,9 @@ sinlines: WORD { $$ = nodes(buffer($1)); }
 oanchoredinline: inline
 | anchoredinline;
 
-anchoredinline: inline SIGIL { $$ = anchor(parser, $1, $2); }
-| WORD SIGIL { $$ = anchor(parser, text_node_new(NODE_TEXT, strndup($1.string, $1.length)), $2); }
-| anchoredinline SIGILSEPARATOR SIGIL { $$ = anchor(parser, $1, $3); }
+anchoredinline: inline ANCHOR { $$ = anchor(parser, $1, $2); }
+| WORD ANCHOR { $$ = anchor(parser, text_node_new(NODE_TEXT, strndup($1.string, $1.length)), $2); }
+| anchoredinline ANCHORSEPARATOR ANCHOR { $$ = anchor(parser, $1, $3); }
 
 inline: CODE
 | EMPHASIS

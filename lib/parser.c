@@ -616,7 +616,7 @@ nmc_parser_lex(struct nmc_parser *parser, YYLTYPE *location, YYSTYPE *value)
         case U_SUPERSCRIPT_PLUS_SIGN:
                 // TODO Only catch this if followed by is_inline_end()
                 // (or perhaps only if followed by superscript()).
-                return token(parser, location, parser->p + length, SIGILSEPARATOR);
+                return token(parser, location, parser->p + length, ANCHORSEPARATOR);
         }
 
         if (is_group_end(end))
@@ -624,8 +624,8 @@ nmc_parser_lex(struct nmc_parser *parser, YYLTYPE *location, YYSTYPE *value)
         else if ((length = superscript(parser)) > 0) {
                 // TODO Only catch this if followed by is_inline_end().
                 const char *begin = parser->p;
-                int r = token(parser, location, parser->p + length, SIGIL);
-                value->sigil = sigil_new(location, begin, length);
+                int r = token(parser, location, parser->p + length, ANCHOR);
+                value->node = anchor_node_new(location, begin, length);
                 return r;
         }
 
