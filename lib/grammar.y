@@ -449,19 +449,30 @@ static void
 report_remaining_anchors(struct nmc_parser *parser)
 {
         struct nmc_error *first = NULL, *previous = NULL, *last = NULL;
+        bool oom = false;
         list_for_each_safe(struct anchor, p, n, parser->anchors) {
-                first = nmc_error_new(&p->location,
-                                      "reference to undefined footnote: %s",
-                                      p->id.string);
-                if (last == NULL)
-                        last = first;
-                if (previous != NULL)
-                        first->next = previous;
-                previous = first;
+                if (!oom) {
+                        first = nmc_error_new(&p->location,
+                                              "reference to undefined footnote: %s",
+                                              p->id.string);
+                        if (first == NULL)
+                                oom = true;
+                        else {
+                                if (last == NULL)
+                                        last = first;
+                                if (previous != NULL)
+                                        first->next = previous;
+                                previous = first;
+                        }
+                }
                 p->node->u.anchor = NULL;
                 anchor_free1(p);
         }
         parser->anchors = NULL;
+        if (oom) {
+                nmc_error_free(previous);
+                first = last = &nmc_oom_error;
+        }
         nmc_parser_errors(parser, first, last);
 }
 }
