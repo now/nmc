@@ -191,6 +191,8 @@ definitions_push(const char *pattern, definefn define, struct nmc_error **error)
 static inline struct node *
 node_init(struct node *node, enum node_type type, enum node_name name)
 {
+        if (node == NULL)
+                return NULL;
         node->next = NULL;
         node->type = type;
         node->name = name;
@@ -725,7 +727,13 @@ static struct node *
 buffer(struct substring substring)
 {
         struct buffer_node *n = node_new(struct buffer_node, PRIVATE, NODE_BUFFER);
+        if (n == NULL)
+                return NULL;
         n->u.buffer = buffer_new(substring.string, substring.length);
+        if (n->u.buffer == NULL) {
+                free(n);
+                return NULL;
+        }
         return (struct node *)n;
 }
 
