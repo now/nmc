@@ -891,7 +891,7 @@ entry: inlines { $$ = parent(NODE_ENTRY, $1); };
 
 inlines: ospace sinlines ospace { N($$ = textify($2)); };
 
-sinlines: WORD { $$ = nodes(buffer($1)); }
+sinlines: WORD { N($$ = nodes(buffer($1))); }
 | oanchoredinline { $$ = nodes($1); }
 /* TODO $1.last can, if I see it correctly, never be NODE_BUFFER, so append_text may be unnecessary here. */
 | sinlines WORD { N($$ = append_text($1, $2)); }
