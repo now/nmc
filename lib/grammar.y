@@ -889,7 +889,7 @@ entries: entry { $$ = nodes($1); }
 
 entry: inlines { $$ = parent(NODE_ENTRY, $1); };
 
-inlines: ospace sinlines ospace { N($$ = textify($2)); };
+inlines: ospace sinlines ospace { $$ = textify($2); };
 
 sinlines: WORD { N($$ = nodes(buffer($1))); }
 | oanchoredinline { $$ = nodes($1); }
