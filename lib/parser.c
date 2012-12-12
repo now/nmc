@@ -269,7 +269,8 @@ again:
                         send++;
                 if (!is_end(send) &&
                     (size_t)(send - (end + 1)) >= parser->indent + 2) {
-                        buffer_append(&b, begin, end - begin);
+                        if (!buffer_append(&b, begin, end - begin))
+                                goto oom;
                         begin = end + parser->indent + 2;
                         end = send;
                         parser->location.last_line++;
@@ -279,7 +280,8 @@ again:
         }
         case ' ':
                 end++;
-                buffer_append(&b, begin, end - begin);
+                if (!buffer_append(&b, begin, end - begin))
+                        goto oom;
                 while (*end == ' ')
                         end++;
                 begin = end;
@@ -288,12 +290,16 @@ again:
                 end++;
                 goto again;
         }
-        buffer_append(&b, begin, end - begin);
+        if (!buffer_append(&b, begin, end - begin))
+                goto oom;
 
         // NOTE We use a throwaway type here; caller must return actual type.
         token(parser, location, end, ERROR);
-
         return buffer_str(&b);
+oom:
+        token(parser, location, end, ERROR);
+        free(b.content);
+        return NULL;
 }
 
 static size_t
