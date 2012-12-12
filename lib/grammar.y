@@ -626,7 +626,7 @@ parent_children(enum node_name name, struct node *first, struct nodes rest)
         return parent1(name, first);
 }
 
-static void
+static bool
 update_anchors(struct nmc_parser *parser, struct footnote *footnote)
 {
         bool found = false;
@@ -653,21 +653,26 @@ update_anchors(struct nmc_parser *parser, struct footnote *footnote)
         }
         if (found)
                 footnote->node = NULL;
-        else
-                nmc_parser_error(parser,
-                                 &footnote->location,
-                                 "unreferenced footnote: %s", footnote->id.string);
+        else if (!nmc_parser_error(parser,
+                                   &footnote->location,
+                                   "unreferenced footnote: %s",
+                                   footnote->id.string))
+                return false;
+        return true;
 }
 
-static void
-footnote(struct nmc_parser *parser, struct footnote *footnotes)
+static bool
+footnote(struct nmc_parser *parser, struct footnote **footnotes)
 {
-        list_for_each_safe(struct footnote, p, n, footnotes) {
-                update_anchors(parser, p);
+        list_for_each_safe(struct footnote, p, n, *footnotes) {
+                if (!update_anchors(parser, p)) {
+                        *footnotes = p;
+                        return false;
+                }
                 footnote_free1(p);
         }
+        return true;
 }
-#define footnote(parser, result, footnotes) (footnote(parser, footnotes), result)
 
 static inline struct footnote *
 fibling(struct nmc_parser *parser, struct footnote *footnotes, struct footnote *footnote)
@@ -809,7 +814,7 @@ blockssections: blocks
 
 blocks: block { $$ = nodes($1); }
 | blocks BLOCKSEPARATOR block { $$ = sibling($1, $3); }
-| blocks BLOCKSEPARATOR footnotes { $$ = footnote(parser, $1, $3); };
+| blocks BLOCKSEPARATOR footnotes { N($$ = footnote(parser, &$3) ? $1 : nodes(NULL)); };
 
 block: paragraph
 | itemization
@@ -823,7 +828,7 @@ sections: footnotedsection { $$ = nodes($1); }
 | sections footnotedsection { $$ = sibling($1, $2); };
 
 footnotedsection: section
-| section footnotes oblockseparator { $$ = footnote(parser, $1, $2); };
+| section footnotes oblockseparator { M($$ = footnote(parser, &$2) ? $1 : NULL); };
 
 oblockseparator: /* empty */
 | BLOCKSEPARATOR;
