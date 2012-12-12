@@ -535,7 +535,7 @@ report_remaining_anchors(struct nmc_parser *parser)
 %type <nodes> headbody rows entries
 %type <nodes> inlines sinlines
 %type <node> oanchoredinline anchoredinline inline
-%type <node> item
+%type <node> item firstparagraph
 %type <nodes> oblocks
 
 %union {
@@ -622,8 +622,6 @@ parent(enum node_name name, struct nodes children)
 static inline struct node *
 parent_children(enum node_name name, struct node *first, struct nodes rest)
 {
-        if (first == NULL)
-                return NULL;
         first->next = rest.first;
         return parent1(name, first);
 }
@@ -922,7 +920,9 @@ spaces: spacecontinuation
 spacecontinuation: SPACE
 | CONTINUATION;
 
-item: { parser->want = INDENT; } inlines oblocks { M($$ = parent_children(NODE_ITEM, parent(NODE_PARAGRAPH, $2), $3)); };
+item: { parser->want = INDENT; } firstparagraph oblocks { M($$ = parent_children(NODE_ITEM, $2, $3)); };
+
+firstparagraph: inlines { M($$ = parent(NODE_PARAGRAPH, $1)); }
 
 oblocks: /* empty */ { $$ = nodes(NULL); }
 | INDENT blocks DEDENT { $$ = $2; };
