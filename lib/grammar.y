@@ -296,9 +296,21 @@ auxiliary_node_free(struct auxiliary_node *node)
 struct node *
 text_node_new(enum node_name name, char *text)
 {
+        if (text == NULL)
+                return NULL;
         struct text_node *n = node_new(struct text_node, TEXT, name);
+        if (n == NULL) {
+                free(text);
+                return NULL;
+        }
         n->text = text;
         return (struct node *)n;
+}
+
+static struct node *
+text_node_new_dup(enum node_name name, const char *string, size_t length)
+{
+        return text_node_new(name, strndup(string, length));
 }
 
 static struct node *
@@ -670,10 +682,28 @@ definition(struct node *term, struct node *item)
 static inline struct node *
 anchor(struct nmc_parser *parser, struct node *atom, struct node *anchor)
 {
+        if (anchor == NULL)
+                return NULL;
         ((struct parent_node *)anchor)->children = atom;
         ((struct anchor_node *)anchor)->u.anchor->next = parser->anchors;
         parser->anchors = ((struct anchor_node *)anchor)->u.anchor;
         return anchor;
+}
+
+static inline struct node *
+wanchor(struct nmc_parser *parser, struct substring substring, struct node *a)
+{
+        if (a == NULL)
+                return NULL;
+        struct node *n = text_node_new_dup(NODE_TEXT, substring.string, substring.length);
+        if (n == NULL)
+                return NULL;
+        struct node *r = anchor(parser, n, a);
+        if (r == NULL) {
+                node_free(n);
+                return NULL;
+        }
+        return r;
 }
 
 static struct node *
@@ -829,9 +859,9 @@ sinlines: WORD { $$ = nodes(buffer($1)); }
 oanchoredinline: inline
 | anchoredinline;
 
-anchoredinline: inline ANCHOR { $$ = anchor(parser, $1, $2); }
-| WORD ANCHOR { $$ = anchor(parser, text_node_new(NODE_TEXT, strndup($1.string, $1.length)), $2); }
-| anchoredinline ANCHORSEPARATOR ANCHOR { $$ = anchor(parser, $1, $3); }
+anchoredinline: inline ANCHOR { M($$ = anchor(parser, $1, $2)); }
+| WORD ANCHOR { M($$ = wanchor(parser, $1, $2)); }
+| anchoredinline ANCHORSEPARATOR ANCHOR { M($$ = anchor(parser, $1, $3)); }
 
 inline: CODE
 | EMPHASIS
