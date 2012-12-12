@@ -110,6 +110,8 @@ nmc_parser_error(struct nmc_parser *parser, YYLTYPE *location, const char *messa
 void
 nmc_parser_oom(struct nmc_parser *parser)
 {
+        if (nmc_parser_is_oom(parser))
+                return;
         nmc_parser_errors(parser, &nmc_oom_error, &nmc_oom_error);
 }
 
