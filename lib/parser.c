@@ -578,11 +578,15 @@ emphasis(struct nmc_parser *parser, YYLTYPE *location, YYSTYPE *value)
                 end++;
         const char *send = end;
         if (is_end(end)) {
-                nmc_parser_error(parser, &parser->location,
-                                 "missing ending ‘/’ for emphasis inline");
+                if (!nmc_parser_error(parser, &parser->location,
+                                      "missing ending ‘/’ for emphasis inline")) {
+                        value->node = NULL;
+                        goto oom;
+                }
         } else
                 end++;
-        value->node = text_node_new(NODE_EMPHASIS, strndup(begin, send - begin));
+        value->node = text_node_new_dup(NODE_EMPHASIS, begin, send - begin);
+oom:
         return token(parser, location, end, EMPHASIS);
 }
 

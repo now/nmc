@@ -907,7 +907,7 @@ anchoredinline: inline ANCHOR { M($$ = anchor(parser, $1, $2)); }
 | anchoredinline ANCHORSEPARATOR ANCHOR { M($$ = anchor(parser, $1, $3)); }
 
 inline: CODE { M($$ = $1); }
-| EMPHASIS
+| EMPHASIS { M($$ = $1); }
 | BEGINGROUP sinlines ENDGROUP { M($$ = parent(NODE_GROUP, textify($2))); };
 
 ospace: /* empty */
