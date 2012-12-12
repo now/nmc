@@ -240,7 +240,7 @@ static struct xml_types types[] = {
 #define block block_enter, leave
 #define inline inline_enter, leave
         [NODE_DOCUMENT] = { "nml", indenting_block },
-        [NODE_TITLE] = { "title", text_block },
+        [NODE_TITLE] = { "title", block },
         [NODE_PARAGRAPH] = { "p", block },
         [NODE_ITEMIZATION] = { "itemization", indenting_block },
         [NODE_ENUMERATION] = { "enumeration", indenting_block },
