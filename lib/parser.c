@@ -371,7 +371,7 @@ definition(struct nmc_parser *parser, YYLTYPE *location, YYSTYPE *value)
                         while (*end == ' ')
                                 end++;
                         if (*end == '/' && is_space_or_end(end + 1)) {
-                                value->node = text_node_new(NODE_TERM, strndup(begin, send - begin));
+                                value->node = text_node_new_dup(NODE_TERM, begin, send - begin);
                                 return token(parser, location, end + 1, TERM);
                         }
                 }

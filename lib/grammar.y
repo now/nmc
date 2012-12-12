@@ -26,6 +26,7 @@ void anchor_free(struct anchor *anchor);
 struct node *anchor_node_new(YYLTYPE *location, const char *string, size_t length);
 
 struct node *text_node_new(enum node_name name, char *text);
+struct node *text_node_new_dup(enum node_name name, const char *string, size_t length);
 
 struct footnote *footnote_new(YYLTYPE *location, char *id, const char *content,
                               struct nmc_error **error);
@@ -309,7 +310,7 @@ text_node_new(enum node_name name, char *text)
         return (struct node *)n;
 }
 
-static struct node *
+struct node *
 text_node_new_dup(enum node_name name, const char *string, size_t length)
 {
         return text_node_new(name, strndup(string, length));
@@ -699,7 +700,11 @@ fibling(struct nmc_parser *parser, struct footnote *footnotes, struct footnote *
 static struct node *
 definition(struct node *term, struct node *item)
 {
+        if (term == NULL)
+                return NULL;
         term->next = parent1(NODE_DEFINITION, ((struct parent_node *)item)->children);
+        if (term->next == NULL)
+                return NULL;
         ((struct parent_node *)item)->children = term;
         return item;
 }
@@ -853,7 +858,7 @@ definitions: definitionitems { $$ = parent(NODE_DEFINITIONS, $1); };
 definitionitems: definition { $$ = nodes($1); }
 | definitionitems definition { $$ = sibling($1, $2); };
 
-definition: TERM item { $$ = definition($1, $2); };
+definition: TERM item { M($$ = definition($1, $2)); };
 
 quote: lines attribution { $$ = parent(NODE_QUOTE, sibling($1, $2)); };
 
