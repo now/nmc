@@ -518,6 +518,7 @@ report_remaining_anchors(struct nmc_parser *parser)
 %token BEGINGROUP
 %token ENDGROUP
 
+%type <node> documenttitle
 %type <nodes> oblockssections0 blockssections blocks sections oblockssections
 %type <node> block footnotedsection section title
 %type <footnote> footnotes
@@ -794,10 +795,12 @@ textify(struct nodes inlines)
 
 %%
 
-nmc: TITLE oblockssections0 {
-        M(parser->doc = parent_children(NODE_DOCUMENT, parent1(NODE_TITLE, $1), $2));
+nmc: documenttitle oblockssections0 {
+        M(parser->doc = parent_children(NODE_DOCUMENT, $1, $2));
         report_remaining_anchors(parser);
 };
+
+documenttitle: TITLE { M($$ = parent1(NODE_TITLE, $1)); };
 
 oblockssections0: /* empty */ { $$ = nodes(NULL); }
 | BLOCKSEPARATOR blockssections { $$ = $2; };
