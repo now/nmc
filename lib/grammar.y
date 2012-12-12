@@ -586,6 +586,8 @@ nodes(struct node *node)
 static inline struct nodes
 sibling(struct nodes siblings, struct node *sibling)
 {
+        if (siblings.last == NULL)
+                return siblings;
         siblings.last->next = sibling;
         return (struct nodes){ siblings.first, sibling };
 }
@@ -600,7 +602,11 @@ siblings(struct nodes siblings, struct nodes rest)
 static inline struct node *
 parent1(enum node_name name, struct node *children)
 {
+        if (children == NULL)
+                return NULL;
         struct parent_node *n = node_new(struct parent_node, PARENT, name);
+        if (n == NULL)
+                return NULL;
         n->children = children;
         return (struct node *)n;
 }
@@ -760,6 +766,8 @@ append_space(struct nodes inlines)
 static inline struct nodes
 textify(struct nodes inlines)
 {
+        if (inlines.last == NULL)
+                return inlines;
         if (inlines.last->name == NODE_BUFFER) {
                 struct buffer_node *buffer = (struct buffer_node *)inlines.last;
                 buffer->node.type = TEXT;
@@ -874,15 +882,15 @@ entries: entry { $$ = nodes($1); }
 
 entry: inlines { $$ = parent(NODE_ENTRY, $1); };
 
-inlines: ospace sinlines ospace { $$ = textify($2); };
+inlines: ospace sinlines ospace { N($$ = textify($2)); };
 
 sinlines: WORD { $$ = nodes(buffer($1)); }
 | oanchoredinline { $$ = nodes($1); }
 /* TODO $1.last can, if I see it correctly, never be NODE_BUFFER, so append_text may be unnecessary here. */
 | sinlines WORD { N($$ = append_text($1, $2)); }
-| sinlines oanchoredinline { $$ = sibling(textify($1), $2); }
+| sinlines oanchoredinline { N($$ = sibling(textify($1), $2)); }
 | sinlines spaces WORD { N($$ = append_text(append_space($1), $3)); }
-| sinlines spaces oanchoredinline { $$ = sibling(textify(append_space($1)), $3); };
+| sinlines spaces oanchoredinline { N($$ = sibling(textify(append_space($1)), $3)); };
 
 oanchoredinline: inline
 | anchoredinline;
@@ -893,7 +901,7 @@ anchoredinline: inline ANCHOR { M($$ = anchor(parser, $1, $2)); }
 
 inline: CODE
 | EMPHASIS
-| BEGINGROUP sinlines ENDGROUP { $$ = parent(NODE_GROUP, textify($2)); };
+| BEGINGROUP sinlines ENDGROUP { M($$ = parent(NODE_GROUP, textify($2))); };
 
 ospace: /* empty */
 | SPACE;
