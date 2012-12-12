@@ -870,24 +870,24 @@ line: QUOTE inlines { $$ = parent(NODE_LINE, $2); };
 attribution: /* empty */ { $$ = NULL; }
 | ATTRIBUTION inlines { $$ = parent(NODE_ATTRIBUTION, $2); };
 
-table: headbody { $$ = parent(NODE_TABLE, $1); }
+table: headbody { M($$ = parent(NODE_TABLE, $1)); }
 
 headbody: head body { $$ = sibling(nodes($1), $2); }
 | body { $$ = nodes($1); };
 
-head: row TABLESEPARATOR { $$ = parent1(NODE_HEAD, $1); };
+head: row TABLESEPARATOR { M($$ = parent1(NODE_HEAD, $1)); };
 
-body: rows { $$ = parent(NODE_BODY, $1); };
+body: rows { M($$ = parent(NODE_BODY, $1)); };
 
 rows: row { $$ = nodes($1); }
 | rows row { $$ = sibling($1, $2); };
 
-row: ROW entries ENTRYSEPARATOR { $$ = parent(NODE_ROW, $2); };
+row: ROW entries ENTRYSEPARATOR { M($$ = parent(NODE_ROW, $2)); };
 
 entries: entry { $$ = nodes($1); }
 | entries ENTRYSEPARATOR entry { $$ = sibling($1, $3); };
 
-entry: inlines { $$ = parent(NODE_ENTRY, $1); };
+entry: inlines { M($$ = parent(NODE_ENTRY, $1)); };
 
 inlines: ospace sinlines ospace { $$ = textify($2); };
 
