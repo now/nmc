@@ -408,7 +408,6 @@ footnote_free(struct footnote *footnote)
 }
 
 struct sigil {
-        struct sigil *next;
         YYLTYPE location;
         char id[];
 };
@@ -417,7 +416,6 @@ struct sigil *
 sigil_new(YYLTYPE *location, const char *string, size_t length)
 {
         struct sigil *sigil = malloc(sizeof(struct sigil) + length + 1);
-        sigil->next = NULL;
         sigil->location = *location;
         memcpy(sigil->id, string, length);
         sigil->id[length] = '\0';
@@ -428,13 +426,6 @@ static void
 sigil_free1(struct sigil *sigil)
 {
         free(sigil);
-}
-
-static void
-sigil_free(struct sigil *sigil)
-{
-        list_for_each_safe(struct sigil, p, n, sigil)
-                sigil_free1(p);
 }
 
 static void
@@ -511,8 +502,7 @@ report_remaining_anchors(struct nmc_parser *parser)
 %type <node> table head body row entry
 %type <nodes> headbody rows entries
 %type <nodes> inlines sinlines
-%type <node> anchoredinline inline
-%type <sigil> sigils
+%type <node> oanchoredinline anchoredinline inline
 %type <node> item
 %type <nodes> oblocks
 
@@ -538,7 +528,7 @@ report_remaining_anchors(struct nmc_parser *parser)
 %destructor { node_unlink_and_free(parser, $$.first); } <nodes>
 %destructor { node_unlink_and_free(parser, $$); } <node>
 %destructor { footnote_free($$); } <footnote>
-%destructor { sigil_free($$); } <sigil>
+%destructor { sigil_free1($$); } <sigil>
 
 %code
 {
@@ -675,30 +665,19 @@ definition(struct node *term, struct node *item)
         return item;
 }
 
-/* Anchor sigils appearing in reverse order. */
 static struct node *
-anchor(struct nmc_parser *parser, struct node *atom, struct sigil *sigils)
+anchor(struct nmc_parser *parser, struct node *atom, struct sigil *sigil)
 {
-        struct node *outermost = atom;
-        list_for_each(struct sigil, p, sigils) {
-                struct anchor *anchor = malloc(sizeof(struct anchor));
-                anchor->next = parser->anchors;
-                parser->anchors = anchor;
-                anchor->location = p->location;
-                anchor->id = id_new(strdup(p->id));
-                anchor->node = node_new(struct anchor_node, PRIVATE, NODE_ANCHOR);
-                anchor->node->u.anchor = anchor;
-                if (outermost == atom) {
-                        anchor->node->node.children = atom;
-                        outermost = (struct node *)anchor->node;
-                } else {
-                        anchor->node->node.children = ((struct parent_node *)outermost)->children;
-                        ((struct parent_node *)outermost)->children = (struct node *)anchor->node;
-                }
-
-                sigil_free1(p);
-        }
-        return outermost;
+        struct anchor *anchor = malloc(sizeof(struct anchor));
+        anchor->next = parser->anchors;
+        parser->anchors = anchor;
+        anchor->location = sigil->location;
+        anchor->id = id_new(strdup(sigil->id));
+        anchor->node = node_new(struct anchor_node, PRIVATE, NODE_ANCHOR);
+        anchor->node->u.anchor = anchor;
+        anchor->node->node.children = atom;
+        sigil_free1(sigil);
+        return (struct node *)anchor->node;
 }
 
 static struct node *
@@ -844,23 +823,23 @@ entry: inlines { $$ = parent(NODE_ENTRY, $1); };
 inlines: ospace sinlines ospace { $$ = textify($2); };
 
 sinlines: WORD { $$ = nodes(buffer($1)); }
-| anchoredinline { $$ = nodes($1); }
+| oanchoredinline { $$ = nodes($1); }
 /* TODO $1.last can, if I see it correctly, never be NODE_BUFFER, so append_text may be unnecessary here. */
 | sinlines WORD { $$ = append_text($1, $2); }
-| sinlines anchoredinline { $$ = sibling(textify($1), $2); }
+| sinlines oanchoredinline { $$ = sibling(textify($1), $2); }
 | sinlines spaces WORD { $$ = append_text(append_space($1), $3); }
-| sinlines spaces anchoredinline { $$ = sibling(textify(append_space($1)), $3); };
+| sinlines spaces oanchoredinline { $$ = sibling(textify(append_space($1)), $3); };
 
-anchoredinline: inline
-| inline sigils { $$ = anchor(parser, $1, $2); }
-| WORD sigils { $$ = anchor(parser, text_node_new(NODE_TEXT, strndup($1.string, $1.length)), $2); };
+oanchoredinline: inline
+| anchoredinline;
+
+anchoredinline: inline SIGIL { $$ = anchor(parser, $1, $2); }
+| WORD SIGIL { $$ = anchor(parser, text_node_new(NODE_TEXT, strndup($1.string, $1.length)), $2); }
+| anchoredinline SIGILSEPARATOR SIGIL { $$ = anchor(parser, $1, $3); }
 
 inline: CODE
 | EMPHASIS
 | BEGINGROUP sinlines ENDGROUP { $$ = parent(NODE_GROUP, textify($2)); };
-
-sigils: SIGIL
-| sigils SIGILSEPARATOR SIGIL { $$ = $3; $$->next = $1; };
 
 ospace: /* empty */
 | SPACE;
