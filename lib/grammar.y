@@ -206,10 +206,16 @@ auxiliary_node_new_matches(const char *name, const char *buffer,
                            regmatch_t *matches, int n, ...)
 {
         struct auxiliary_node *d = node_new(struct auxiliary_node, AUXILIARY, NODE_AUXILIARY);
+        if (d == NULL)
+                return NULL;
         d->node.children = NULL;
         d->name = name;
         d->attributes = malloc(sizeof(struct auxiliary_node_attributes) +
                                sizeof(struct auxiliary_node_attribute) * (n + 1));
+        if (d->attributes == NULL) {
+                free(d);
+                return NULL;
+        }
         d->attributes->references = 1;
         regmatch_t *m = &matches[1];
         struct auxiliary_node_attribute *a = d->attributes->items;
@@ -219,6 +225,12 @@ auxiliary_node_new_matches(const char *name, const char *buffer,
                 /* TODO Check that rm_so/rm_eo ≠ -1 */
                 a->name = va_arg(args, const char *);
                 a->value = strndup(buffer + m->rm_so, m->rm_eo - m->rm_so);
+                if (a->value == NULL) {
+                        va_end(args);
+                        free(d->attributes);
+                        free(d);
+                        return NULL;
+                }
                 m++;
                 a++;
         }
@@ -428,8 +440,14 @@ footnote_new(YYLTYPE *location, char *id, const char *content, struct nmc_error 
         footnote->location = *location;
         footnote->id = id_new(id);
         footnote->node = define(content, error);
-        if (footnote->node == NULL)
+        if (footnote->node == NULL) {
+                if (*error == NULL) {
+                        free(id);
+                        free(footnote);
+                        return NULL;
+                }
                 (*error)->location = *location;
+        }
         return footnote;
 }
 
