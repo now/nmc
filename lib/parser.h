@@ -1,4 +1,4 @@
-struct nmc_parser {
+struct parser {
         const char *p;
         YYLTYPE location;
         size_t indent;
@@ -21,12 +21,12 @@ struct nmc_error *nmc_error_new(struct nmc_location *location,
                                 const char *message,
                                 ...) NMC_PRINTF(2, 3);
 struct nmc_error *nmc_error_newu(const char *message, ...) NMC_PRINTF(1, 2);
-void nmc_parser_errors(struct nmc_parser *parser,
-                       struct nmc_error *first,
-                       struct nmc_error *last);
-bool nmc_parser_error(struct nmc_parser *parser,
-                      YYLTYPE *location,
-                      const char *message, ...) NMC_PRINTF(3, 4);
-void nmc_parser_oom(struct nmc_parser *parser);
+void parser_errors(struct parser *parser,
+                   struct nmc_error *first,
+                   struct nmc_error *last);
+bool parser_error(struct parser *parser,
+                  YYLTYPE *location,
+                  const char *message, ...) NMC_PRINTF(3, 4);
+void parser_oom(struct parser *parser);
 
-int nmc_parser_lex(struct nmc_parser *parser, YYLTYPE *location, YYSTYPE *value);
+int parser_lex(struct parser *parser, YYLTYPE *location, YYSTYPE *value);

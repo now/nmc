@@ -1,7 +1,7 @@
 %code requires
 {
 #define YYLTYPE struct nmc_location
-struct nmc_parser;
+struct parser;
 
 #include <stdbool.h>
 #include <stddef.h>
@@ -112,7 +112,7 @@ struct anchor_node {
 };
 
 static void
-anchor_unlink(struct node *node, struct nmc_parser *parser)
+anchor_unlink(struct node *node, struct parser *parser)
 {
         if (node->name != NODE_ANCHOR)
                 return;
@@ -130,7 +130,7 @@ anchor_unlink(struct node *node, struct nmc_parser *parser)
 }
 
 static void
-node_unlink_and_free(struct nmc_parser *parser, struct node *node)
+node_unlink_and_free(struct parser *parser, struct node *node)
 {
         nmc_node_traverse(node, (traversefn)anchor_unlink, nmc_node_traverse_null, parser);
         /* TODO Once nmc_node_traverse can actually handle reporting OOM, if
@@ -479,7 +479,7 @@ footnote_free(struct footnote *footnote)
 }
 
 static void
-report_remaining_anchors(struct nmc_parser *parser)
+report_remaining_anchors(struct parser *parser)
 {
         struct nmc_error *first = NULL, *previous = NULL, *last = NULL;
         bool oom = false;
@@ -506,13 +506,13 @@ report_remaining_anchors(struct nmc_parser *parser)
                 nmc_error_free(previous);
                 first = last = &nmc_oom_error;
         }
-        nmc_parser_errors(parser, first, last);
+        parser_errors(parser, first, last);
 }
 }
 
 %define api.pure
-%parse-param {struct nmc_parser *parser}
-%lex-param {struct nmc_parser *parser}
+%parse-param {struct parser *parser}
+%lex-param {struct parser *parser}
 %name-prefix "nmc_grammar_"
 %debug
 %error-verbose
@@ -598,21 +598,21 @@ report_remaining_anchors(struct nmc_parser *parser)
 %code
 {
 static int
-nmc_grammar_lex(YYSTYPE *value, YYLTYPE *location, struct nmc_parser *parser)
+nmc_grammar_lex(YYSTYPE *value, YYLTYPE *location, struct parser *parser)
 {
         int token;
 
         do {
-                token = nmc_parser_lex(parser, location, value);
+                token = parser_lex(parser, location, value);
         } while (token == AGAIN);
 
         return token;
 }
 
 static void
-nmc_grammar_error(YYLTYPE *location, struct nmc_parser *parser, const char *message)
+nmc_grammar_error(YYLTYPE *location, struct parser *parser, const char *message)
 {
-        nmc_parser_error(parser, location, "%s", message);
+        parser_error(parser, location, "%s", message);
 }
 
 static inline struct nodes
@@ -663,7 +663,7 @@ parent_children(enum node_name name, struct node *first, struct nodes rest)
 }
 
 static bool
-update_anchors(struct nmc_parser *parser, struct footnote *footnote)
+update_anchors(struct parser *parser, struct footnote *footnote)
 {
         bool found = false;
         struct anchor *p = NULL;
@@ -689,16 +689,16 @@ update_anchors(struct nmc_parser *parser, struct footnote *footnote)
         }
         if (found)
                 footnote->node = NULL;
-        else if (!nmc_parser_error(parser,
-                                   &footnote->location,
-                                   "unreferenced footnote: %s",
-                                   footnote->id.string))
+        else if (!parser_error(parser,
+                               &footnote->location,
+                               "unreferenced footnote: %s",
+                               footnote->id.string))
                 return false;
         return true;
 }
 
 static bool
-footnote(struct nmc_parser *parser, struct footnote **footnotes)
+footnote(struct parser *parser, struct footnote **footnotes)
 {
         list_for_each_safe(struct footnote, p, n, *footnotes) {
                 if (!update_anchors(parser, p)) {
@@ -711,7 +711,7 @@ footnote(struct nmc_parser *parser, struct footnote **footnotes)
 }
 
 static inline struct footnote *
-fibling(struct nmc_parser *parser, struct footnote *footnotes, struct footnote *footnote)
+fibling(struct parser *parser, struct footnote *footnotes, struct footnote *footnote)
 {
         if (footnote == NULL)
                 return NULL;
@@ -721,9 +721,9 @@ fibling(struct nmc_parser *parser, struct footnote *footnotes, struct footnote *
                         char *s = nmc_location_str(&p->location);
                         if (s == NULL)
                                 return NULL;
-                        if (!nmc_parser_error(parser, &footnote->location,
-                                              "footnote %s already defined at %s",
-                                              p->id.string, s)) {
+                        if (!parser_error(parser, &footnote->location,
+                                          "footnote %s already defined at %s",
+                                          p->id.string, s)) {
                                 free(s);
                                 return NULL;
                         }
@@ -750,7 +750,7 @@ definition(struct node *term, struct node *item)
 }
 
 static inline struct node *
-anchor(struct nmc_parser *parser, struct node *atom, struct node *anchor)
+anchor(struct parser *parser, struct node *atom, struct node *anchor)
 {
         if (anchor == NULL)
                 return NULL;
@@ -761,7 +761,7 @@ anchor(struct nmc_parser *parser, struct node *atom, struct node *anchor)
 }
 
 static inline struct node *
-wanchor(struct nmc_parser *parser, struct substring substring, struct node *a)
+wanchor(struct parser *parser, struct substring substring, struct node *a)
 {
         if (a == NULL)
                 return NULL;
@@ -828,7 +828,7 @@ textify(struct nodes inlines)
         return inlines;
 }
 
-#define M(n) do { if ((n) == NULL) { nmc_parser_oom(parser); YYABORT; } } while (0)
+#define M(n) do { if ((n) == NULL) { parser_oom(parser); YYABORT; } } while (0)
 #define N(n) M((n).last)
 }
 

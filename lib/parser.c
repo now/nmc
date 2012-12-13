@@ -70,16 +70,16 @@ nmc_error_newu(const char *message, ...)
 }
 
 static inline bool
-nmc_parser_is_oom(struct nmc_parser *parser)
+parser_is_oom(struct parser *parser)
 {
         return parser->errors.last == &nmc_oom_error;
 }
 
 void
-nmc_parser_errors(struct nmc_parser *parser,
-                  struct nmc_error *first, struct nmc_error *last)
+parser_errors(struct parser *parser,
+              struct nmc_error *first, struct nmc_error *last)
 {
-        if (nmc_parser_is_oom(parser)) {
+        if (parser_is_oom(parser)) {
                 nmc_error_free(first);
                 return;
         }
@@ -91,34 +91,34 @@ nmc_parser_errors(struct nmc_parser *parser,
 }
 
 bool
-nmc_parser_error(struct nmc_parser *parser, YYLTYPE *location, const char *message, ...)
+parser_error(struct parser *parser, YYLTYPE *location, const char *message, ...)
 {
-        if (nmc_parser_is_oom(parser))
+        if (parser_is_oom(parser))
                 return false;
         va_list args;
         va_start(args, message);
         struct nmc_error *error = nmc_error_newv(location, message, args);
         va_end(args);
         if (error == NULL) {
-                nmc_parser_oom(parser);
+                parser_oom(parser);
                 return false;
         }
-        nmc_parser_errors(parser, error, error);
+        parser_errors(parser, error, error);
         return true;
 }
 
 void
-nmc_parser_oom(struct nmc_parser *parser)
+parser_oom(struct parser *parser)
 {
-        if (nmc_parser_is_oom(parser))
+        if (parser_is_oom(parser))
                 return;
-        nmc_parser_errors(parser, &nmc_oom_error, &nmc_oom_error);
+        parser_errors(parser, &nmc_oom_error, &nmc_oom_error);
 }
 
 struct node *
 nmc_parse(const char *input, struct nmc_error **errors)
 {
-        struct nmc_parser parser;
+        struct parser parser;
         parser.p = input;
         parser.location = (YYLTYPE){ 1, 1, 1, 1 };
         parser.dedents = 0;
@@ -138,14 +138,14 @@ nmc_parse(const char *input, struct nmc_error **errors)
 }
 
 static void
-locate(struct nmc_parser *parser, YYLTYPE *location, int last_column)
+locate(struct parser *parser, YYLTYPE *location, int last_column)
 {
         parser->location.last_column = last_column;
         *location = parser->location;
 }
 
 static int
-token(struct nmc_parser *parser, YYLTYPE *location, const char *end, int type)
+token(struct parser *parser, YYLTYPE *location, const char *end, int type)
 {
         if (location != NULL)
                 locate(parser,
@@ -161,7 +161,7 @@ token(struct nmc_parser *parser, YYLTYPE *location, const char *end, int type)
 }
 
 static int
-substring(struct nmc_parser *parser, YYLTYPE *location, YYSTYPE *value,
+substring(struct parser *parser, YYLTYPE *location, YYSTYPE *value,
           const char *end, int type)
 {
         value->substring.string = parser->p;
@@ -170,7 +170,7 @@ substring(struct nmc_parser *parser, YYLTYPE *location, YYSTYPE *value,
 }
 
 static int
-dedent(struct nmc_parser *parser, YYLTYPE *location, const char *end)
+dedent(struct parser *parser, YYLTYPE *location, const char *end)
 {
         /* TODO: assert(parser->dedents > 0); */
         parser->dedents--;
@@ -178,7 +178,7 @@ dedent(struct nmc_parser *parser, YYLTYPE *location, const char *end)
 }
 
 static int
-dedents(struct nmc_parser *parser, YYLTYPE *location, const char *end, size_t spaces)
+dedents(struct parser *parser, YYLTYPE *location, const char *end, size_t spaces)
 {
         parser->dedents = (parser->indent - spaces) / 2;
         parser->indent -= 2 * parser->dedents;
@@ -189,7 +189,7 @@ dedents(struct nmc_parser *parser, YYLTYPE *location, const char *end, size_t sp
 typedef bool (*isfn)(uchar);
 
 static inline size_t
-length_of_run(struct nmc_parser *parser, isfn is)
+length_of_run(struct parser *parser, isfn is)
 {
         const char *end = parser->p;
         while (is(u_dref(end)))
@@ -219,7 +219,7 @@ is_superscript(uchar c)
 }
 
 static inline size_t
-superscript(struct nmc_parser *parser)
+superscript(struct parser *parser)
 {
         return length_of_run(parser, is_superscript);
 }
@@ -234,7 +234,7 @@ is_subscript(uchar c)
 }
 
 static inline size_t
-subscript(struct nmc_parser *parser)
+subscript(struct parser *parser)
 {
         return length_of_run(parser, is_subscript);
 }
@@ -252,7 +252,7 @@ is_space_or_end(const char *end)
 }
 
 static char *
-buffer(struct nmc_parser *parser, YYLTYPE *location, const char *begin)
+buffer(struct parser *parser, YYLTYPE *location, const char *begin)
 {
         while (*begin == ' ')
                 begin++;
@@ -303,18 +303,18 @@ oom:
 }
 
 static size_t
-bol_space(struct nmc_parser *parser, size_t offset)
+bol_space(struct parser *parser, size_t offset)
 {
         if (*(parser->p + offset) == ' ')
                 return 1;
-        nmc_parser_error(parser, &parser->location,
-                         "missing ‘ ’ after ‘%.*s’ at beginning of line",
-                         (int)(u_next(parser->p) - parser->p), parser->p);
+        parser_error(parser, &parser->location,
+                     "missing ‘ ’ after ‘%.*s’ at beginning of line",
+                     (int)(u_next(parser->p) - parser->p), parser->p);
         return 0;
 }
 
 static int
-footnote(struct nmc_parser *parser, YYLTYPE *location, YYSTYPE *value, size_t length)
+footnote(struct parser *parser, YYLTYPE *location, YYSTYPE *value, size_t length)
 {
         const char *id = parser->p;
         char *content = buffer(parser, location,
@@ -327,12 +327,12 @@ footnote(struct nmc_parser *parser, YYLTYPE *location, YYSTYPE *value, size_t le
         value->footnote = footnote_new(location, strxdup(id, length), content, &error);
         free(content);
         if (error != NULL)
-                nmc_parser_errors(parser, error, error);
+                parser_errors(parser, error, error);
         return FOOTNOTE;
 }
 
 static int
-codeblock(struct nmc_parser *parser, YYLTYPE *location, YYSTYPE *value)
+codeblock(struct parser *parser, YYLTYPE *location, YYSTYPE *value)
 {
         const char *begin = parser->p + 4;
         const char *end = begin;
@@ -373,7 +373,7 @@ done:
 }
 
 static int
-definition(struct nmc_parser *parser, YYLTYPE *location, YYSTYPE *value)
+definition(struct parser *parser, YYLTYPE *location, YYSTYPE *value)
 {
         const char *begin = parser->p + 1 + bol_space(parser, 1);
         const char *end = begin;
@@ -392,13 +392,13 @@ definition(struct nmc_parser *parser, YYLTYPE *location, YYSTYPE *value)
                 end++;
         }
 
-        nmc_parser_error(parser, &parser->location,
-                         "missing ending “. /” for term in definition");
+        parser_error(parser, &parser->location,
+                     "missing ending “. /” for term in definition");
         return token(parser, location, end, AGAIN);
 }
 
 static int
-bol_token(struct nmc_parser *parser, YYLTYPE *location, size_t length, int type)
+bol_token(struct parser *parser, YYLTYPE *location, size_t length, int type)
 {
         return token(parser,
                      location,
@@ -411,7 +411,7 @@ bol_token(struct nmc_parser *parser, YYLTYPE *location, size_t length, int type)
 #define U_EM_DASH ((uchar)0x2014)
 
 static int
-bol(struct nmc_parser *parser, YYLTYPE *location, YYSTYPE *value)
+bol(struct parser *parser, YYLTYPE *location, YYSTYPE *value)
 {
         parser->bol = false;
 
@@ -454,23 +454,23 @@ bol(struct nmc_parser *parser, YYLTYPE *location, YYSTYPE *value)
         }
 
         if (c == U_BAD_INPUT_CHAR)
-                nmc_parser_error(parser, &parser->location,
-                                 "broken UTF-8 sequence at beginning of line starting with %#02x",
-                                 *parser->p);
+                parser_error(parser, &parser->location,
+                             "broken UTF-8 sequence at beginning of line starting with %#02x",
+                             *parser->p);
         else if (!uc_issolid(c))
-                nmc_parser_error(parser, &parser->location,
-                                 "unrecognized character U+%04X at beginning of line",
-                                 c);
+                parser_error(parser, &parser->location,
+                             "unrecognized character U+%04X at beginning of line",
+                             c);
         else
-                nmc_parser_error(parser, &parser->location,
-                                 "unrecognized character ‘%.*s’ (U+%04X) at beginning of line",
-                                 (int)length, parser->p, c);
+                parser_error(parser, &parser->location,
+                             "unrecognized character ‘%.*s’ (U+%04X) at beginning of line",
+                             (int)length, parser->p, c);
 
         return PARAGRAPH;
 }
 
 static int
-eol(struct nmc_parser *parser, YYLTYPE *location, YYSTYPE *value)
+eol(struct parser *parser, YYLTYPE *location, YYSTYPE *value)
 {
         const char *end = parser->p;
         end++;
@@ -557,7 +557,7 @@ is_inline_end(const char *end)
 #define U_SINGLE_RIGHT_POINTING_ANGLE_QUOTATION_MARK ((uchar)0x203a)
 
 static int
-code(struct nmc_parser *parser, YYLTYPE *location, YYSTYPE *value)
+code(struct parser *parser, YYLTYPE *location, YYSTYPE *value)
 {
         const char *begin = parser->p + 3;
         const char *end = begin;
@@ -567,8 +567,8 @@ code(struct nmc_parser *parser, YYLTYPE *location, YYSTYPE *value)
                 end += length;
         const char *send = end;
         if (is_end(end)) {
-                if (!nmc_parser_error(parser, &parser->location,
-                                      "missing ending ‘›’ for code inline")) {
+                if (!parser_error(parser, &parser->location,
+                                  "missing ending ‘›’ for code inline")) {
                         value->node = NULL;
                         goto oom;
                 }
@@ -583,7 +583,7 @@ oom:
 }
 
 static int
-emphasis(struct nmc_parser *parser, YYLTYPE *location, YYSTYPE *value)
+emphasis(struct parser *parser, YYLTYPE *location, YYSTYPE *value)
 {
         const char *begin = parser->p + 1;
         const char *end = begin;
@@ -592,8 +592,8 @@ emphasis(struct nmc_parser *parser, YYLTYPE *location, YYSTYPE *value)
                 end++;
         const char *send = end;
         if (is_end(end)) {
-                if (!nmc_parser_error(parser, &parser->location,
-                                      "missing ending ‘/’ for emphasis inline")) {
+                if (!parser_error(parser, &parser->location,
+                                  "missing ending ‘/’ for emphasis inline")) {
                         value->node = NULL;
                         goto oom;
                 }
@@ -608,7 +608,7 @@ oom:
 #define U_SUPERSCRIPT_PLUS_SIGN ((uchar)0x207a)
 
 int
-nmc_parser_lex(struct nmc_parser *parser, YYLTYPE *location, YYSTYPE *value)
+parser_lex(struct parser *parser, YYLTYPE *location, YYSTYPE *value)
 {
         if (parser->dedents > 0)
                 return dedent(parser, location, parser->p);
