@@ -324,7 +324,7 @@ footnote(struct nmc_parser *parser, YYLTYPE *location, YYSTYPE *value, size_t le
                 return FOOTNOTE;
         }
         struct nmc_error *error = NULL;
-        value->footnote = footnote_new(location, strndup(id, length), content, &error);
+        value->footnote = footnote_new(location, strxdup(id, length), content, &error);
         free(content);
         if (error != NULL)
                 nmc_parser_errors(parser, error, error);

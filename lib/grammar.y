@@ -30,6 +30,8 @@ struct node *text_node_new_dup(enum node_name name, const char *string, size_t l
 
 struct footnote *footnote_new(YYLTYPE *location, char *id, const char *content,
                               struct nmc_error **error);
+
+char *strxdup(const char *source, size_t n);
 }
 
 %code
@@ -189,6 +191,16 @@ definitions_push(const char *pattern, definefn define, struct nmc_error **error)
         return true;
 }
 
+char *
+strxdup(const char *source, size_t n)
+{
+        char *target = malloc(n + 1);
+        if (target == NULL)
+                return NULL;
+        target[n] = '\0';
+        return memcpy(target, source, n);
+}
+
 static inline struct node *
 node_init(struct node *node, enum node_type type, enum node_name name)
 {
@@ -224,7 +236,7 @@ auxiliary_node_new_matches(const char *name, const char *buffer,
         for (int i = 0; i < n; i++) {
                 /* TODO Check that rm_so/rm_eo ≠ -1 */
                 a->name = va_arg(args, const char *);
-                a->value = strndup(buffer + m->rm_so, m->rm_eo - m->rm_so);
+                a->value = strxdup(buffer + m->rm_so, m->rm_eo - m->rm_so);
                 if (a->value == NULL) {
                         va_end(args);
                         free(d->attributes);
@@ -325,7 +337,7 @@ text_node_new(enum node_name name, char *text)
 struct node *
 text_node_new_dup(enum node_name name, const char *string, size_t length)
 {
-        return text_node_new(name, strndup(string, length));
+        return text_node_new(name, strxdup(string, length));
 }
 
 static struct node *
