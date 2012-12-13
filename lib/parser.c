@@ -472,12 +472,11 @@ bol(struct parser *parser, YYLTYPE *location, YYSTYPE *value)
 static int
 eol(struct parser *parser, YYLTYPE *location, YYSTYPE *value)
 {
-        const char *end = parser->p;
-        end++;
         parser->location.last_line++;
         parser->location.first_line = parser->location.last_line;
         parser->location.first_column = 1;
-        const char *begin = end;
+
+        const char *begin = parser->p + 1, *end = begin;
         while (*end == ' ')
                 end++;
         if (*end == '\n') {
