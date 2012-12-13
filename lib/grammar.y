@@ -546,7 +546,13 @@ report_remaining_anchors(struct nmc_parser *parser)
 }
 
 %printer { fprintf(yyoutput, "%.*s", (int)$$.length, $$.string); } <substring>
-%printer { fprintf(yyoutput, "%d, %d", $$.first->name, $$.last->name); } <nodes>
+%printer {
+        if ($$.first != NULL) {
+                fprintf(yyoutput, "first: %d", $$.first->name);
+                if ($$.last != NULL)
+                        fprintf(yyoutput, ", last: %d", $$.last->name);
+        }
+} <nodes>
 %printer { fprintf(yyoutput, "%d", $$->name); } <node>
 %printer {
         if ($$->node != NULL)
