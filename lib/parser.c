@@ -373,7 +373,7 @@ done:
 }
 
 static int
-definition(struct parser *parser, YYLTYPE *location, YYSTYPE *value)
+term(struct parser *parser, YYLTYPE *location, YYSTYPE *value)
 {
         const char *begin = parser->p + 1 + bol_space(parser, 1);
         const char *end = begin;
@@ -459,7 +459,7 @@ bol(struct parser *parser, YYLTYPE *location, YYSTYPE *value)
         case U_EM_DASH:
                 return bol_token(parser, location, length, ATTRIBUTION);
         case '=':
-                return definition(parser, location, value);
+                return term(parser, location, value);
         case '>':
                 return bol_token(parser, location, length, QUOTE);
         case '|':
