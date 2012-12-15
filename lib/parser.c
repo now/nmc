@@ -384,7 +384,7 @@ definition(struct parser *parser, YYLTYPE *location, YYSTYPE *value)
                         end++;
                         while (*end == ' ')
                                 end++;
-                        if (*end == '/' && is_space_or_end(end + 1)) {
+                        if (*end == '=' && is_space_or_end(end + 1)) {
                                 value->node = text_node_new_dup(NODE_TERM, begin, send - begin);
                                 return token(parser, location, end + 1, TERM);
                         }
@@ -394,7 +394,7 @@ definition(struct parser *parser, YYLTYPE *location, YYSTYPE *value)
 
         int r = token(parser, location, end, AGAIN);
         parser_error(parser, location,
-                     "missing ending “. /” for term in definition");
+                     "missing ending “. =” for term in definition");
         return r;
 }
 
@@ -458,7 +458,7 @@ bol(struct parser *parser, YYLTYPE *location, YYSTYPE *value)
                 return bol_token(parser, location, length, ITEMIZATION);
         case U_EM_DASH:
                 return bol_token(parser, location, length, ATTRIBUTION);
-        case '/':
+        case '=':
                 return definition(parser, location, value);
         case '>':
                 return bol_token(parser, location, length, QUOTE);

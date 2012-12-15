@@ -317,9 +317,9 @@ AT_SETUP([Document consisting of a title followed by a three-item definition])
 AT_DATA([title],
 [[Title
 
-/ A. /   1
-/ B. /   2
-/ C. /   3
+= A. =   1
+= B. =   2
+= C. =   3
 ]])
 
 AT_NMC_CHECK([title],
@@ -352,12 +352,12 @@ AT_SETUP([Document consisting of a title followed by a three-item definition wit
 AT_DATA([title],
 [[Title
 
-/ A.    1
-/ B. /   2
-/ C. /   3
+= A.    1
+= B. =   2
+= C. =   3
 ]])
 
-AT_NMC_CHECK_FAIL([title], [3.1-9: missing ending “. /” for term in definition])
+AT_NMC_CHECK_FAIL([title], [3.1-9: missing ending “. =” for term in definition])
 
 AT_CLEANUP
 
@@ -969,10 +969,10 @@ AT_SETUP([Document consisting of a title followed by a broken definition])
 AT_DATA([title],
 [[Title
 
-/A. /   1
+=A. =   1
 ]])
 
-AT_NMC_CHECK_FAIL([title], [3:1: missing ‘ ’ after ‘/’ at beginning of line])
+AT_NMC_CHECK_FAIL([title], [3:1: missing ‘ ’ after ‘=’ at beginning of line])
 
 AT_CLEANUP
 
