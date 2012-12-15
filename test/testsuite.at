@@ -357,7 +357,7 @@ AT_DATA([title],
 / C. /   3
 ]])
 
-AT_NMC_CHECK_FAIL([title], [3:1: missing ending “. /” for term in definition])
+AT_NMC_CHECK_FAIL([title], [3.1-9: missing ending “. /” for term in definition])
 
 AT_CLEANUP
 

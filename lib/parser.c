@@ -392,10 +392,10 @@ definition(struct parser *parser, YYLTYPE *location, YYSTYPE *value)
                 end++;
         }
 
-        // TODO Do this after location has been updated?
-        parser_error(parser, &parser->location,
+        int r = token(parser, location, end, AGAIN);
+        parser_error(parser, location,
                      "missing ending “. /” for term in definition");
-        return token(parser, location, end, AGAIN);
+        return r;
 }
 
 static int
