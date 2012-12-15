@@ -22,6 +22,8 @@ lib_libnmc_a_SOURCES = \
 	common/private.h \
 	lib/buffer.c \
 	lib/buffer.h \
+	lib/error.c \
+	lib/error.h \
 	lib/ext.c \
 	lib/ext.h \
 	lib/grammar.y \

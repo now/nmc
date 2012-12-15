@@ -51,6 +51,7 @@ char *strxdup(const char *source, size_t n);
 #include <private.h>
 
 #include "buffer.h"
+#include "error.h"
 #include "ext.h"
 #include "parser.h"
 
