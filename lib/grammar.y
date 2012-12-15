@@ -527,7 +527,6 @@ report_remaining_anchors(struct parser *parser)
 %token PARAGRAPH
 %token <substring> SPACE
 %token CONTINUATION
-%token <substring> BLOCKSEPARATOR
 %token ITEMIZATION
 %token ENUMERATION
 %token <node> TERM
@@ -540,6 +539,7 @@ report_remaining_anchors(struct parser *parser)
 %token <footnote> FOOTNOTE
 %token SECTION
 %token INDENT
+%token ITEMINDENT
 %token DEDENT
 %token <node> CODE
 %token <node> EMPHASIS
@@ -547,6 +547,17 @@ report_remaining_anchors(struct parser *parser)
 %token ANCHORSEPARATOR
 %token BEGINGROUP
 %token ENDGROUP
+
+%left NotFootnote
+%left FOOTNOTE
+
+%left NotBlock
+%left ITEMIZATION
+%left ENUMERATION
+%left TERM
+%left ATTRIBUTION
+%left QUOTE
+%left ROW
 
 %type <node> documenttitle
 %type <nodes> oblockssections0 blockssections blocks sections oblockssections
@@ -560,7 +571,7 @@ report_remaining_anchors(struct parser *parser)
 %type <node> definitions definition
 %type <nodes> definitionitems
 %type <node> quote line attribution
-%type <nodes> lines
+%type <nodes> quotecontent lines
 %type <node> table head body row entry
 %type <nodes> headbody rows entries
 %type <nodes> inlines sinlines
@@ -842,15 +853,15 @@ nmc: documenttitle oblockssections0 {
 documenttitle: TITLE { M($$ = parent1(NODE_TITLE, $1)); };
 
 oblockssections0: /* empty */ { $$ = nodes(NULL); }
-| BLOCKSEPARATOR blockssections { $$ = $2; };
+| blockssections { $$ = $1; };
 
 blockssections: blocks
-| blocks BLOCKSEPARATOR sections { $$ = siblings($1, $3); }
+| blocks sections { $$ = siblings($1, $2); }
 | sections;
 
 blocks: block { $$ = nodes($1); }
-| blocks BLOCKSEPARATOR block { $$ = sibling($1, $3); }
-| blocks BLOCKSEPARATOR footnotes { N($$ = footnote(parser, &$3) ? $1 : nodes(NULL)); };
+| blocks block { $$ = sibling($1, $2); }
+| blocks footnotes %prec NotFootnote { N($$ = footnote(parser, &$2) ? $1 : nodes(NULL)); };
 
 block: paragraph
 | itemization
@@ -864,10 +875,7 @@ sections: footnotedsection { $$ = nodes($1); }
 | sections footnotedsection { $$ = sibling($1, $2); };
 
 footnotedsection: section
-| section footnotes oblockseparator { M($$ = footnote(parser, &$2) ? $1 : NULL); };
-
-oblockseparator: /* empty */
-| BLOCKSEPARATOR;
+| section footnotes { M($$ = footnote(parser, &$2) ? $1 : NULL); };
 
 section: SECTION { parser->want = INDENT; } title oblockssections { M($$ = parent_children(NODE_SECTION, $3, $4)); };
 
@@ -881,36 +889,38 @@ footnotes: FOOTNOTE { M($$ = $1); }
 
 paragraph: PARAGRAPH inlines { M($$ = parent(NODE_PARAGRAPH, $2)); };
 
-itemization: itemizationitems { M($$ = parent(NODE_ITEMIZATION, $1)); };
+itemization: itemizationitems %prec NotBlock { M($$ = parent(NODE_ITEMIZATION, $1)); };
 
 itemizationitems: itemizationitem { $$ = nodes($1); }
 | itemizationitems itemizationitem { $$ = sibling($1, $2); };
 
 itemizationitem: ITEMIZATION item { $$ = $2; };
 
-enumeration: enumerationitems { M($$ = parent(NODE_ENUMERATION, $1)); };
+enumeration: enumerationitems %prec NotBlock { M($$ = parent(NODE_ENUMERATION, $1)); };
 
 enumerationitems: enumerationitem { $$ = nodes($1); }
 | enumerationitems enumerationitem { $$ = sibling($1, $2); };
 
 enumerationitem: ENUMERATION item { $$ = $2; };
 
-definitions: definitionitems { M($$ = parent(NODE_DEFINITIONS, $1)); };
+definitions: definitionitems %prec NotBlock { M($$ = parent(NODE_DEFINITIONS, $1)); };
 
 definitionitems: definition { $$ = nodes($1); }
 | definitionitems definition { $$ = sibling($1, $2); };
 
 definition: TERM item { M($$ = definition($1, $2)); };
 
-quote: lines attribution { M($$ = parent(NODE_QUOTE, sibling($1, $2))); };
+quote: quotecontent { M($$ = parent(NODE_QUOTE, $1)); };
+
+quotecontent: lines %prec NotBlock
+| lines attribution { $$ = sibling($1, $2); };
 
 lines: line { $$ = nodes($1); }
 | lines line { $$ = sibling($1, $2); };
 
 line: QUOTE inlines { M($$ = parent(NODE_LINE, $2)); };
 
-attribution: /* empty */ { $$ = NULL; }
-| ATTRIBUTION inlines { M($$ = parent(NODE_ATTRIBUTION, $2)); };
+attribution: ATTRIBUTION inlines { M($$ = parent(NODE_ATTRIBUTION, $2)); };
 
 table: headbody { M($$ = parent(NODE_TABLE, $1)); }
 
@@ -919,7 +929,7 @@ headbody: head body { $$ = sibling(nodes($1), $2); }
 
 head: row TABLESEPARATOR { M($$ = parent1(NODE_HEAD, $1)); };
 
-body: rows { M($$ = parent(NODE_BODY, $1)); };
+body: rows %prec NotBlock { M($$ = parent(NODE_BODY, $1)); };
 
 rows: row { $$ = nodes($1); }
 | rows row { $$ = sibling($1, $2); };
@@ -961,9 +971,9 @@ spaces: spacecontinuation
 spacecontinuation: SPACE
 | CONTINUATION;
 
-item: { parser->want = INDENT; } firstparagraph oblocks { M($$ = parent_children(NODE_ITEM, $2, $3)); };
+item: { parser->want = ITEMINDENT; } firstparagraph oblocks { M($$ = parent_children(NODE_ITEM, $2, $3)); };
 
 firstparagraph: inlines { M($$ = parent(NODE_PARAGRAPH, $1)); }
 
 oblocks: /* empty */ { $$ = nodes(NULL); }
-| INDENT blocks DEDENT { $$ = $2; };
+| ITEMINDENT blocks DEDENT { $$ = $2; };

@@ -178,12 +178,12 @@ dedent(struct parser *parser, YYLTYPE *location, const char *end)
 }
 
 static int
-dedents(struct parser *parser, YYLTYPE *location, const char *end, size_t spaces)
+dedents(struct parser *parser, const char *begin, size_t spaces)
 {
         parser->dedents = (parser->indent - spaces) / 2;
         parser->indent -= 2 * parser->dedents;
         /* TODO: assert(parser->indent >= 0); */
-        return dedent(parser, location, end);
+        return dedent(parser, NULL, begin + parser->indent);
 }
 
 typedef bool (*isfn)(uchar);
@@ -392,6 +392,7 @@ definition(struct parser *parser, YYLTYPE *location, YYSTYPE *value)
                 end++;
         }
 
+        // TODO Do this after location has been updated?
         parser_error(parser, &parser->location,
                      "missing ending “. /” for term in definition");
         return token(parser, location, end, AGAIN);
@@ -406,9 +407,28 @@ bol_token(struct parser *parser, YYLTYPE *location, size_t length, int type)
                      type);
 }
 
+#define U_PILCROW_SIGN ((uchar)0x00b6)
 #define U_SECTION_SIGN ((uchar)0x00a7)
 #define U_BULLET ((uchar)0x2022)
 #define U_EM_DASH ((uchar)0x2014)
+
+static bool
+is_bol_symbol(const char *end)
+{
+        uchar c = u_dref(end);
+        switch (c) {
+        case U_PILCROW_SIGN:
+        case U_SECTION_SIGN:
+        case U_BULLET:
+        case U_EM_DASH:
+        case '/':
+        case '>':
+        case '|':
+                return true;
+        default:
+                return is_subscript(c) || is_superscript(c);
+        }
+}
 
 static int
 bol(struct parser *parser, YYLTYPE *location, YYSTYPE *value)
@@ -429,6 +449,8 @@ bol(struct parser *parser, YYLTYPE *location, YYSTYPE *value)
                                 return codeblock(parser, location, value);
                         return token(parser, location, parser->p + 2, PARAGRAPH);
                 }
+                return bol_token(parser, location, length, PARAGRAPH);
+        case U_PILCROW_SIGN:
                 return bol_token(parser, location, length, PARAGRAPH);
         case U_SECTION_SIGN:
                 return bol_token(parser, location, length, SECTION);
@@ -484,31 +506,52 @@ eol(struct parser *parser, YYLTYPE *location, YYSTYPE *value)
                 end++;
                 parser->location.last_line++;
                 begin = end;
-                while (*end == ' ' || *end == '\n') {
-                        if (*end == '\n') {
-                                begin = end + 1;
-                                parser->location.last_line++;
-                        }
+                while (true) {
+                        while (*end == ' ')
+                                end++;
+                        if (*end != '\n')
+                                break;
                         end++;
+                        parser->location.last_line++;
+                        begin = end;
                 }
                 size_t spaces = end - begin;
-                if (parser->want == INDENT && spaces > parser->indent + 2) {
+                if ((parser->want == INDENT && spaces >= parser->indent + 2) ||
+                    (parser->want == ITEMINDENT && spaces >= parser->indent + 2 &&
+                     (spaces > parser->indent + 2 || is_bol_symbol(end)))) {
+                        int want = parser->want;
                         parser->want = ERROR;
                         parser->indent += 2;
                         locate(parser, location, parser->indent);
-                        return token(parser, NULL, begin + parser->indent, INDENT);
+                        return token(parser, NULL, begin + parser->indent, want);
                 } else if (spaces < parser->indent && spaces % 2 == 0) {
                         parser->want = ERROR;
                         locate(parser, location, spaces);
-                        return dedents(parser, NULL, end, spaces);
+                        return dedents(parser, begin, spaces);
+                } else if (parser->indent > 0 && spaces == parser->indent &&
+                           !is_bol_symbol(end)) {
+                        // EXAMPLE An itemization containing multiple
+                        // paragraphs followed by a paragraph.
+                        parser->want = ERROR;
+                        parser->location.first_line = parser->location.last_line;
+                        locate(parser, location, spaces + 1);
+                        return dedents(parser, begin, spaces - 2);
                 } else {
                         parser->want = ERROR;
-                        locate(parser, location, parser->indent);
-                        return substring(parser, NULL, value, begin + parser->indent, BLOCKSEPARATOR);
+                        parser->location.first_line = parser->location.last_line;
+                        locate(parser, location, parser->indent + 1);
+                        parser->p = begin + parser->indent;
+                        return bol(parser, location, value);
                 }
         } else {
                 size_t spaces = end - begin;
-                if (spaces > parser->indent) {
+                if (parser->want == ITEMINDENT && spaces == parser->indent + 2) {
+                        parser->bol = true;
+                        parser->want = ERROR;
+                        parser->indent += 2;
+                        locate(parser, location, parser->indent);
+                        return token(parser, NULL, begin + parser->indent, ITEMINDENT);
+                } else if (spaces > parser->indent) {
                         locate(parser, location, parser->indent + 1);
                         parser->location.last_column--;
                         return token(parser, NULL, begin + parser->indent, CONTINUATION);
@@ -519,7 +562,7 @@ eol(struct parser *parser, YYLTYPE *location, YYSTYPE *value)
                         if (spaces % 2 != 0)
                                 return token(parser, NULL, end, CONTINUATION);
                         parser->bol = true;
-                        return dedents(parser, NULL, end, spaces);
+                        return dedents(parser, begin, spaces);
                 } else {
                        parser->p = end;
                        return bol(parser, location, value);
