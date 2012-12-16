@@ -178,7 +178,7 @@ is_space_or_end(const char *end)
 }
 
 static char *
-buffer(struct parser *parser, YYLTYPE *location, const char *begin)
+text(struct parser *parser, YYLTYPE *location, const char *begin)
 {
         while (*begin == ' ')
                 begin++;
@@ -243,8 +243,8 @@ static int
 footnote(struct parser *parser, YYLTYPE *location, YYSTYPE *value, size_t length)
 {
         const char *id = parser->p;
-        char *content = buffer(parser, location,
-                               parser->p + length + bol_space(parser, length));
+        char *content = text(parser, location,
+                             parser->p + length + bol_space(parser, length));
         if (content == NULL) {
                 value->footnote = NULL;
                 return FOOTNOTE;
@@ -588,7 +588,7 @@ parser_lex(struct parser *parser, YYLTYPE *location, YYSTYPE *value)
 
         if (parser->want == TITLE) {
                 parser->want = ERROR;
-                value->node = text_node_new(NODE_TEXT, buffer(parser, location, end));
+                value->node = text_node_new(NODE_TEXT, text(parser, location, end));
                 return TITLE;
         }
 
