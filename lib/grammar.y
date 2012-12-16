@@ -20,9 +20,6 @@ struct nodes {
 
 %code provides
 {
-struct anchor;
-void anchor_free(struct anchor *anchor);
-
 struct node *anchor_node_new(YYLTYPE *location, const char *string, size_t length);
 
 struct node *text_node_new(enum node_name name, char *text);
@@ -94,7 +91,7 @@ anchor_free1(struct anchor *anchor)
         free(anchor);
 }
 
-void
+static void
 anchor_free(struct anchor *anchor)
 {
         list_for_each_safe(struct anchor, p, n, anchor)
@@ -710,7 +707,7 @@ update_anchors(struct parser *parser, struct footnote *footnote)
 }
 
 static bool
-footnote(struct parser *parser, struct footnote **footnotes)
+reference(struct parser *parser, struct footnote **footnotes)
 {
         list_for_each_safe(struct footnote, p, n, *footnotes) {
                 if (!update_anchors(parser, p)) {
@@ -862,7 +859,7 @@ blockssections: blocks
 
 blocks: block { $$ = nodes($1); }
 | blocks block { $$ = sibling($1, $2); }
-| blocks footnotes %prec NotFootnote { N($$ = footnote(parser, &$2) ? $1 : nodes(NULL)); };
+| blocks footnotes %prec NotFootnote { N($$ = reference(parser, &$2) ? $1 : nodes(NULL)); };
 
 block: paragraph
 | itemization
@@ -876,7 +873,7 @@ sections: footnotedsection { $$ = nodes($1); }
 | sections footnotedsection { $$ = sibling($1, $2); };
 
 footnotedsection: section
-| section footnotes { M($$ = footnote(parser, &$2) ? $1 : NULL); };
+| section footnotes { M($$ = reference(parser, &$2) ? $1 : NULL); };
 
 section: SECTION { parser->want = INDENT; } title oblockssections { M($$ = parent_children(NODE_SECTION, $3, $4)); };
 
@@ -978,3 +975,27 @@ firstparagraph: inlines { M($$ = parent(NODE_PARAGRAPH, $1)); }
 
 oblocks: /* empty */ { $$ = nodes(NULL); }
 | ITEMINDENT blocks DEDENT { $$ = $2; };
+
+%%
+
+struct node *
+nmc_parse(const char *input, struct nmc_error **errors)
+{
+        struct parser parser;
+        parser.p = input;
+        parser.location = (YYLTYPE){ 1, 1, 1, 1 };
+        parser.dedents = 0;
+        parser.indent = 0;
+        parser.bol = false;
+        parser.want = TITLE;
+        parser.doc = NULL;
+        parser.anchors = NULL;
+        parser.errors.first = parser.errors.last = NULL;
+
+        nmc_grammar_parse(&parser);
+
+        anchor_free(parser.anchors);
+
+        *errors = parser.errors.first;
+        return parser.doc;
+}

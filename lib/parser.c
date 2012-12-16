@@ -63,28 +63,6 @@ parser_oom(struct parser *parser)
         parser_errors(parser, &nmc_oom_error, &nmc_oom_error);
 }
 
-struct node *
-nmc_parse(const char *input, struct nmc_error **errors)
-{
-        struct parser parser;
-        parser.p = input;
-        parser.location = (YYLTYPE){ 1, 1, 1, 1 };
-        parser.dedents = 0;
-        parser.indent = 0;
-        parser.bol = false;
-        parser.want = TITLE;
-        parser.doc = NULL;
-        parser.anchors = NULL;
-        parser.errors.first = parser.errors.last = NULL;
-
-        nmc_grammar_parse(&parser);
-
-        anchor_free(parser.anchors);
-
-        *errors = parser.errors.first;
-        return parser.doc;
-}
-
 static void
 locate(struct parser *parser, YYLTYPE *location, int last_column)
 {
