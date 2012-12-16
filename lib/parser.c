@@ -497,7 +497,7 @@ eol(struct parser *parser, YYLTYPE *location, YYSTYPE *value)
 }
 
 static inline bool
-is_reference_or_space_or_end(const char *end)
+is_superscript_or_space_or_end(const char *end)
 {
         return is_space_or_end(end) || is_superscript(u_dref(end));
 }
@@ -509,7 +509,7 @@ is_group_end(const char *end)
                 do {
                         end++;
                 } while (*end == '}');
-                return is_reference_or_space_or_end(end);
+                return is_superscript_or_space_or_end(end);
         }
 
         return false;
@@ -518,7 +518,7 @@ is_group_end(const char *end)
 static inline bool
 is_inline_end(const char *end)
 {
-        return is_reference_or_space_or_end(end) ||
+        return is_superscript_or_space_or_end(end) ||
                 is_group_end(end);
 }
 
