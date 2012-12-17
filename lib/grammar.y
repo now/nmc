@@ -323,20 +323,6 @@ node_free(struct node *node)
         }
 }
 
-char *
-nmc_location_str(const struct nmc_location *l)
-{
-        char *s;
-        if (l->first_line == l->last_line) {
-                if (l->first_column == l->last_column)
-                        nmc_asprintf(&s, "%d:%d", l->first_line, l->first_column);
-                else
-                        nmc_asprintf(&s, "%d.%d-%d", l->first_line, l->first_column, l->last_column);
-        } else
-                nmc_asprintf(&s, "%d.%d-%d.%d", l->first_line, l->first_column, l->last_line, l->last_column);
-        return s;
-}
-
 struct footnote {
         struct footnote *next;
         YYLTYPE location;
@@ -1616,4 +1602,18 @@ void
 nmc_finalize(void)
 {
         definitions_free();
+}
+
+char *
+nmc_location_str(const struct nmc_location *l)
+{
+        char *s;
+        if (l->first_line == l->last_line) {
+                if (l->first_column == l->last_column)
+                        nmc_asprintf(&s, "%d:%d", l->first_line, l->first_column);
+                else
+                        nmc_asprintf(&s, "%d.%d-%d", l->first_line, l->first_column, l->last_column);
+        } else
+                nmc_asprintf(&s, "%d.%d-%d.%d", l->first_line, l->first_column, l->last_line, l->last_column);
+        return s;
 }
