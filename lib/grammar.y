@@ -18,19 +18,6 @@ struct nodes {
 };
 }
 
-%code provides
-{
-struct node *anchor_node_new(YYLTYPE *location, const char *string, size_t length);
-
-struct node *text_node_new(enum node_name name, char *text);
-struct node *text_node_new_dup(enum node_name name, const char *string, size_t length);
-
-struct footnote *footnote_new(YYLTYPE *location, char *id, const char *content,
-                              struct nmc_error **error);
-
-char *strxdup(const char *source, size_t n);
-}
-
 %code
 {
 #include <config.h>
@@ -204,7 +191,7 @@ definitions_push(const char *pattern, definefn define, struct nmc_error **error)
         return true;
 }
 
-char *
+static char *
 strxdup(const char *source, size_t n)
 {
         char *target = malloc(n + 1);
@@ -333,7 +320,7 @@ auxiliary_node_free(struct auxiliary_node *node)
         return parent_node_free((struct parent_node *)node);
 }
 
-struct node *
+static struct node *
 text_node_new(enum node_name name, char *text)
 {
         if (text == NULL)
@@ -347,7 +334,7 @@ text_node_new(enum node_name name, char *text)
         return (struct node *)n;
 }
 
-struct node *
+static struct node *
 text_node_new_dup(enum node_name name, const char *string, size_t length)
 {
         return text_node_new(name, strxdup(string, length));
@@ -360,7 +347,7 @@ text_node_free(struct text_node *node)
         return NULL;
 }
 
-struct node *
+static struct node *
 anchor_node_new(YYLTYPE *location, const char *string, size_t length)
 {
         struct anchor_node *n = node_new(struct anchor_node, PRIVATE, NODE_ANCHOR);
@@ -453,7 +440,7 @@ struct footnote {
         struct auxiliary_node *node;
 };
 
-struct footnote *
+static struct footnote *
 footnote_new(YYLTYPE *location, char *id, const char *content, struct nmc_error **error)
 {
         struct footnote *footnote = malloc(sizeof(struct footnote));
