@@ -78,7 +78,7 @@ void nmc_node_traverse(struct node *node, nmc_node_traverse_fn enter,
 void nmc_node_traverse_r(struct node *node, nmc_node_traverse_fn enter,
                          nmc_node_traverse_fn leave, void *closure);
 void nmc_node_free(struct node *node);
-void nmc_node_to_xml(struct node *node);
+void nmc_node_xml(struct node *node);
 
 struct nmc_location {
         int first_line;

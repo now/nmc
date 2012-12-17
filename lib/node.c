@@ -287,7 +287,7 @@ xml_leave(struct node *node, struct xml_closure *closure)
 }
 
 void
-nmc_node_to_xml(struct node *node)
+nmc_node_xml(struct node *node)
 {
         struct xml_closure closure = { 0 };
         fputs("<?xml version=\"1.0\" encoding=\"UTF-8\"?>", stdout);

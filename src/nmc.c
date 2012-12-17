@@ -160,7 +160,7 @@ main(int argc, char *const *argv)
         nmc_error_free(errors);
 
         if (result == EXIT_SUCCESS)
-                nmc_node_to_xml(doc);
+                nmc_node_xml(doc);
 
         nmc_node_free(doc);
 
