@@ -135,23 +135,6 @@ node_init(struct node *node, enum node_type type, enum node_name name)
 #define node_new(stype, type, name) ((stype *)node_init(malloc(sizeof(stype)), type, name))
 
 static struct node *
-parent_node_free(struct parent_node *node)
-{
-        return node->children;
-}
-
-static struct node *
-auxiliary_node_free(struct auxiliary_node *node)
-{
-        if (--node->attributes->references == 0) {
-                for (struct auxiliary_node_attribute *a = node->attributes->items; a->name != NULL; a++)
-                        free(a->value);
-                free(node->attributes);
-        }
-        return parent_node_free((struct parent_node *)node);
-}
-
-static struct node *
 text_node_new(enum node_name name, char *text)
 {
         if (text == NULL)
@@ -169,13 +152,6 @@ static struct node *
 text_node_new_dup(enum node_name name, const char *string, size_t length)
 {
         return text_node_new(name, strxdup(string, length));
-}
-
-static struct node *
-text_node_free(struct text_node *node)
-{
-        free(node->text);
-        return NULL;
 }
 
 static struct node *
@@ -202,52 +178,6 @@ anchor_node_new(YYLTYPE *location, const char *string, size_t length)
         n->u.anchor->id = id_new(id);
         n->u.anchor->node = n;
         return (struct node *)n;
-}
-
-static struct node *
-private_node_free(struct node *node)
-{
-        switch (node->name) {
-        case NODE_BUFFER:
-                buffer_free(((struct buffer_node *)node)->u.buffer);
-                return NULL;
-        case NODE_ANCHOR:
-                anchor_free1(((struct anchor_node *)node)->u.anchor);
-                return parent_node_free((struct parent_node *)node);
-        default:
-                /* TODO assert(false); */
-                return NULL;
-        }
-}
-
-void
-node_free(struct node *node)
-{
-        typedef struct node *(*nodefreefn)(struct node *);
-        static nodefreefn fns[] = {
-                [PARENT] = (nodefreefn)parent_node_free,
-                [AUXILIARY] = (nodefreefn)auxiliary_node_free,
-                [TEXT] = (nodefreefn)text_node_free,
-                [PRIVATE] = (nodefreefn)private_node_free,
-        };
-
-        if (node == NULL)
-                return;
-        struct node *p = node;
-        struct node *last = p;
-        while (last->next != NULL)
-                last = last->next;
-        while (p != NULL) {
-                struct node *children = fns[p->type](p);
-                if (children != NULL) {
-                        last->next = children;
-                        while (last->next != NULL)
-                                last = last->next;
-                }
-                struct node *next = p->next;
-                free(p);
-                p = next;
-        }
 }
 
 static void
@@ -1616,4 +1546,74 @@ nmc_location_str(const struct nmc_location *l)
         } else
                 nmc_asprintf(&s, "%d.%d-%d.%d", l->first_line, l->first_column, l->last_line, l->last_column);
         return s;
+}
+
+static struct node *
+parent_node_free(struct parent_node *node)
+{
+        return node->children;
+}
+
+static struct node *
+auxiliary_node_free(struct auxiliary_node *node)
+{
+        if (--node->attributes->references == 0) {
+                for (struct auxiliary_node_attribute *a = node->attributes->items; a->name != NULL; a++)
+                        free(a->value);
+                free(node->attributes);
+        }
+        return parent_node_free((struct parent_node *)node);
+}
+
+static struct node *
+text_node_free(struct text_node *node)
+{
+        free(node->text);
+        return NULL;
+}
+
+static struct node *
+private_node_free(struct node *node)
+{
+        switch (node->name) {
+        case NODE_BUFFER:
+                buffer_free(((struct buffer_node *)node)->u.buffer);
+                return NULL;
+        case NODE_ANCHOR:
+                anchor_free1(((struct anchor_node *)node)->u.anchor);
+                return parent_node_free((struct parent_node *)node);
+        default:
+                /* TODO assert(false); */
+                return NULL;
+        }
+}
+
+void
+node_free(struct node *node)
+{
+        typedef struct node *(*nodefreefn)(struct node *);
+        static nodefreefn fns[] = {
+                [PARENT] = (nodefreefn)parent_node_free,
+                [AUXILIARY] = (nodefreefn)auxiliary_node_free,
+                [TEXT] = (nodefreefn)text_node_free,
+                [PRIVATE] = (nodefreefn)private_node_free,
+        };
+
+        if (node == NULL)
+                return;
+        struct node *p = node;
+        struct node *last = p;
+        while (last->next != NULL)
+                last = last->next;
+        while (p != NULL) {
+                struct node *children = fns[p->type](p);
+                if (children != NULL) {
+                        last->next = children;
+                        while (last->next != NULL)
+                                last = last->next;
+                }
+                struct node *next = p->next;
+                free(p);
+                p = next;
+        }
 }
