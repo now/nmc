@@ -75,24 +75,6 @@ struct anchor {
         struct anchor_node *node;
 };
 
-static void
-anchor_free1(struct anchor *anchor)
-{
-        if (anchor == NULL)
-                return;
-        free(anchor->id.string);
-        /* NOTE anchor->node is either on the stack or in the tree, so we don’t
-         * need to free it here. */
-        free(anchor);
-}
-
-static void
-anchor_free(struct anchor *anchor)
-{
-        list_for_each_safe(struct anchor, p, n, anchor)
-                anchor_free1(p);
-}
-
 struct anchor_node {
         struct parent_node node;
         union {
@@ -1152,6 +1134,24 @@ parent_children(enum node_name name, struct node *first, struct nodes rest)
 {
         first->next = rest.first;
         return parent1(name, first);
+}
+
+static void
+anchor_free1(struct anchor *anchor)
+{
+        if (anchor == NULL)
+                return;
+        free(anchor->id.string);
+        /* NOTE anchor->node is either on the stack or in the tree, so we don’t
+         * need to free it here. */
+        free(anchor);
+}
+
+static void
+anchor_free(struct anchor *anchor)
+{
+        list_for_each_safe(struct anchor, p, n, anchor)
+                anchor_free1(p);
 }
 
 static void
