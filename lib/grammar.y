@@ -75,17 +75,6 @@ struct anchor {
         struct anchor_node *node;
 };
 
-struct anchor_node {
-        struct parent_node node;
-        union {
-                struct anchor *anchor;
-                struct {
-                        const char *name;
-                        struct auxiliary_node_attributes *attributes;
-                } auxiliary;
-        } u;
-};
-
 static char *
 strxdup(const char *source, size_t n)
 {
@@ -982,6 +971,17 @@ emphasis(struct parser *parser, YYLTYPE *location, YYSTYPE *value)
 oom:
         return token(parser, location, end, EMPHASIS);
 }
+
+struct anchor_node {
+        struct parent_node node;
+        union {
+                struct anchor *anchor;
+                struct {
+                        const char *name;
+                        struct auxiliary_node_attributes *attributes;
+                } auxiliary;
+        } u;
+};
 
 static struct node *
 anchor_node_new(YYLTYPE *location, const char *string, size_t length)
