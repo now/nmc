@@ -188,16 +188,15 @@ footnote_free(struct footnote *footnote)
 %type <nodes> oblockssections0 blockssections blocks sections oblockssections
 %type <node> block footnotedsection section title
 %type <footnote> footnotes
-%type <node> paragraph
-%type <node> itemization itemizationitem
+%type <node> itemizationitem
 %type <nodes> itemizationitems
-%type <node> enumeration enumerationitem
+%type <node> enumerationitem
 %type <nodes> enumerationitems
-%type <node> definitions definition
+%type <node> definition
 %type <nodes> definitionitems
-%type <node> quote line attribution
+%type <node> line attribution
 %type <nodes> quotecontent lines
-%type <node> table head body row entry
+%type <node> head body row entry
 %type <nodes> headbody rows entries
 %type <nodes> inlines sinlines
 %type <node> oanchoredinline anchoredinline inline
@@ -1383,13 +1382,13 @@ blocks: block { $$ = nodes($1); }
 | blocks block { $$ = sibling($1, $2); }
 | blocks footnotes %prec NotFootnote { N($$ = reference(parser, &$2) ? $1 : nodes(NULL)); };
 
-block: paragraph
-| itemization
-| enumeration
-| definitions
-| quote
+block: PARAGRAPH inlines { M($$ = parent(NODE_PARAGRAPH, $2)); }
+| itemizationitems %prec NotBlock { M($$ = parent(NODE_ITEMIZATION, $1)); }
+| enumerationitems %prec NotBlock { M($$ = parent(NODE_ENUMERATION, $1)); }
+| definitionitems %prec NotBlock { M($$ = parent(NODE_DEFINITIONS, $1)); }
+| quotecontent { M($$ = parent(NODE_QUOTE, $1)); }
 | CODEBLOCK { M($$ = $1); }
-| table;
+| headbody { M($$ = parent(NODE_TABLE, $1)); };
 
 sections: footnotedsection { $$ = nodes($1); }
 | sections footnotedsection { $$ = sibling($1, $2); };
@@ -1407,30 +1406,20 @@ oblockssections: /* empty */ { $$ = nodes(NULL); }
 footnotes: FOOTNOTE { M($$ = $1); }
 | footnotes FOOTNOTE { M($$ = fibling(parser, $1, $2)); };
 
-paragraph: PARAGRAPH inlines { M($$ = parent(NODE_PARAGRAPH, $2)); };
-
-itemization: itemizationitems %prec NotBlock { M($$ = parent(NODE_ITEMIZATION, $1)); };
-
 itemizationitems: itemizationitem { $$ = nodes($1); }
 | itemizationitems itemizationitem { $$ = sibling($1, $2); };
 
 itemizationitem: ITEMIZATION item { $$ = $2; };
-
-enumeration: enumerationitems %prec NotBlock { M($$ = parent(NODE_ENUMERATION, $1)); };
 
 enumerationitems: enumerationitem { $$ = nodes($1); }
 | enumerationitems enumerationitem { $$ = sibling($1, $2); };
 
 enumerationitem: ENUMERATION item { $$ = $2; };
 
-definitions: definitionitems %prec NotBlock { M($$ = parent(NODE_DEFINITIONS, $1)); };
-
 definitionitems: definition { $$ = nodes($1); }
 | definitionitems definition { $$ = sibling($1, $2); };
 
 definition: TERM item { M($$ = definition($1, $2)); };
-
-quote: quotecontent { M($$ = parent(NODE_QUOTE, $1)); };
 
 quotecontent: lines %prec NotBlock
 | lines attribution { $$ = sibling($1, $2); };
@@ -1441,8 +1430,6 @@ lines: line { $$ = nodes($1); }
 line: QUOTE inlines { M($$ = parent(NODE_LINE, $2)); };
 
 attribution: ATTRIBUTION inlines { M($$ = parent(NODE_ATTRIBUTION, $2)); };
-
-table: headbody { M($$ = parent(NODE_TABLE, $1)); }
 
 headbody: head body { $$ = sibling(nodes($1), $2); }
 | body { $$ = nodes($1); };
