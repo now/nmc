@@ -106,7 +106,8 @@ anchor_unlink(struct node *node, struct parser *parser)
 static void
 node_unlink_and_free(struct parser *parser, struct node *node)
 {
-        nmc_node_traverse(node, (traversefn)anchor_unlink, nmc_node_traverse_null, parser);
+        nmc_node_traverse(node, (nmc_node_traverse_fn)anchor_unlink,
+                          nmc_node_traverse_null, parser);
         /* TODO Once nmc_node_traverse can actually handle reporting OOM, if
          * that occurs, parser->anchors must be completely cleared. */
         nmc_node_free(node);

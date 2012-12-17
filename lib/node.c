@@ -46,7 +46,8 @@ move_to_used(struct action **actions, struct action **used)
 }
 
 void
-nmc_node_traverse(struct node *node, traversefn enter, traversefn leave, void *closure)
+nmc_node_traverse(struct node *node, nmc_node_traverse_fn enter,
+                  nmc_node_traverse_fn leave, void *closure)
 {
         if (node == NULL)
                 return;
@@ -75,7 +76,8 @@ nmc_node_traverse(struct node *node, traversefn enter, traversefn leave, void *c
 }
 
 void
-nmc_node_traverse_r(struct node *node, traversefn enter, traversefn leave, void *closure)
+nmc_node_traverse_r(struct node *node, nmc_node_traverse_fn enter,
+                    nmc_node_traverse_fn leave, void *closure)
 {
         list_for_each(struct node, p, node) {
                 enter(p, closure);
@@ -289,6 +291,7 @@ nmc_node_to_xml(struct node *node)
 {
         struct xml_closure closure = { 0 };
         fputs("<?xml version=\"1.0\" encoding=\"UTF-8\"?>", stdout);
-        nmc_node_traverse(node, (traversefn)xml_enter, (traversefn)xml_leave, &closure);
+        nmc_node_traverse(node, (nmc_node_traverse_fn)xml_enter,
+                          (nmc_node_traverse_fn)xml_leave, &closure);
         putchar('\n');
 }
