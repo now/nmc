@@ -770,44 +770,37 @@ define(const char *content, struct nmc_error **error)
         return NULL;
 }
 
-static struct footnote *
-footnote_new(YYLTYPE *location, char *id, const char *content, struct nmc_error **error)
-{
-        struct footnote *footnote = malloc(sizeof(struct footnote));
-        if (footnote == NULL) {
-                free(id);
-                return NULL;
-        }
-        footnote->next = NULL;
-        footnote->location = *location;
-        footnote->id = id_new(id);
-        footnote->node = define(content, error);
-        if (footnote->node == NULL) {
-                if (*error == NULL) {
-                        free(id);
-                        free(footnote);
-                        return NULL;
-                }
-                (*error)->location = *location;
-        }
-        return footnote;
-}
-
 static int
 footnote(struct parser *parser, YYLTYPE *location, YYSTYPE *value, size_t length)
 {
-        const char *id = parser->p;
+        value->footnote = malloc(sizeof(struct footnote));
+        if (value->footnote == NULL)
+                return FOOTNOTE;
+        value->footnote->next = NULL;
+        char *id = strxdup(parser->p, length);
+        if (id == NULL)
+                goto oom;
+        value->footnote->id = id_new(id);
         char *content = text(parser, location,
                              parser->p + length + bol_space(parser, length));
-        if (content == NULL) {
-                value->footnote = NULL;
-                return FOOTNOTE;
-        }
+        if (content == NULL)
+                goto oom_id;
         struct nmc_error *error = NULL;
-        value->footnote = footnote_new(location, strxdup(id, length), content, &error);
+        value->footnote->node = define(content, &error);
         free(content);
-        if (error != NULL)
+        if (value->footnote->node == NULL) {
+                if (error == NULL)
+                        goto oom_id;
+                error->location = *location;
                 parser_errors(parser, error, error);
+        }
+        value->footnote->location = *location;
+        return FOOTNOTE;
+oom_id:
+        free(id);
+oom:
+        free(value->footnote);
+        value->footnote = NULL;
         return FOOTNOTE;
 }
 
