@@ -1,7 +1,7 @@
 AM_CFLAGS = $(WARN_CFLAGS) $(WERROR_CFLAGS)
 AM_CPPFLAGS = -I$(top_srcdir)/common -I$(top_srcdir)/include
 
-AM_YFLAGS = -d -v
+AM_YFLAGS = --warnings=all,error --report=all
 
 noinst_PROGRAMS = \
 	build/ucategory
@@ -32,9 +32,6 @@ lib_libnmc_a_SOURCES = \
 	lib/ucategory.h \
 	lib/unicode.c \
 	lib/unicode.h
-
-BUILT_SOURCES = \
-	lib/grammar.h
 
 bin_PROGRAMS = src/nmc
 
