@@ -151,7 +151,6 @@ footnote_free(struct footnote *footnote)
 %token <substring> WORD
 %token PARAGRAPH
 %token SPACE
-%token CONTINUATION
 %token ITEMIZATION
 %token ENUMERATION
 %token <node> TERM
@@ -879,13 +878,13 @@ eol(struct parser *parser, YYLTYPE *location, YYSTYPE *value)
                 } else if (spaces > parser->indent) {
                         locate(parser, location, parser->indent + 1);
                         parser->location.last_column--;
-                        return token(parser, NULL, begin + parser->indent, CONTINUATION);
+                        return token(parser, NULL, begin + parser->indent, SPACE);
                 } else if (spaces < parser->indent) {
                         locate(parser, location, spaces + 1);
                         parser->location.last_column--;
-                        /* TODO Why’s this a continuation? */
+                        // TODO Complain about invalid dedent?
                         if (spaces % 2 != 0)
-                                return token(parser, NULL, end, CONTINUATION);
+                                return token(parser, NULL, end, SPACE);
                         parser->bol = true;
                         return dedents(parser, begin, spaces);
                 } else {
@@ -1472,11 +1471,8 @@ inline: CODE { M($$ = $1); }
 ospace: /* empty */
 | SPACE;
 
-spaces: spacecontinuation
-| spaces spacecontinuation;
-
-spacecontinuation: SPACE
-| CONTINUATION;
+spaces: SPACE
+| spaces SPACE;
 
 item: { parser->want = ITEMINDENT; } firstparagraph oblocks { M($$ = parent_children(NODE_ITEM, $2, $3)); };
 
