@@ -104,33 +104,6 @@ struct anchor_node {
         } u;
 };
 
-static void
-anchor_unlink(struct node *node, struct parser *parser)
-{
-        if (node->name != NODE_ANCHOR)
-                return;
-        struct anchor *p = NULL;
-        list_for_each_safe(struct anchor, c, n, parser->anchors) {
-                if (c->node == (struct anchor_node *)node) {
-                        if (p == NULL)
-                                parser->anchors = n;
-                        else
-                                p->next = n;
-                        break;
-                }
-                p = c;
-        }
-}
-
-static void
-node_unlink_and_free(struct parser *parser, struct node *node)
-{
-        nmc_node_traverse(node, (traversefn)anchor_unlink, nmc_node_traverse_null, parser);
-        /* TODO Once nmc_node_traverse can actually handle reporting OOM, if
-         * that occurs, parser->anchors must be completely cleared. */
-        node_free(node);
-}
-
 struct buffer_node {
         struct node node;
         union {
@@ -275,6 +248,33 @@ node_free(struct node *node)
                 free(p);
                 p = next;
         }
+}
+
+static void
+anchor_unlink(struct node *node, struct parser *parser)
+{
+        if (node->name != NODE_ANCHOR)
+                return;
+        struct anchor *p = NULL;
+        list_for_each_safe(struct anchor, c, n, parser->anchors) {
+                if (c->node == (struct anchor_node *)node) {
+                        if (p == NULL)
+                                parser->anchors = n;
+                        else
+                                p->next = n;
+                        break;
+                }
+                p = c;
+        }
+}
+
+static void
+node_unlink_and_free(struct parser *parser, struct node *node)
+{
+        nmc_node_traverse(node, (traversefn)anchor_unlink, nmc_node_traverse_null, parser);
+        /* TODO Once nmc_node_traverse can actually handle reporting OOM, if
+         * that occurs, parser->anchors must be completely cleared. */
+        node_free(node);
 }
 
 struct footnote {
