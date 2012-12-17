@@ -104,14 +104,6 @@ struct anchor_node {
         } u;
 };
 
-struct buffer_node {
-        struct node node;
-        union {
-                char *text;
-                struct buffer *buffer;
-        } u;
-};
-
 static char *
 strxdup(const char *source, size_t n)
 {
@@ -1306,6 +1298,14 @@ wanchor(struct parser *parser, struct substring substring, struct node *a)
         }
         return r;
 }
+
+struct buffer_node {
+        struct node node;
+        union {
+                char *text;
+                struct buffer *buffer;
+        } u;
+};
 
 static struct node *
 buffer(struct substring substring)
