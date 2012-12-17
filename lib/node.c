@@ -63,7 +63,7 @@ nmc_node_traverse(struct node *node, nmc_node_traverse_fn enter,
 
                         if (NODE_IS_NESTED(n)) {
                                 actions = action_new(&used, actions, false, n);
-                                if (NODE_HAS_CHILDREN(n))
+                                if (NMC_NODE_HAS_CHILDREN(n))
                                         actions = action_new(&used, actions, true, ((struct parent_node *)n)->children);
                         }
                 } else {
@@ -82,7 +82,7 @@ nmc_node_traverse_r(struct node *node, nmc_node_traverse_fn enter,
         list_for_each(struct node, p, node) {
                 enter(p, closure);
                 if (NODE_IS_NESTED(p)) {
-                        if (NODE_HAS_CHILDREN(p))
+                        if (NMC_NODE_HAS_CHILDREN(p))
                                 nmc_node_traverse_r(((struct parent_node *)p)->children, enter, leave, closure);
                         leave(p, closure);
                 }

@@ -68,7 +68,7 @@ struct auxiliary_node {
         struct auxiliary_node_attributes *attributes;
 };
 
-#define NODE_HAS_CHILDREN(node) ((node)->type < TEXT)
+#define NMC_NODE_HAS_CHILDREN(node) ((node)->type < TEXT)
 
 typedef void (*nmc_node_traverse_fn)(struct node *node, void *closure);
 
