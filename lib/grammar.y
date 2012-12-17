@@ -150,7 +150,7 @@ footnote_free(struct footnote *footnote)
 %token <node> TITLE
 %token <substring> WORD
 %token PARAGRAPH
-%token <substring> SPACE
+%token SPACE
 %token CONTINUATION
 %token ITEMIZATION
 %token ENUMERATION
@@ -1036,7 +1036,7 @@ parser_lex(struct parser *parser, YYLTYPE *location, YYSTYPE *value)
                 do {
                         end++;
                 } while (*end == ' ');
-                return substring(parser, location, value, end, SPACE);
+                return token(parser, location, end, SPACE);
         case '\n':
                 return eol(parser, location, value);
         case '|':
