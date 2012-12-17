@@ -139,52 +139,6 @@ struct buffer_node {
         } u;
 };
 
-typedef struct auxiliary_node *(*definefn)(const char *, regmatch_t *);
-
-struct definition {
-        struct definition *next;
-        regex_t regex;
-        definefn define;
-};
-
-static struct definition *definitions;
-
-#pragma GCC diagnostic ignored "-Wformat-nonliteral"
-static struct nmc_error *
-nmc_regerror(YYLTYPE *location, int errcode, const regex_t *regex, const char *message)
-{
-        size_t l = regerror(errcode, regex, NULL, 0);
-        char *s = malloc(l);
-        if (s == NULL)
-                return &nmc_oom_error;
-        regerror(errcode, regex, s, l);
-        struct nmc_error *e = nmc_error_new(location, message, s);
-        free(s);
-        return e == NULL ? &nmc_oom_error : e;
-}
-#pragma GCC diagnostic warning "-Wformat-nonliteral"
-
-static bool
-definitions_push(const char *pattern, definefn define, struct nmc_error **error)
-{
-        struct definition *definition = malloc(sizeof(struct definition));
-        if (definition == NULL) {
-                *error = &nmc_oom_error;
-                return false;
-        }
-        int r = regcomp(&definition->regex, pattern, REG_EXTENDED);
-        if (r != 0) {
-                *error = nmc_regerror(&(YYLTYPE){ 0, 0, 0, 0 }, r,
-                                      &definition->regex,
-                                      "definition regex compilation failed: %s");
-                free(definition);
-                return false;
-        }
-        definition->define = define;
-        definitions = list_cons(definition, definitions);
-        return true;
-}
-
 static char *
 strxdup(const char *source, size_t n)
 {
@@ -665,6 +619,52 @@ bol_space(struct parser *parser, size_t offset)
                      "missing ‘ ’ after ‘%.*s’ at beginning of line",
                      (int)(u_next(parser->p) - parser->p), parser->p);
         return 0;
+}
+
+typedef struct auxiliary_node *(*definefn)(const char *, regmatch_t *);
+
+struct definition {
+        struct definition *next;
+        regex_t regex;
+        definefn define;
+};
+
+static struct definition *definitions;
+
+#pragma GCC diagnostic ignored "-Wformat-nonliteral"
+static struct nmc_error *
+nmc_regerror(YYLTYPE *location, int errcode, const regex_t *regex, const char *message)
+{
+        size_t l = regerror(errcode, regex, NULL, 0);
+        char *s = malloc(l);
+        if (s == NULL)
+                return &nmc_oom_error;
+        regerror(errcode, regex, s, l);
+        struct nmc_error *e = nmc_error_new(location, message, s);
+        free(s);
+        return e == NULL ? &nmc_oom_error : e;
+}
+#pragma GCC diagnostic warning "-Wformat-nonliteral"
+
+static bool
+definitions_push(const char *pattern, definefn define, struct nmc_error **error)
+{
+        struct definition *definition = malloc(sizeof(struct definition));
+        if (definition == NULL) {
+                *error = &nmc_oom_error;
+                return false;
+        }
+        int r = regcomp(&definition->regex, pattern, REG_EXTENDED);
+        if (r != 0) {
+                *error = nmc_regerror(&(YYLTYPE){ 0, 0, 0, 0 }, r,
+                                      &definition->regex,
+                                      "definition regex compilation failed: %s");
+                free(definition);
+                return false;
+        }
+        definition->define = define;
+        definitions = list_cons(definition, definitions);
+        return true;
 }
 
 static struct auxiliary_node *
