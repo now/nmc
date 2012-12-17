@@ -85,38 +85,6 @@ strxdup(const char *source, size_t n)
         return memcpy(target, source, n);
 }
 
-static inline struct node *
-node_init(struct node *node, enum node_type type, enum node_name name)
-{
-        if (node == NULL)
-                return NULL;
-        node->next = NULL;
-        node->type = type;
-        node->name = name;
-        return node;
-}
-#define node_new(stype, type, name) ((stype *)node_init(malloc(sizeof(stype)), type, name))
-
-static struct node *
-text_node_new(enum node_name name, char *text)
-{
-        if (text == NULL)
-                return NULL;
-        struct text_node *n = node_new(struct text_node, TEXT, name);
-        if (n == NULL) {
-                free(text);
-                return NULL;
-        }
-        n->text = text;
-        return (struct node *)n;
-}
-
-static struct node *
-text_node_new_dup(enum node_name name, const char *string, size_t length)
-{
-        return text_node_new(name, strxdup(string, length));
-}
-
 static void
 anchor_unlink(struct node *node, struct parser *parser)
 {
@@ -534,6 +502,18 @@ definitions_push(const char *pattern, definefn define, struct nmc_error **error)
         return true;
 }
 
+static inline struct node *
+node_init(struct node *node, enum node_type type, enum node_name name)
+{
+        if (node == NULL)
+                return NULL;
+        node->next = NULL;
+        node->type = type;
+        node->name = name;
+        return node;
+}
+#define node_new(stype, type, name) ((stype *)node_init(malloc(sizeof(stype)), type, name))
+
 static struct auxiliary_node *
 auxiliary_node_new_matches(const char *name, const char *buffer,
                            regmatch_t *matches, int n, ...)
@@ -657,6 +637,20 @@ oom:
         return FOOTNOTE;
 }
 
+static struct node *
+text_node_new(enum node_name name, char *text)
+{
+        if (text == NULL)
+                return NULL;
+        struct text_node *n = node_new(struct text_node, TEXT, name);
+        if (n == NULL) {
+                free(text);
+                return NULL;
+        }
+        n->text = text;
+        return (struct node *)n;
+}
+
 static int
 codeblock(struct parser *parser, YYLTYPE *location, YYSTYPE *value)
 {
@@ -696,6 +690,12 @@ oom:
         value->node = NULL;
 done:
         return token(parser, location, end, CODEBLOCK);
+}
+
+static struct node *
+text_node_new_dup(enum node_name name, const char *string, size_t length)
+{
+        return text_node_new(name, strxdup(string, length));
 }
 
 static int
