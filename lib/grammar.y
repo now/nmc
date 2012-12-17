@@ -1,11 +1,26 @@
-%code requires
-{
-#define YYLTYPE struct nmc_location
-struct parser;
+%{
+#include <config.h>
 
+#include <sys/types.h>
+#include <regex.h>
+#include <stdarg.h>
 #include <stdbool.h>
 #include <stddef.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
 #include <nmc.h>
+#include <nmc/list.h>
+
+#include <private.h>
+
+#include "buffer.h"
+#include "error.h"
+#include "ext.h"
+#include "unicode.h"
+
+#define YYLTYPE struct nmc_location
 
 struct substring {
         const char *string;
@@ -16,28 +31,6 @@ struct nodes {
         struct node *first;
         struct node *last;
 };
-}
-
-%code
-{
-#include <config.h>
-
-#include <sys/types.h>
-#include <regex.h>
-#include <stdarg.h>
-#include <stdbool.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
-#include <nmc/list.h>
-
-#include <private.h>
-
-#include "buffer.h"
-#include "error.h"
-#include "ext.h"
-#include "unicode.h"
 
 struct parser {
         const char *p;
@@ -477,7 +470,7 @@ footnote_free(struct footnote *footnote)
         list_for_each_safe(struct footnote, p, n, footnote)
                 footnote_free1(p);
 }
-}
+%}
 
 %define api.pure
 %parse-param {struct parser *parser}
