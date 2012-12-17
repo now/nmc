@@ -128,32 +128,6 @@ text_node_new_dup(enum node_name name, const char *string, size_t length)
         return text_node_new(name, strxdup(string, length));
 }
 
-static struct node *
-anchor_node_new(YYLTYPE *location, const char *string, size_t length)
-{
-        struct anchor_node *n = node_new(struct anchor_node, PRIVATE, NODE_ANCHOR);
-        if (n == NULL)
-                return NULL;
-        n->u.anchor = malloc(sizeof(struct anchor));
-        if (n->u.anchor == NULL) {
-                free(n);
-                return NULL;
-        }
-        n->u.anchor->next = NULL;
-        n->u.anchor->location = *location;
-        char *id = malloc(length + 1);
-        if (id == NULL) {
-                free(n->u.anchor);
-                free(n);
-                return NULL;
-        }
-        memcpy(id, string, length);
-        id[length] = '\0';
-        n->u.anchor->id = id_new(id);
-        n->u.anchor->node = n;
-        return (struct node *)n;
-}
-
 static void
 anchor_unlink(struct node *node, struct parser *parser)
 {
@@ -1007,6 +981,32 @@ emphasis(struct parser *parser, YYLTYPE *location, YYSTYPE *value)
         value->node = text_node_new_dup(NODE_EMPHASIS, begin, send - begin);
 oom:
         return token(parser, location, end, EMPHASIS);
+}
+
+static struct node *
+anchor_node_new(YYLTYPE *location, const char *string, size_t length)
+{
+        struct anchor_node *n = node_new(struct anchor_node, PRIVATE, NODE_ANCHOR);
+        if (n == NULL)
+                return NULL;
+        n->u.anchor = malloc(sizeof(struct anchor));
+        if (n->u.anchor == NULL) {
+                free(n);
+                return NULL;
+        }
+        n->u.anchor->next = NULL;
+        n->u.anchor->location = *location;
+        char *id = malloc(length + 1);
+        if (id == NULL) {
+                free(n->u.anchor);
+                free(n);
+                return NULL;
+        }
+        memcpy(id, string, length);
+        id[length] = '\0';
+        n->u.anchor->id = id_new(id);
+        n->u.anchor->node = n;
+        return (struct node *)n;
 }
 
 #define U_SINGLE_LEFT_POINTING_ANGLE_QUOTATION_MARK ((uchar)0x2039)
