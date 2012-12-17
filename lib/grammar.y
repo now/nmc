@@ -206,96 +206,6 @@ node_init(struct node *node, enum node_type type, enum node_name name)
 }
 #define node_new(stype, type, name) ((stype *)node_init(malloc(sizeof(stype)), type, name))
 
-static struct auxiliary_node *
-auxiliary_node_new_matches(const char *name, const char *buffer,
-                           regmatch_t *matches, int n, ...)
-{
-        struct auxiliary_node *d = node_new(struct auxiliary_node, AUXILIARY, NODE_AUXILIARY);
-        if (d == NULL)
-                return NULL;
-        d->node.children = NULL;
-        d->name = name;
-        d->attributes = malloc(sizeof(struct auxiliary_node_attributes) +
-                               sizeof(struct auxiliary_node_attribute) * (n + 1));
-        if (d->attributes == NULL) {
-                free(d);
-                return NULL;
-        }
-        d->attributes->references = 1;
-        regmatch_t *m = &matches[1];
-        struct auxiliary_node_attribute *a = d->attributes->items;
-        va_list args;
-        va_start(args, n);
-        for (int i = 0; i < n; i++) {
-                /* TODO Check that rm_so/rm_eo ≠ -1 */
-                a->name = va_arg(args, const char *);
-                a->value = strxdup(buffer + m->rm_so, m->rm_eo - m->rm_so);
-                if (a->value == NULL) {
-                        va_end(args);
-                        free(d->attributes);
-                        free(d);
-                        return NULL;
-                }
-                m++;
-                a++;
-        }
-        va_end(args);
-        a->name = NULL;
-        a->value = NULL;
-        return d;
-}
-
-static struct auxiliary_node *
-abbreviation(const char *buffer, regmatch_t *matches)
-{
-        return auxiliary_node_new_matches("abbreviation", buffer, matches, 1, "for");
-}
-
-static struct auxiliary_node *
-ref(const char *buffer, regmatch_t *matches)
-{
-        return auxiliary_node_new_matches("ref", buffer, matches, 2, "title", "uri");
-}
-
-static bool
-definitions_init(struct nmc_error **error)
-{
-        if (definitions != NULL)
-                return true;
-        return  definitions_push("^(.+) +at +(.+)", ref, error) &&
-                definitions_push("^Abbreviation +for +(.+)", abbreviation, error);
-}
-
-static void
-definitions_free(void)
-{
-        list_for_each_safe(struct definition, p, n, definitions) {
-                regfree(&p->regex);
-                free(p);
-        }
-        definitions = NULL;
-}
-
-static struct auxiliary_node *
-define(const char *content, struct nmc_error **error)
-{
-        list_for_each(struct definition, p, definitions) {
-                regmatch_t matches[p->regex.re_nsub + 1];
-                int r = regexec(&p->regex, content,
-                                p->regex.re_nsub + 1, matches, 0);
-                if (r == 0)
-                        return p->define(content, matches);
-                else if (r != REG_NOMATCH) {
-                        *error = nmc_regerror(r, &p->regex,
-                                              "definition regex execution failed: %s");
-                        return NULL;
-                }
-        }
-
-        *error = nmc_error_newu("unrecognized footnote content: %s", content);
-        return NULL;
-}
-
 static struct node *
 parent_node_free(struct parent_node *node)
 {
@@ -432,29 +342,6 @@ struct footnote {
         struct id id;
         struct auxiliary_node *node;
 };
-
-static struct footnote *
-footnote_new(YYLTYPE *location, char *id, const char *content, struct nmc_error **error)
-{
-        struct footnote *footnote = malloc(sizeof(struct footnote));
-        if (footnote == NULL) {
-                free(id);
-                return NULL;
-        }
-        footnote->next = NULL;
-        footnote->location = *location;
-        footnote->id = id_new(id);
-        footnote->node = define(content, error);
-        if (footnote->node == NULL) {
-                if (*error == NULL) {
-                        free(id);
-                        free(footnote);
-                        return NULL;
-                }
-                (*error)->location = *location;
-        }
-        return footnote;
-}
 
 static void
 footnote_free1(struct footnote *footnote)
@@ -791,6 +678,119 @@ bol_space(struct parser *parser, size_t offset)
                      "missing ‘ ’ after ‘%.*s’ at beginning of line",
                      (int)(u_next(parser->p) - parser->p), parser->p);
         return 0;
+}
+
+static struct auxiliary_node *
+auxiliary_node_new_matches(const char *name, const char *buffer,
+                           regmatch_t *matches, int n, ...)
+{
+        struct auxiliary_node *d = node_new(struct auxiliary_node, AUXILIARY, NODE_AUXILIARY);
+        if (d == NULL)
+                return NULL;
+        d->node.children = NULL;
+        d->name = name;
+        d->attributes = malloc(sizeof(struct auxiliary_node_attributes) +
+                               sizeof(struct auxiliary_node_attribute) * (n + 1));
+        if (d->attributes == NULL) {
+                free(d);
+                return NULL;
+        }
+        d->attributes->references = 1;
+        regmatch_t *m = &matches[1];
+        struct auxiliary_node_attribute *a = d->attributes->items;
+        va_list args;
+        va_start(args, n);
+        for (int i = 0; i < n; i++) {
+                /* TODO Check that rm_so/rm_eo ≠ -1 */
+                a->name = va_arg(args, const char *);
+                a->value = strxdup(buffer + m->rm_so, m->rm_eo - m->rm_so);
+                if (a->value == NULL) {
+                        va_end(args);
+                        free(d->attributes);
+                        free(d);
+                        return NULL;
+                }
+                m++;
+                a++;
+        }
+        va_end(args);
+        a->name = NULL;
+        a->value = NULL;
+        return d;
+}
+
+static struct auxiliary_node *
+abbreviation(const char *buffer, regmatch_t *matches)
+{
+        return auxiliary_node_new_matches("abbreviation", buffer, matches, 1, "for");
+}
+
+static struct auxiliary_node *
+ref(const char *buffer, regmatch_t *matches)
+{
+        return auxiliary_node_new_matches("ref", buffer, matches, 2, "title", "uri");
+}
+
+static bool
+definitions_init(struct nmc_error **error)
+{
+        if (definitions != NULL)
+                return true;
+        return  definitions_push("^(.+) +at +(.+)", ref, error) &&
+                definitions_push("^Abbreviation +for +(.+)", abbreviation, error);
+}
+
+static void
+definitions_free(void)
+{
+        list_for_each_safe(struct definition, p, n, definitions) {
+                regfree(&p->regex);
+                free(p);
+        }
+        definitions = NULL;
+}
+
+static struct auxiliary_node *
+define(const char *content, struct nmc_error **error)
+{
+        list_for_each(struct definition, p, definitions) {
+                regmatch_t matches[p->regex.re_nsub + 1];
+                int r = regexec(&p->regex, content,
+                                p->regex.re_nsub + 1, matches, 0);
+                if (r == 0)
+                        return p->define(content, matches);
+                else if (r != REG_NOMATCH) {
+                        *error = nmc_regerror(r, &p->regex,
+                                              "definition regex execution failed: %s");
+                        return NULL;
+                }
+        }
+
+        *error = nmc_error_newu("unrecognized footnote content: %s", content);
+        return NULL;
+}
+
+static struct footnote *
+footnote_new(YYLTYPE *location, char *id, const char *content, struct nmc_error **error)
+{
+        struct footnote *footnote = malloc(sizeof(struct footnote));
+        if (footnote == NULL) {
+                free(id);
+                return NULL;
+        }
+        footnote->next = NULL;
+        footnote->location = *location;
+        footnote->id = id_new(id);
+        footnote->node = define(content, error);
+        if (footnote->node == NULL) {
+                if (*error == NULL) {
+                        free(id);
+                        free(footnote);
+                        return NULL;
+                }
+                (*error)->location = *location;
+        }
+        return footnote;
 }
 
 static int
