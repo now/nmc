@@ -151,14 +151,14 @@ static struct definition *definitions;
 
 #pragma GCC diagnostic ignored "-Wformat-nonliteral"
 static struct nmc_error *
-nmc_regerror(int errcode, const regex_t *regex, const char *message)
+nmc_regerror(YYLTYPE *location, int errcode, const regex_t *regex, const char *message)
 {
         size_t l = regerror(errcode, regex, NULL, 0);
         char *s = malloc(l);
         if (s == NULL)
                 return &nmc_oom_error;
         regerror(errcode, regex, s, l);
-        struct nmc_error *e = nmc_error_newu(message, s);
+        struct nmc_error *e = nmc_error_new(location, message, s);
         free(s);
         return e == NULL ? &nmc_oom_error : e;
 }
@@ -174,7 +174,8 @@ definitions_push(const char *pattern, definefn define, struct nmc_error **error)
         }
         int r = regcomp(&definition->regex, pattern, REG_EXTENDED);
         if (r != 0) {
-                *error = nmc_regerror(r, &definition->regex,
+                *error = nmc_regerror(&(YYLTYPE){ 0, 0, 0, 0 }, r,
+                                      &definition->regex,
                                       "definition regex compilation failed: %s");
                 free(definition);
                 return false;
@@ -751,7 +752,7 @@ definitions_free(void)
 }
 
 static struct auxiliary_node *
-define(const char *content, struct nmc_error **error)
+define(YYLTYPE *location, const char *content, struct nmc_error **error)
 {
         list_for_each(struct definition, p, definitions) {
                 regmatch_t matches[p->regex.re_nsub + 1];
@@ -760,13 +761,13 @@ define(const char *content, struct nmc_error **error)
                 if (r == 0)
                         return p->define(content, matches);
                 else if (r != REG_NOMATCH) {
-                        *error = nmc_regerror(r, &p->regex,
-                                              "definition regex execution failed: %s");
+                        *error = nmc_regerror(location, r, &p->regex,
+                                              "footnote definition regex execution failed: %s");
                         return NULL;
                 }
         }
 
-        *error = nmc_error_newu("unrecognized footnote content: %s", content);
+        *error = nmc_error_new(location, "unrecognized footnote content: %s", content);
         return NULL;
 }
 
@@ -786,12 +787,11 @@ footnote(struct parser *parser, YYLTYPE *location, YYSTYPE *value, size_t length
         if (content == NULL)
                 goto oom_id;
         struct nmc_error *error = NULL;
-        value->footnote->node = define(content, &error);
+        value->footnote->node = define(location, content, &error);
         free(content);
         if (value->footnote->node == NULL) {
                 if (error == NULL)
                         goto oom_id;
-                error->location = *location;
                 parser_errors(parser, error, error);
         }
         value->footnote->location = *location;

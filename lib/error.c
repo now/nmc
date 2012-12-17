@@ -54,13 +54,3 @@ nmc_error_new(struct nmc_location *location, const char *message, ...)
         va_end(args);
         return error;
 }
-
-struct nmc_error *
-nmc_error_newu(const char *message, ...)
-{
-        va_list args;
-        va_start(args, message);
-        struct nmc_error *error = nmc_error_newv(&(struct nmc_location){ 0, 0, 0, 0 }, message, args);
-        va_end(args);
-        return error;
-}
