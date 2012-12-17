@@ -75,7 +75,7 @@ typedef void (*traversefn)(struct node *node, void *closure);
 void nmc_node_traverse_null(struct node *node, void *closure);
 void nmc_node_traverse(struct node *node, traversefn enter, traversefn leave, void *closure);
 void nmc_node_traverse_r(struct node *node, traversefn enter, traversefn leave, void *closure);
-void node_free(struct node *node);
+void nmc_node_free(struct node *node);
 void nmc_node_to_xml(struct node *node);
 
 struct nmc_location {

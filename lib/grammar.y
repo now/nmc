@@ -109,7 +109,7 @@ node_unlink_and_free(struct parser *parser, struct node *node)
         nmc_node_traverse(node, (traversefn)anchor_unlink, nmc_node_traverse_null, parser);
         /* TODO Once nmc_node_traverse can actually handle reporting OOM, if
          * that occurs, parser->anchors must be completely cleared. */
-        node_free(node);
+        nmc_node_free(node);
 }
 
 struct footnote {
@@ -123,7 +123,7 @@ static void
 footnote_free1(struct footnote *footnote)
 {
         free(footnote->id.string);
-        node_free((struct node *)footnote->node);
+        nmc_node_free((struct node *)footnote->node);
         free(footnote);
 }
 
@@ -1289,7 +1289,7 @@ wanchor(struct parser *parser, struct substring substring, struct node *a)
                 return NULL;
         struct node *r = anchor(parser, n, a);
         if (r == NULL) {
-                node_free(n);
+                nmc_node_free(n);
                 return NULL;
         }
         return r;
@@ -1570,7 +1570,7 @@ private_node_free(struct node *node)
 }
 
 void
-node_free(struct node *node)
+nmc_node_free(struct node *node)
 {
         typedef struct node *(*nodefreefn)(struct node *);
         static nodefreefn fns[] = {

@@ -162,7 +162,7 @@ main(int argc, char *const *argv)
         if (result == EXIT_SUCCESS)
                 nmc_node_to_xml(doc);
 
-        node_free(doc);
+        nmc_node_free(doc);
 
         nmc_finalize();
 
