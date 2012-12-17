@@ -994,14 +994,12 @@ anchor_node_new(YYLTYPE *location, const char *string, size_t length)
         }
         n->u.anchor->next = NULL;
         n->u.anchor->location = *location;
-        char *id = malloc(length + 1);
+        char *id = strxdup(string, length);
         if (id == NULL) {
                 free(n->u.anchor);
                 free(n);
                 return NULL;
         }
-        memcpy(id, string, length);
-        id[length] = '\0';
         n->u.anchor->id = id_new(id);
         n->u.anchor->node = n;
         return (struct node *)n;
