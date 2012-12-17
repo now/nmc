@@ -97,7 +97,7 @@ void nmc_error_free(struct nmc_error *error);
 
 extern int nmc_grammar_debug;
 
-bool nmc_grammar_initialize(struct nmc_error **error);
-void nmc_grammar_finalize(void);
+bool nmc_initialize(struct nmc_error **error);
+void nmc_finalize(void);
 
 struct node *nmc_parse(const char *input, struct nmc_error **errors);

@@ -151,7 +151,7 @@ main(int argc, char *const *argv)
         struct nmc_error *errors = NULL;
         struct node *doc = NULL;
 
-        if (nmc_grammar_initialize(&errors))
+        if (nmc_initialize(&errors))
                 doc = nmc_parse(buffer, &errors);
         if (errors != NULL)
                 result = EXIT_FAILURE;
@@ -164,7 +164,7 @@ main(int argc, char *const *argv)
 
         node_free(doc);
 
-        nmc_grammar_finalize();
+        nmc_finalize();
 
         free(buffer);
 

@@ -257,8 +257,8 @@ ref(const char *buffer, regmatch_t *matches)
         return auxiliary_node_new_matches("ref", buffer, matches, 2, "title", "uri");
 }
 
-bool
-nmc_grammar_initialize(struct nmc_error **error)
+static bool
+definitions_init(struct nmc_error **error)
 {
         if (definitions != NULL)
                 return true;
@@ -266,8 +266,8 @@ nmc_grammar_initialize(struct nmc_error **error)
                 definitions_push("^Abbreviation +for +(.+)", abbreviation, error);
 }
 
-void
-nmc_grammar_finalize(void)
+static void
+definitions_free(void)
 {
         list_for_each_safe(struct definition, p, n, definitions) {
                 regfree(&p->regex);
@@ -1611,4 +1611,16 @@ nmc_parse(const char *input, struct nmc_error **errors)
 
         *errors = parser.errors.first;
         return parser.doc;
+}
+
+bool
+nmc_initialize(struct nmc_error **error)
+{
+        return definitions_init(error);
+}
+
+void
+nmc_finalize(void)
+{
+        definitions_free();
 }
