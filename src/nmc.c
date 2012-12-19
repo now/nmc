@@ -158,6 +158,7 @@ main(int argc, char *const *argv)
 
         if (nmc_initialize(&errors))
                 doc = nmc_parse(buffer, &errors);
+        free(buffer);
         if (errors != NULL)
                 result = EXIT_FAILURE;
         list_for_each(struct nmc_error, p, errors)
@@ -174,8 +175,6 @@ main(int argc, char *const *argv)
         nmc_node_free(doc);
 
         nmc_finalize();
-
-        free(buffer);
 
         return result;
 }
