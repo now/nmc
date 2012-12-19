@@ -1,5 +1,3 @@
-extern struct nmc_error nmc_oom_error;
-
 struct nmc_error *nmc_error_newv(struct nmc_location *location,
                                  const char *message,
                                  va_list args);

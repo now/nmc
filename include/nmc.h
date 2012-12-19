@@ -73,12 +73,12 @@ struct auxiliary_node {
 typedef void (*nmc_node_traverse_fn)(struct node *node, void *closure);
 
 void nmc_node_traverse_null(struct node *node, void *closure);
-void nmc_node_traverse(struct node *node, nmc_node_traverse_fn enter,
+bool nmc_node_traverse(struct node *node, nmc_node_traverse_fn enter,
                        nmc_node_traverse_fn leave, void *closure);
 void nmc_node_traverse_r(struct node *node, nmc_node_traverse_fn enter,
                          nmc_node_traverse_fn leave, void *closure);
 void nmc_node_free(struct node *node);
-void nmc_node_xml(struct node *node);
+bool nmc_node_xml(struct node *node);
 
 struct nmc_location {
         int first_line;
@@ -94,6 +94,8 @@ struct nmc_error {
         struct nmc_location location;
         char *message;
 };
+
+extern struct nmc_error nmc_oom_error;
 
 void nmc_error_free(struct nmc_error *error);
 

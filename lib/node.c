@@ -28,8 +28,14 @@ action_new(struct action **used, struct action *next, bool enter, struct node *n
         if (*used != NULL) {
                 n = *used;
                 *used = (*used)->next;
-        } else
+        } else {
                 n = malloc(sizeof(struct action));
+                if (n == NULL) {
+                        list_for_each_safe(struct action, p, m, next)
+                                free(p);
+                        return NULL;
+                }
+        }
         n->next = next;
         n->enter = enter;
         n->nodes = nodes;
@@ -45,14 +51,17 @@ move_to_used(struct action **actions, struct action **used)
         *used = a;
 }
 
-void
+bool
 nmc_node_traverse(struct node *node, nmc_node_traverse_fn enter,
                   nmc_node_traverse_fn leave, void *closure)
 {
         if (node == NULL)
-                return;
+                return true;
         struct action *used = NULL;
         struct action *actions = action_new(&used, NULL, true, node);
+        if (actions == NULL)
+                return false;
+        bool done = false;
         while (actions != NULL) {
                 if (actions->enter) {
                         struct node *n = actions->nodes;
@@ -63,16 +72,24 @@ nmc_node_traverse(struct node *node, nmc_node_traverse_fn enter,
 
                         if (NODE_IS_NESTED(n)) {
                                 actions = action_new(&used, actions, false, n);
-                                if (NMC_NODE_HAS_CHILDREN(n))
+                                if (actions == NULL)
+                                        goto oom;
+                                if (NMC_NODE_HAS_CHILDREN(n)) {
                                         actions = action_new(&used, actions, true, ((struct parent_node *)n)->children);
+                                        if (actions == NULL)
+                                                goto oom;
+                                }
                         }
                 } else {
                         leave(actions->nodes, closure);
                         move_to_used(&actions, &used);
                 }
         }
+        done = true;
+oom:
         list_for_each_safe(struct action, p, n, used)
                 free(p);
+        return done;
 }
 
 void
@@ -290,12 +307,14 @@ xml_leave(struct node *node, struct xml_closure *closure)
         types[node->name].leave(node, closure);
 }
 
-void
+bool
 nmc_node_xml(struct node *node)
 {
         struct xml_closure closure = { 0 };
         fputs("<?xml version=\"1.0\" encoding=\"UTF-8\"?>", stdout);
-        nmc_node_traverse(node, (nmc_node_traverse_fn)xml_enter,
-                          (nmc_node_traverse_fn)xml_leave, &closure);
+        if (!nmc_node_traverse(node, (nmc_node_traverse_fn)xml_enter,
+                               (nmc_node_traverse_fn)xml_leave, &closure))
+                return false;
         putchar('\n');
+        return true;
 }

@@ -165,7 +165,11 @@ main(int argc, char *const *argv)
         nmc_error_free(errors);
 
         if (result == EXIT_SUCCESS)
-                nmc_node_xml(doc);
+                if (!nmc_node_xml(doc)) {
+                        // TODO Use more descriptive error?
+                        report_nmc_error(&nmc_oom_error);
+                        result = EXIT_FAILURE;
+                }
 
         nmc_node_free(doc);
 
