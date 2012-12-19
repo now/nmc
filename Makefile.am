@@ -15,13 +15,20 @@ include_HEADERS = \
 pkginclude_HEADERS = \
 	include/nmc/list.h
 
+noinst_LIBRARIES = \
+	lib/libbuffer.a
+
+lib_libbuffer_a_SOURCES = \
+	common/buffer.h \
+	lib/buffer.c
+
 lib_LIBRARIES = \
 	lib/libnmc.a
 
 lib_libnmc_a_SOURCES = \
 	common/private.h \
+	common/buffer.h \
 	lib/buffer.c \
-	lib/buffer.h \
 	lib/error.c \
 	lib/error.h \
 	lib/ext.c \
@@ -39,7 +46,9 @@ src_nmc_SOURCES = \
 	common/private.h \
 	src/nmc.c
 
-src_nmc_LDADD = lib/libnmc.a
+src_nmc_LDADD = \
+	lib/libbuffer.a \
+	lib/libnmc.a
 
 src/ucategory.h: $(srcdir)/build/ucategory
 	$(srcdir)/build/ucategory < UnicodeData.txt > $@

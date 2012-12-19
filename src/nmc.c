@@ -11,6 +11,8 @@
 #include <nmc.h>
 #include <nmc/list.h>
 
+#include <buffer.h>
+
 struct nmc_option {
         char c;
         const char *name;
@@ -139,11 +141,14 @@ main(int argc, char *const *argv)
                 return EXIT_FAILURE;
         }
 
-        int result = EXIT_SUCCESS;
+        struct buffer b = BUFFER_INIT;
+        if (!buffer_read(&b, STDIN_FILENO, 0)) {
+                perror(PACKAGE_NAME ": error while reading from stdin");
+                return EXIT_FAILURE;
+        }
+        char *buffer = buffer_str(&b);
 
-        char *buffer = malloc(2000000);
-        ssize_t bytes = read(STDIN_FILENO, buffer, 2000000);
-        buffer[bytes] = '\0';
+        int result = EXIT_SUCCESS;
 
         if (getenv("NMC_DEBUG"))
                 nmc_grammar_debug = 1;

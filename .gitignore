@@ -21,6 +21,7 @@ config.status
 configure
 lib/grammar.c
 lib/grammar.output
+lib/libbuffer.a
 lib/libnmc.a
 src/nmc
 stamp-h1
