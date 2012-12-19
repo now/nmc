@@ -34,6 +34,7 @@ AC_ARG_ENABLE(gcc-warnings,
  esac],
  [enableval=no])
 if test "${enableval}" = yes; then
+  nmc_WARN_ADD([-pedantic])
   nmc_WARN_ADD([-Werror], [WERROR_CFLAGS])
   nmc_WARN_ADD([-Wall])
   nmc_WARN_ADD([-Wcast-align])
@@ -50,7 +51,6 @@ if test "${enableval}" = yes; then
   nmc_WARN_ADD([-Wpacked])
   nmc_WARN_ADD([-Wp,-D_FORTIFY_SOURCE=2])
   nmc_WARN_ADD([-Wpointer-arith])
-  nmc_WARN_ADD([-Wsign-compare])
   nmc_WARN_ADD([-Wstrict-aliasing=2])
   nmc_WARN_ADD([-Wsuggest-attribute=const])
   nmc_WARN_ADD([-Wsuggest-attribute=noreturn])

@@ -164,28 +164,6 @@ text_enter(struct node *node, UNUSED(struct xml_closure *closure))
         escape(((struct text_node *)node)->text, lengthof(text_entities), text_entities);
 }
 
-typedef void (*xmltraversefn)(struct node *, struct xml_closure *);
-
-static struct xml_types {
-        const char *name;
-        xmltraversefn enter;
-        xmltraversefn leave;
-} types[];
-
-static void
-inline_enter(struct node *node, UNUSED(struct xml_closure *closure))
-{
-        element_start(types[node->name].name);
-        text_enter(node, closure);
-}
-
-static void
-block_enter(struct node *node, struct xml_closure *closure)
-{
-        indent(closure->indent);
-        element_start(types[node->name].name);
-}
-
 static void
 auxiliary_enter(struct auxiliary_node *node, UNUSED(struct xml_closure *closure))
 {
@@ -208,6 +186,8 @@ auxiliary_leave(struct auxiliary_node *node, UNUSED(struct xml_closure *closure)
         element_end(node->name);
 }
 
+static void block_enter(struct node *node, struct xml_closure *closure);
+
 static void
 text_block_enter(struct node *node, struct xml_closure *closure)
 {
@@ -222,11 +202,7 @@ indenting_block_enter(struct node *node, struct xml_closure *closure)
         closure->indent++;
 }
 
-static void
-leave(struct node *node, UNUSED(struct xml_closure *closure))
-{
-        element_end(types[node->name].name);
-}
+static void leave(struct node *node, struct xml_closure *closure);
 
 static void
 indenting_block_leave(struct node *node, struct xml_closure *closure)
@@ -236,7 +212,15 @@ indenting_block_leave(struct node *node, struct xml_closure *closure)
         leave(node, closure);
 }
 
-static struct xml_types types[] = {
+static void inline_enter(struct node *node, struct xml_closure *closure);
+
+typedef void (*xmltraversefn)(struct node *, struct xml_closure *);
+
+static struct {
+        const char *name;
+        xmltraversefn enter;
+        xmltraversefn leave;
+} types[] = {
 #define indenting_block indenting_block_enter, indenting_block_leave
 #define text_block text_block_enter, leave
 #define block block_enter, leave
@@ -273,6 +257,26 @@ static struct xml_types types[] = {
 #undef block
 #undef inline
 };
+
+static void
+inline_enter(struct node *node, UNUSED(struct xml_closure *closure))
+{
+        element_start(types[node->name].name);
+        text_enter(node, closure);
+}
+
+static void
+block_enter(struct node *node, struct xml_closure *closure)
+{
+        indent(closure->indent);
+        element_start(types[node->name].name);
+}
+
+static void
+leave(struct node *node, UNUSED(struct xml_closure *closure))
+{
+        element_end(types[node->name].name);
+}
 
 static void
 xml_enter(struct node *node, struct xml_closure *closure)
