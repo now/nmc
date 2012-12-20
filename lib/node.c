@@ -25,8 +25,8 @@ struct action {
         struct node *nodes;
 };
 
-static struct action *
-action_new(struct action **used, struct action *next, bool enter, struct node *nodes)
+static bool
+push(struct action **actions, struct action **used, bool enter, struct node *nodes)
 {
         struct action *n;
         if (*used != NULL) {
@@ -34,20 +34,18 @@ action_new(struct action **used, struct action *next, bool enter, struct node *n
                 *used = (*used)->next;
         } else {
                 n = malloc(sizeof(struct action));
-                if (n == NULL) {
-                        list_for_each_safe(struct action, p, m, next)
-                                free(p);
-                        return NULL;
-                }
+                if (n == NULL)
+                        return false;
         }
-        n->next = next;
+        n->next = *actions;
         n->enter = enter;
         n->nodes = nodes;
-        return n;
+        *actions = n;
+        return true;
 }
 
 static inline void
-move_to_used(struct action **actions, struct action **used)
+pop(struct action **actions, struct action **used)
 {
         struct action *a = *actions;
         *actions = (*actions)->next;
@@ -61,9 +59,9 @@ nmc_node_traverse(struct node *node, nmc_node_traverse_fn enter,
 {
         if (node == NULL)
                 return true;
+        struct action *actions = NULL;
         struct action *used = NULL;
-        struct action *actions = action_new(&used, NULL, true, node);
-        if (actions == NULL)
+        if (!push(&actions, &used, true, node))
                 return false;
         bool done = false;
         while (actions != NULL) {
@@ -71,26 +69,26 @@ nmc_node_traverse(struct node *node, nmc_node_traverse_fn enter,
                         struct node *n = actions->nodes;
                         actions->nodes = n->next;
                         if (actions->nodes == NULL)
-                                move_to_used(&actions, &used);
+                                pop(&actions, &used);
                         enter(n, closure);
 
                         if (NODE_IS_NESTED(n)) {
-                                actions = action_new(&used, actions, false, n);
-                                if (actions == NULL)
+                                if (!push(&actions, &used, false, n))
                                         goto oom;
-                                if (NMC_NODE_HAS_CHILDREN(n)) {
-                                        actions = action_new(&used, actions, true, ((struct parent_node *)n)->children);
-                                        if (actions == NULL)
-                                                goto oom;
-                                }
+                                if (NMC_NODE_HAS_CHILDREN(n) &&
+                                    !push(&actions, &used, true,
+                                          ((struct parent_node *)n)->children))
+                                        goto oom;
                         }
                 } else {
                         leave(actions->nodes, closure);
-                        move_to_used(&actions, &used);
+                        pop(&actions, &used);
                 }
         }
         done = true;
 oom:
+        list_for_each_safe(struct action, p, n, actions)
+                free(p);
         list_for_each_safe(struct action, p, n, used)
                 free(p);
         return done;
