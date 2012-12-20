@@ -113,57 +113,41 @@ nmc_node_traverse_r(struct node *node, nmc_node_traverse_fn enter,
 struct nmc_output;
 
 typedef ssize_t (*nmc_output_write_fn)(struct nmc_output *, const char *, size_t);
+typedef ssize_t (*nmc_output_write_c_fn)(struct nmc_output *, char, size_t);
+typedef bool (*nmc_output_close_fn)(struct nmc_output *);
 
 struct nmc_output {
         nmc_output_write_fn write;
+        nmc_output_write_c_fn write_c;
+        nmc_output_close_fn close;
 };
+
+static inline bool
+output_c(struct nmc_output *output, char c, size_t n)
+{
+        if (output->write_c != NULL)
+                return output->write_c(output, c, n);
+        char cs[n];
+        memset(cs, c, n);
+        return output->write(output, cs, n);
+}
+
+static inline bool
+output_s(struct nmc_output *output, const char *string, size_t length)
+{
+        return output->write(output, string, length);
+}
+
+static bool
+output_close(struct nmc_output *output)
+{
+        return output->close == NULL || output->close(output);
+}
 
 struct nmc_fd_output {
         struct nmc_output output;
         int fd;
 };
-
-struct output_buffer {
-        struct nmc_output *output;
-        struct buffer buffer;
-};
-
-static inline bool
-output_buffer_flush(struct output_buffer *buffer)
-{
-        if (buffer->output->write(buffer->output, buffer->buffer.content,
-                                  buffer->buffer.length) == -1)
-                return false;
-        buffer->buffer.length = 0;
-        return true;
-}
-
-#define OUTPUT_BUFFER_LIMIT 4096
-
-static inline bool
-output_buffer_flush_if_full(struct output_buffer *buffer)
-{
-        return buffer->buffer.length < OUTPUT_BUFFER_LIMIT ? true :
-                output_buffer_flush(buffer);
-}
-
-static inline bool
-output_buffer_c(struct output_buffer *buffer, char c, size_t n)
-{
-        return buffer_append_c(&buffer->buffer, c, n) &&
-                output_buffer_flush_if_full(buffer);
-}
-
-static inline bool
-output_buffer_s(struct output_buffer *buffer, const char *string, size_t length)
-{
-        if (length >= OUTPUT_BUFFER_LIMIT) {
-                return output_buffer_flush(buffer) &&
-                        buffer->output->write(buffer->output, string, length) != -1;
-        }
-        return buffer_append(&buffer->buffer, string, length) &&
-                output_buffer_flush_if_full(buffer);
-}
 
 static ssize_t
 nmc_fd_output_write(struct nmc_fd_output *output, const char *string, size_t length)
@@ -178,16 +162,65 @@ nmc_fd_output_write(struct nmc_fd_output *output, const char *string, size_t len
         }
 }
 
+struct nmc_buffered_output {
+        struct nmc_output output;
+        struct buffer buffer;
+        struct nmc_output *real;
+};
+
+static inline bool
+flush(struct nmc_buffered_output *output)
+{
+        if (output->real->write(output->real,
+                                output->buffer.content,
+                                output->buffer.length) == -1)
+                return false;
+        output->buffer.length = 0;
+        return true;
+}
+
+#define OUTPUT_BUFFER_LIMIT 4096
+
+static inline bool
+flush_if_full(struct nmc_buffered_output *output)
+{
+        return output->buffer.length < OUTPUT_BUFFER_LIMIT ? true : flush(output);
+}
+
+static bool
+nmc_buffered_output_write(struct nmc_buffered_output *output, const char *string, size_t length)
+{
+        if (length >= OUTPUT_BUFFER_LIMIT) {
+                return flush(output) &&
+                        output->real->write(output->real, string, length) != -1;
+        }
+        return buffer_append(&output->buffer, string, length) && flush_if_full(output);
+}
+
+static bool
+nmc_buffered_output_write_c(struct nmc_buffered_output *output, char c, size_t n)
+{
+        return buffer_append_c(&output->buffer, c, n) && flush_if_full(output);
+}
+
+static bool
+nmc_buffered_output_close(struct nmc_buffered_output *output)
+{
+        bool r = flush(output);
+        free(output->buffer.content);
+        return r;
+}
+
 struct xml_closure {
-        struct output_buffer buffer;
+        struct nmc_output *output;
         int indent;
 };
 
 static void
-indent(struct output_buffer *buffer, int n)
+indent(struct nmc_output *output, int n)
 {
-        output_buffer_c(buffer, '\n', 1);
-        output_buffer_c(buffer, ' ', 2 * n);
+        output_c(output, '\n', 1);
+        output_c(output, ' ', 2 * n);
 }
 
 static const char * const text_entities[] = {
@@ -213,62 +246,62 @@ static const char * const attribute_entities[] = {
 };
 
 static void
-escape(struct output_buffer *buffer, const char *string, size_t n_entities, const char * const *entities)
+escape(struct nmc_output *output, const char *string, size_t n_entities, const char * const *entities)
 {
         const char *s = string;
         const char *e = s;
         while (*e != '\0') {
                 if ((unsigned)*e < n_entities && entities[(unsigned)*e] != NULL) {
-                        output_buffer_s(buffer, s, e - s);
-                        output_buffer_s(buffer, entities[(unsigned)*e], strlen(entities[(unsigned)*e]));
+                        output_s(output, s, e - s);
+                        output_s(output, entities[(unsigned)*e], strlen(entities[(unsigned)*e]));
                         s = e + 1;
                 }
                 e++;
         }
-        output_buffer_s(buffer, s, e - s);
+        output_s(output, s, e - s);
 }
 
 static void
-element_start(struct output_buffer *buffer, const char *name, size_t length)
+element_start(struct nmc_output *output, const char *name, size_t length)
 {
-        output_buffer_c(buffer, '<', 1);
-        output_buffer_s(buffer, name, length);
-        output_buffer_c(buffer, '>', 1);
+        output_c(output, '<', 1);
+        output_s(output, name, length);
+        output_c(output, '>', 1);
 }
 
 static void
-element_end(struct output_buffer *buffer, const char *name, size_t length)
+element_end(struct nmc_output *output, const char *name, size_t length)
 {
-        output_buffer_s(buffer, "</", 2);
-        output_buffer_s(buffer, name, length);
-        output_buffer_c(buffer, '>', 1);
+        output_s(output, "</", 2);
+        output_s(output, name, length);
+        output_c(output, '>', 1);
 }
 
 static void
 text_enter(struct node *node, struct xml_closure *closure)
 {
-        escape(&closure->buffer, ((struct text_node *)node)->text, lengthof(text_entities), text_entities);
+        escape(closure->output, ((struct text_node *)node)->text, lengthof(text_entities), text_entities);
 }
 
 static void
 auxiliary_enter(struct auxiliary_node *node, struct xml_closure *closure)
 {
-        output_buffer_c(&closure->buffer, '<', 1);
-        output_buffer_s(&closure->buffer, node->name, strlen(node->name));
+        output_c(closure->output, '<', 1);
+        output_s(closure->output, node->name, strlen(node->name));
         for (struct auxiliary_node_attribute *p = node->attributes->items; p->name != NULL; p++) {
-                output_buffer_c(&closure->buffer, ' ', 1);
-                output_buffer_s(&closure->buffer, p->name, strlen(p->name));
-                output_buffer_s(&closure->buffer, "=\"", 2);
-                escape(&closure->buffer, p->value, lengthof(attribute_entities), attribute_entities);
-                output_buffer_c(&closure->buffer, '"', 1);
+                output_c(closure->output, ' ', 1);
+                output_s(closure->output, p->name, strlen(p->name));
+                output_s(closure->output, "=\"", 2);
+                escape(closure->output, p->value, lengthof(attribute_entities), attribute_entities);
+                output_c(closure->output, '"', 1);
         }
-        output_buffer_c(&closure->buffer, '>', 1);
+        output_c(closure->output, '>', 1);
 }
 
 static void
 auxiliary_leave(struct auxiliary_node *node, struct xml_closure *closure)
 {
-        element_end(&closure->buffer, node->name, strlen(node->name));
+        element_end(closure->output, node->name, strlen(node->name));
 }
 
 static void block_enter(struct node *node, struct xml_closure *closure);
@@ -293,7 +326,7 @@ static void
 indenting_block_leave(struct node *node, struct xml_closure *closure)
 {
         closure->indent--;
-        indent(&closure->buffer, closure->indent);
+        indent(closure->output, closure->indent);
         leave(node, closure);
 }
 
@@ -349,21 +382,21 @@ static struct {
 static void
 inline_enter(struct node *node, struct xml_closure *closure)
 {
-        element_start(&closure->buffer, types[node->name].name, types[node->name].length);
+        element_start(closure->output, types[node->name].name, types[node->name].length);
         text_enter(node, closure);
 }
 
 static void
 block_enter(struct node *node, struct xml_closure *closure)
 {
-        indent(&closure->buffer, closure->indent);
-        element_start(&closure->buffer, types[node->name].name, types[node->name].length);
+        indent(closure->output, closure->indent);
+        element_start(closure->output, types[node->name].name, types[node->name].length);
 }
 
 static void
 leave(struct node *node, struct xml_closure *closure)
 {
-        element_end(&closure->buffer, types[node->name].name, types[node->name].length);
+        element_end(closure->output, types[node->name].name, types[node->name].length);
 }
 
 static void
@@ -382,20 +415,26 @@ bool
 nmc_node_xml(struct node *node)
 {
         struct nmc_fd_output fd = {
-                { (nmc_output_write_fn)nmc_fd_output_write },
+                { (nmc_output_write_fn)nmc_fd_output_write, NULL, NULL },
                 STDOUT_FILENO
         };
+        struct nmc_buffered_output buffer = {
+                { (nmc_output_write_fn)nmc_buffered_output_write,
+                  (nmc_output_write_c_fn)nmc_buffered_output_write_c,
+                  (nmc_output_close_fn)nmc_buffered_output_close },
+                BUFFER_INIT,
+                (struct nmc_output *)&fd
+        };
         struct xml_closure closure = {
-                { (struct nmc_output *)&fd, BUFFER_INIT },
+                (struct nmc_output *)&buffer,
                 0
         };
         static char xml_header[] = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>";
-        output_buffer_s(&closure.buffer, xml_header, sizeof(xml_header) - 1);
+        output_s(closure.output, xml_header, sizeof(xml_header) - 1);
         if (!nmc_node_traverse(node, (nmc_node_traverse_fn)xml_enter,
                                (nmc_node_traverse_fn)xml_leave, &closure))
                 return false;
-        output_buffer_c(&closure.buffer, '\n', 1);
-        output_buffer_flush(&closure.buffer);
-        free(closure.buffer.buffer.content);
+        output_c(closure.output, '\n', 1);
+        output_close(closure.output);
         return true;
 }
