@@ -121,19 +121,21 @@ struct nmc_output {
 };
 
 static inline bool
+output_s(struct nmc_output *output, const char *string, size_t length)
+{
+        return output->write(output, string, length);
+}
+
+static inline bool
 output_c(struct nmc_output *output, char c, size_t n)
 {
         if (output->write_c != NULL)
                 return output->write_c(output, c, n);
+        if (n == 1)
+                output_s(output, &c, n);
         char cs[n];
         memset(cs, c, n);
-        return output->write(output, cs, n);
-}
-
-static inline bool
-output_s(struct nmc_output *output, const char *string, size_t length)
-{
-        return output->write(output, string, length);
+        return output_s(output, cs, n);
 }
 
 static bool
