@@ -89,19 +89,19 @@ struct nmc_location {
 
 char *nmc_location_str(const struct nmc_location *location);
 
-struct nmc_error {
-        struct nmc_error *next;
+struct nmc_parser_error {
+        struct nmc_parser_error *next;
         struct nmc_location location;
         char *message;
 };
 
-extern struct nmc_error nmc_oom_error;
+extern struct nmc_parser_error nmc_parser_oom_error;
 
-void nmc_error_free(struct nmc_error *error);
+void nmc_parser_error_free(struct nmc_parser_error *error);
 
 extern int nmc_grammar_debug;
 
-bool nmc_initialize(struct nmc_error **error);
+bool nmc_initialize(struct nmc_parser_error **error);
 void nmc_finalize(void);
 
-struct node *nmc_parse(const char *input, struct nmc_error **errors);
+struct node *nmc_parse(const char *input, struct nmc_parser_error **errors);

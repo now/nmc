@@ -42,8 +42,8 @@ struct parser {
         struct node *doc;
         struct anchor *anchors;
         struct {
-                struct nmc_error *first;
-                struct nmc_error *last;
+                struct nmc_parser_error *first;
+                struct nmc_parser_error *last;
         } errors;
 };
 
@@ -235,15 +235,15 @@ footnote_free(struct footnote *footnote)
 static inline bool
 parser_is_oom(struct parser *parser)
 {
-        return parser->errors.last == &nmc_oom_error;
+        return parser->errors.last == &nmc_parser_oom_error;
 }
 
 static void
 parser_errors(struct parser *parser,
-              struct nmc_error *first, struct nmc_error *last)
+              struct nmc_parser_error *first, struct nmc_parser_error *last)
 {
         if (parser_is_oom(parser)) {
-                nmc_error_free(first);
+                nmc_parser_error_free(first);
                 return;
         }
         if (parser->errors.first == NULL)
@@ -258,7 +258,7 @@ parser_oom(struct parser *parser)
 {
         if (parser_is_oom(parser))
                 return;
-        parser_errors(parser, &nmc_oom_error, &nmc_oom_error);
+        parser_errors(parser, &nmc_parser_oom_error, &nmc_parser_oom_error);
 }
 
 static bool NMC_PRINTF(3, 4)
@@ -269,7 +269,7 @@ parser_error(struct parser *parser, YYLTYPE *location,
                 return false;
         va_list args;
         va_start(args, message);
-        struct nmc_error *error = nmc_error_newv(location, message, args);
+        struct nmc_parser_error *error = nmc_parser_error_newv(location, message, args);
         va_end(args);
         if (error == NULL) {
                 parser_oom(parser);
@@ -466,26 +466,26 @@ struct definition {
 static struct definition *definitions;
 
 #pragma GCC diagnostic ignored "-Wformat-nonliteral"
-static struct nmc_error *
+static struct nmc_parser_error *
 nmc_regerror(YYLTYPE *location, int errcode, const regex_t *regex, const char *message)
 {
         size_t l = regerror(errcode, regex, NULL, 0);
         char *s = malloc(l);
         if (s == NULL)
-                return &nmc_oom_error;
+                return &nmc_parser_oom_error;
         regerror(errcode, regex, s, l);
-        struct nmc_error *e = nmc_error_new(location, message, s);
+        struct nmc_parser_error *e = nmc_parser_error_new(location, message, s);
         free(s);
-        return e == NULL ? &nmc_oom_error : e;
+        return e == NULL ? &nmc_parser_oom_error : e;
 }
 #pragma GCC diagnostic warning "-Wformat-nonliteral"
 
 static bool
-definitions_push(const char *pattern, definefn define, struct nmc_error **error)
+definitions_push(const char *pattern, definefn define, struct nmc_parser_error **error)
 {
         struct definition *definition = malloc(sizeof(struct definition));
         if (definition == NULL) {
-                *error = &nmc_oom_error;
+                *error = &nmc_parser_oom_error;
                 return false;
         }
         int r = regcomp(&definition->regex, pattern, REG_EXTENDED);
@@ -565,7 +565,7 @@ ref(const char *buffer, regmatch_t *matches)
 }
 
 static bool
-definitions_init(struct nmc_error **error)
+definitions_init(struct nmc_parser_error **error)
 {
         if (definitions != NULL)
                 return true;
@@ -584,7 +584,7 @@ definitions_free(void)
 }
 
 static struct auxiliary_node *
-define(YYLTYPE *location, const char *content, struct nmc_error **error)
+define(YYLTYPE *location, const char *content, struct nmc_parser_error **error)
 {
         list_for_each(struct definition, p, definitions) {
                 regmatch_t matches[p->regex.re_nsub + 1];
@@ -599,7 +599,7 @@ define(YYLTYPE *location, const char *content, struct nmc_error **error)
                 }
         }
 
-        *error = nmc_error_new(location, "unrecognized footnote content: %s", content);
+        *error = nmc_parser_error_new(location, "unrecognized footnote content: %s", content);
         return NULL;
 }
 
@@ -618,7 +618,7 @@ footnote(struct parser *parser, YYLTYPE *location, YYSTYPE *value, size_t length
                              parser->p + length + bol_space(parser, length));
         if (content == NULL)
                 goto oom_id;
-        struct nmc_error *error = NULL;
+        struct nmc_parser_error *error = NULL;
         value->footnote->node = define(location, content, &error);
         free(content);
         if (value->footnote->node == NULL) {
@@ -1154,13 +1154,13 @@ anchor_free(struct anchor *anchor)
 static void
 report_remaining_anchors(struct parser *parser)
 {
-        struct nmc_error *first = NULL, *previous = NULL, *last = NULL;
+        struct nmc_parser_error *first = NULL, *previous = NULL, *last = NULL;
         bool oom = false;
         list_for_each_safe(struct anchor, p, n, parser->anchors) {
                 if (!oom) {
-                        first = nmc_error_new(&p->location,
-                                              "reference to undefined footnote: %s",
-                                              p->id.string);
+                        first = nmc_parser_error_new(&p->location,
+                                                     "reference to undefined footnote: %s",
+                                                     p->id.string);
                         if (first == NULL)
                                 oom = true;
                         else {
@@ -1176,8 +1176,8 @@ report_remaining_anchors(struct parser *parser)
         }
         parser->anchors = NULL;
         if (oom) {
-                nmc_error_free(previous);
-                first = last = &nmc_oom_error;
+                nmc_parser_error_free(previous);
+                first = last = &nmc_parser_oom_error;
         }
         parser_errors(parser, first, last);
 }
@@ -1483,7 +1483,7 @@ oblocks: /* empty */ { $$ = nodes(NULL); }
 %%
 
 struct node *
-nmc_parse(const char *input, struct nmc_error **errors)
+nmc_parse(const char *input, struct nmc_parser_error **errors)
 {
         struct parser parser;
         parser.p = input;
@@ -1505,7 +1505,7 @@ nmc_parse(const char *input, struct nmc_error **errors)
 }
 
 bool
-nmc_initialize(struct nmc_error **error)
+nmc_initialize(struct nmc_parser_error **error)
 {
         return definitions_init(error);
 }
