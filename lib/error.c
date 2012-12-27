@@ -67,12 +67,6 @@ nmc_error_release_dynamic(struct nmc_error *error)
         free(error->message);
 }
 
-static struct nmc_error nmc_oom_error = {
-        nmc_error_release_static,
-        ENOMEM,
-        (char *)""
-};
-
 static inline bool
 init(struct nmc_error *error, void (*release)(struct nmc_error *), int number,
      char *message)
@@ -92,7 +86,7 @@ nmc_error_init(struct nmc_error *error, int number, const char *message)
 bool
 nmc_error_oom(struct nmc_error *error)
 {
-        return init(error, nmc_oom_error.release, nmc_oom_error.number, nmc_oom_error.message);
+        return nmc_error_init(error, ENOMEM, "");
 }
 
 bool
