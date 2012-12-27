@@ -56,7 +56,7 @@ usage(void)
 {
         fprintf(stdout,
                 "Usage: %s [OPTION]...\n"
-                "Process standard input as compact neat markup and turn it into its XML representation.\n"
+                "Process standard input as No Markup and turn it into its XML representation.\n"
                 "\n"
                 "Options:\n",
                 PACKAGE_NAME);
