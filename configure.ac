@@ -60,6 +60,8 @@ if test "${enableval}" = yes; then
   nmc_WARN_ADD([-Wwrite-strings])
 fi
 
+AC_CANONICAL_HOST
+
 AC_PROG_YACC
 AC_CHECK_PROGS([VALGRIND], [valgrind])
 case $VALGRIND:$host_os in
