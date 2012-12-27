@@ -76,7 +76,7 @@ struct anchor {
 };
 
 static char *
-strxdup(const char *source, size_t n)
+mstrdup(const char *source, size_t n)
 {
         char *target = malloc(n + 1);
         if (target == NULL)
@@ -554,7 +554,7 @@ auxiliary_node_new_matches(const char *name, const char *buffer,
         for (int i = 0; i < n; i++) {
                 /* TODO Check that rm_so/rm_eo ≠ -1 */
                 a->name = va_arg(args, const char *);
-                a->value = strxdup(buffer + m->rm_so, m->rm_eo - m->rm_so);
+                a->value = mstrdup(buffer + m->rm_so, m->rm_eo - m->rm_so);
                 if (a->value == NULL) {
                         va_end(args);
                         free(d->attributes);
@@ -637,7 +637,7 @@ footnote(struct parser *parser, YYLTYPE *location, YYSTYPE *value, size_t length
         if (value->footnote == NULL)
                 return FOOTNOTE;
         value->footnote->next = NULL;
-        char *id = strxdup(parser->p, length);
+        char *id = mstrdup(parser->p, length);
         if (id == NULL)
                 goto oom;
         value->footnote->id = id_new(id);
@@ -721,7 +721,7 @@ done:
 static struct node *
 text_node_new_dup(enum node_name name, const char *string, size_t length)
 {
-        return text_node_new(name, strxdup(string, length));
+        return text_node_new(name, mstrdup(string, length));
 }
 
 static int
@@ -1022,7 +1022,7 @@ anchor_node_new(YYLTYPE *location, const char *string, size_t length)
         }
         n->u.anchor->next = NULL;
         n->u.anchor->location = *location;
-        char *id = strxdup(string, length);
+        char *id = mstrdup(string, length);
         if (id == NULL) {
                 free(n->u.anchor);
                 free(n);
