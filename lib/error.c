@@ -70,7 +70,7 @@ nmc_error_release_dynamic(struct nmc_error *error)
 static struct nmc_error nmc_oom_error = {
         nmc_error_release_static,
         ENOMEM,
-        (char *)"memory exhausted"
+        (char *)""
 };
 
 static inline bool
