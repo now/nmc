@@ -172,22 +172,25 @@ main(int argc, char *const *argv)
         struct nmc_parser_error *errors = NULL;
         struct node *doc = nmc_parse(buffer, &errors);
         free(buffer);
-        int result = errors == NULL ? EXIT_SUCCESS : EXIT_FAILURE;
-        list_for_each(struct nmc_parser_error, p, errors)
-                if (!report_nmc_parser_error(p))
-                        break;
-        nmc_parser_error_free(errors);
+        if (errors != NULL) {
+                nmc_node_free(doc);
+                nmc_finalize();
+                list_for_each(struct nmc_parser_error, p, errors)
+                        if (!report_nmc_parser_error(p))
+                                break;
+                nmc_parser_error_free(errors);
+                return EXIT_FAILURE;
+        }
 
-        if (result == EXIT_SUCCESS)
-                if (!nmc_node_xml(doc, &error)) {
-                        report_nmc_error(&error);
-                        result = EXIT_FAILURE;
-                }
+        if (!nmc_node_xml(doc, &error)) {
+                nmc_node_free(doc);
+                nmc_finalize();
+                report_nmc_error(&error);
+                return EXIT_FAILURE;
+        }
 
         nmc_node_free(doc);
-
         nmc_finalize();
-
-        return result;
+        return EXIT_SUCCESS;
 }
 
