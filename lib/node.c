@@ -461,19 +461,17 @@ xml_leave(struct node *node, struct xml_closure *closure)
 bool
 nmc_node_xml(struct node *node, struct nmc_error *error)
 {
-        struct nmc_fd_output fd = {
-                { (nmc_output_write_fn)nmc_fd_output_write, NULL },
-                STDOUT_FILENO
-        };
-        struct nmc_buffered_output buffer = {
-                { (nmc_output_write_fn)nmc_buffered_output_write,
-                  (nmc_output_close_fn)nmc_buffered_output_close },
-                (struct nmc_output *)&fd,
-                0,
-                { '\0' }
-        };
         struct xml_closure closure = {
-                (struct nmc_output *)&buffer,
+                (struct nmc_output *)&(struct nmc_buffered_output){
+                        { (nmc_output_write_fn)nmc_buffered_output_write,
+                          (nmc_output_close_fn)nmc_buffered_output_close },
+                        (struct nmc_output *)&(struct nmc_fd_output){
+                                { (nmc_output_write_fn)nmc_fd_output_write, NULL },
+                                STDOUT_FILENO
+                        },
+                        0,
+                        { '\0' }
+                },
                 0,
                 error
         };
