@@ -101,7 +101,7 @@ maintainer-check-valgrind: $(BUILT_SOURCES) all-am $(testdir)/atconfig $(testdir
 	if test -n '$(VALGRIND)'; then \
 	  echo '$(TESTSUITE): Entering directory `$(testdir)'\'; \
 	  $(SHELL) '$(TESTSUITE)' -C '$(testdir)' $(TESTSUITEFLAGS) PRENMC='$(VALGRIND) -q' \
-	    VALGRIND_OPTS='--leak-check=full --show-reachable=yes' \
+	    VALGRIND_OPTS='--leak-check=full --show-reachable=yes'; \
 	  echo '$(TESTSUITE): Leaving directory `$(testdir)'\'; \
 	fi
 
