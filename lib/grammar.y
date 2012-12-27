@@ -1215,14 +1215,9 @@ update_anchors(struct parser *parser, struct footnote *footnote)
                 } else
                         p = c;
         }
-        if (found)
-                footnote->node = NULL;
-        else if (!parser_error(parser,
-                               &footnote->location,
-                               "unreferenced footnote: %s",
-                               footnote->id.string))
-                return false;
-        return true;
+        return found || parser_error(parser, &footnote->location,
+                                     "unreferenced footnote: %s",
+                                     footnote->id.string);
 }
 
 static bool
