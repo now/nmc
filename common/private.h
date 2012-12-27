@@ -16,3 +16,11 @@
 #endif
 
 #define lengthof(array) (sizeof(array) / sizeof((array)[0]))
+
+#ifndef HAVE_VASPRINTF
+int vasprintf(char **output, const char *format, va_list args);
+#endif
+
+#ifndef HAVE_ASPRINTF
+int asprintf(char **output, const char *format, ...) NMC_PRINTF(2, 3);
+#endif

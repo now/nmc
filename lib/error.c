@@ -4,6 +4,7 @@
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stddef.h>
+#include <stdio.h>
 #include <stdlib.h>
 
 #include <nmc.h>
@@ -12,7 +13,6 @@
 #include <private.h>
 
 #include "error.h"
-#include "ext.h"
 
 struct nmc_parser_error nmc_parser_oom_error = {
         NULL,
@@ -39,7 +39,7 @@ nmc_parser_error_newv(struct nmc_location *location, const char *message, va_lis
                 return NULL;
         error->next = NULL;
         error->location = *location;
-        if (nmc_vasprintf(&error->message, message, args) == -1) {
+        if (vasprintf(&error->message, message, args) == -1) {
                 free(error);
                 return NULL;
         }
@@ -100,7 +100,7 @@ bool
 nmc_error_formatv(struct nmc_error *error, int number, const char *message, va_list args)
 {
         char *formatted;
-        nmc_vasprintf(&formatted, message, args);
+        vasprintf(&formatted, message, args);
         return nmc_error_dyninit(error, number, formatted);
 }
 

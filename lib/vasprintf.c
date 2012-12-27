@@ -9,10 +9,8 @@
 
 #include <private.h>
 
-#include "ext.h"
-
 int
-nmc_vasprintf(char **output, const char *format, va_list args)
+vasprintf(char **output, const char *format, va_list args)
 {
         va_list saved;
         va_copy(saved, args);
@@ -22,15 +20,5 @@ nmc_vasprintf(char **output, const char *format, va_list args)
         vsnprintf(result, size + 1, format, saved);
         va_end(saved);
         *output = result;
-        return size;
-}
-
-int
-nmc_asprintf(char **output, const char *format, ...)
-{
-        va_list args;
-        va_start(args, format);
-        int size = nmc_vasprintf(output, format, args);
-        va_end(args);
         return size;
 }

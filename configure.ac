@@ -1,4 +1,5 @@
 AC_INIT([nmc], [1.0.0], [now@bitwi.se])
+AC_CONFIG_LIBOBJ_DIR([lib])
 AC_CONFIG_SRCDIR([src/nmc.c])
 AC_CONFIG_TESTDIR([test], [test])
 AC_CONFIG_AUX_DIR([build])
@@ -69,6 +70,7 @@ esac
 AC_CHECK_HEADERS([getopt.h])
 AC_CHECK_FUNCS([getopt_long],,
   [AC_CHECK_LIB([gnugetopt],[getopt_long],[AC_DEFINE([HAVE_GETOPT_LONG])])])
+AC_REPLACE_FUNCS([asprintf vasprintf])
 
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_FILES([

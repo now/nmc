@@ -17,7 +17,6 @@
 
 #include "buffer.h"
 #include "error.h"
-#include "ext.h"
 #include "unicode.h"
 
 #define YYLTYPE struct nmc_location
@@ -1531,11 +1530,11 @@ nmc_location_str(const struct nmc_location *l)
         char *s;
         if (l->first_line == l->last_line) {
                 if (l->first_column == l->last_column)
-                        nmc_asprintf(&s, "%d:%d", l->first_line, l->first_column);
+                        asprintf(&s, "%d:%d", l->first_line, l->first_column);
                 else
-                        nmc_asprintf(&s, "%d.%d-%d", l->first_line, l->first_column, l->last_column);
+                        asprintf(&s, "%d.%d-%d", l->first_line, l->first_column, l->last_column);
         } else
-                nmc_asprintf(&s, "%d.%d-%d.%d", l->first_line, l->first_column, l->last_line, l->last_column);
+                asprintf(&s, "%d.%d-%d.%d", l->first_line, l->first_column, l->last_line, l->last_column);
         return s;
 }
 

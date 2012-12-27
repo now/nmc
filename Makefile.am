@@ -31,14 +31,13 @@ lib_libnmc_a_SOURCES = \
 	lib/buffer.c \
 	lib/error.c \
 	lib/error.h \
-	lib/ext.c \
-	lib/ext.h \
 	lib/grammar.y \
 	lib/node.c \
 	lib/node.h \
 	lib/ucategory.h \
 	lib/unicode.c \
 	lib/unicode.h
+lib_libnmc_a_LIBADD = $(LIBOBJS)
 
 bin_PROGRAMS = src/nmc
 
