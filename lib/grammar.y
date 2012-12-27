@@ -514,7 +514,8 @@ definitions_push(const char *pattern, definefn define, struct nmc_error *error)
                 return false;
         }
         definition->define = define;
-        definitions = list_cons(definition, definitions);
+        definition->next = definitions;
+        definitions = definition;
         return true;
 }
 
