@@ -27,14 +27,28 @@ struct nmc_option {
 #define options_for_each(item) \
         for (struct nmc_option *item = options; item->c != '\0'; item++)
 
-static int
-report_nmc_error(const struct nmc_error *error)
+static bool
+report_nmc_parser_error(const struct nmc_parser_error *error)
 {
         char *s = nmc_location_str(&error->location);
-        fprintf(stderr, "%s: %s\n", s, error->message);
+        bool r = fputs(s, stderr) != EOF &&
+                fputs(": ", stderr) != EOF &&
+                fputs(error->message, stderr) != EOF &&
+                fputc('\n', stderr) != EOF;
         free(s);
+        return r;
+}
 
-        return 1;
+static bool
+report_nmc_error(const struct nmc_error *error)
+{
+        if (fputs(error->message, stderr) == EOF)
+                return false;
+        if (error->number >= 0)
+                if ((*error->message != '\0' && fputs(": ", stderr) == EOF) ||
+                    fputs(strerror(error->number), stderr) == EOF)
+                        return false;
+        return fputc('\n', stderr) != EOF;
 }
 
 static void
@@ -141,6 +155,13 @@ main(int argc, char *const *argv)
                 return EXIT_FAILURE;
         }
 
+        struct nmc_error error;
+        if (!nmc_initialize(&error))
+                return EXIT_FAILURE;
+
+        if (getenv("NMC_DEBUG"))
+                nmc_grammar_debug = 1;
+
         struct buffer b = BUFFER_INIT;
         if (!buffer_read(&b, STDIN_FILENO, 0)) {
                 perror(PACKAGE_NAME ": error while reading from stdin");
@@ -148,27 +169,18 @@ main(int argc, char *const *argv)
         }
         char *buffer = buffer_str(&b);
 
-        int result = EXIT_SUCCESS;
-
-        if (getenv("NMC_DEBUG"))
-                nmc_grammar_debug = 1;
-
-        struct nmc_error *errors = NULL;
-        struct node *doc = NULL;
-
-        if (nmc_initialize(&errors))
-                doc = nmc_parse(buffer, &errors);
+        struct nmc_parser_error *errors = NULL;
+        struct node *doc = nmc_parse(buffer, &errors);
         free(buffer);
-        if (errors != NULL)
-                result = EXIT_FAILURE;
-        list_for_each(struct nmc_error, p, errors)
-                report_nmc_error(p);
-        nmc_error_free(errors);
+        int result = errors == NULL ? EXIT_SUCCESS : EXIT_FAILURE;
+        list_for_each(struct nmc_parser_error, p, errors)
+                if (!report_nmc_parser_error(p))
+                        break;
+        nmc_parser_error_free(errors);
 
         if (result == EXIT_SUCCESS)
-                if (!nmc_node_xml(doc)) {
-                        // TODO Use more descriptive error?
-                        report_nmc_error(&nmc_oom_error);
+                if (!nmc_node_xml(doc, &error)) {
+                        report_nmc_error(&error);
                         result = EXIT_FAILURE;
                 }
 

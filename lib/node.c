@@ -12,10 +12,14 @@
 
 #include <private.h>
 
+#include "error.h"
+
 #define NODE_IS_NESTED(n) ((n)->name <= NODE_AUXILIARY)
 
-void nmc_node_traverse_null(UNUSED(struct node *node), UNUSED(void *closure))
+bool
+nmc_node_traverse_null(UNUSED(struct node *node), UNUSED(void *closure))
 {
+        return true;
 }
 
 struct action {
@@ -54,22 +58,25 @@ pop(struct action **actions, struct action **used)
 
 bool
 nmc_node_traverse(struct node *node, nmc_node_traverse_fn enter,
-                  nmc_node_traverse_fn leave, void *closure)
+                  nmc_node_traverse_fn leave, void *closure,
+                  struct nmc_error *error)
 {
         if (node == NULL)
                 return true;
+        bool done = false;
         struct action *actions = NULL;
         struct action *used = NULL;
         if (!push(&actions, &used, true, node))
-                return false;
-        bool done = false;
+                goto oom;
         while (actions != NULL) {
                 if (actions->enter) {
                         struct node *n = actions->nodes;
                         actions->nodes = n->next;
                         if (actions->nodes == NULL)
                                 pop(&actions, &used);
-                        enter(n, closure);
+                        // TODO Pass error to enter/leave?
+                        if (!enter(n, closure))
+                                goto fail;
 
                         if (NODE_IS_NESTED(n)) {
                                 if (!push(&actions, &used, false, n))
@@ -80,12 +87,15 @@ nmc_node_traverse(struct node *node, nmc_node_traverse_fn enter,
                                         goto oom;
                         }
                 } else {
-                        leave(actions->nodes, closure);
+                        if (!leave(actions->nodes, closure))
+                                goto fail;
                         pop(&actions, &used);
                 }
         }
         done = true;
 oom:
+        nmc_error_oom(error);
+fail:
         list_for_each_safe(struct action, p, n, actions)
                 free(p);
         list_for_each_safe(struct action, p, n, used)
@@ -109,8 +119,9 @@ nmc_node_traverse_r(struct node *node, nmc_node_traverse_fn enter,
 
 struct nmc_output;
 
-typedef ssize_t (*nmc_output_write_fn)(struct nmc_output *, const char *, size_t);
-typedef bool (*nmc_output_close_fn)(struct nmc_output *);
+typedef ssize_t (*nmc_output_write_fn)(struct nmc_output *, const char *,
+                                       size_t, struct nmc_error *error);
+typedef bool (*nmc_output_close_fn)(struct nmc_output *, struct nmc_error *error);
 
 struct nmc_output {
         nmc_output_write_fn write;
@@ -118,11 +129,12 @@ struct nmc_output {
 };
 
 static bool
-write_all(struct nmc_output *output, const char *string, size_t length, size_t *written)
+write_all(struct nmc_output *output, const char *string, size_t length,
+          size_t *written, struct nmc_error *error)
 {
         size_t n = 0;
         while (n < length) {
-                ssize_t w = output->write(output, string, length);
+                ssize_t w = output->write(output, string, length, error);
                 if (w == -1) {
                         *written = n;
                         return false;
@@ -133,39 +145,30 @@ write_all(struct nmc_output *output, const char *string, size_t length, size_t *
         return true;
 }
 
-static inline bool
-output_s(struct nmc_output *output, const char *string, size_t length)
-{
-        size_t w;
-        return write_all(output, string, length, &w);
-}
-
-static inline bool
-output_c(struct nmc_output *output, char c)
-{
-        return output_s(output, &c, 1);
-}
-
-static bool
-output_close(struct nmc_output *output)
-{
-        return output->close == NULL || output->close(output);
-}
-
 struct nmc_fd_output {
         struct nmc_output output;
         int fd;
 };
 
+static bool
+output_close(struct nmc_output *output, struct nmc_error *error)
+{
+        return output->close == NULL || output->close(output, error);
+}
+
 static ssize_t
-nmc_fd_output_write(struct nmc_fd_output *output, const char *string, size_t length)
+nmc_fd_output_write(struct nmc_fd_output *output, const char *string,
+                    size_t length, struct nmc_error *error)
 {
         if (length == 0)
                 return 0;
         while (true) {
                 ssize_t w = write(output->fd, string, length);
-                if (w == -1 && (errno == EAGAIN || errno == EINTR))
-                        continue;
+                if (w == -1) {
+                        if (errno == EAGAIN || errno == EINTR)
+                                continue;
+                        nmc_error_init(error, errno, "can’t write to file");
+                }
                 return w;
         }
 }
@@ -178,10 +181,10 @@ struct nmc_buffered_output {
 };
 
 static bool
-flush(struct nmc_buffered_output *output)
+flush(struct nmc_buffered_output *output, struct nmc_error *error)
 {
         size_t w;
-        bool r = write_all(output->real, output->buffer, output->length, &w);
+        bool r = write_all(output->real, output->buffer, output->length, &w, error);
         if (w < output->length)
                 memmove(output->buffer, output->buffer + w, output->length - w);
         output->length -= w;
@@ -189,9 +192,11 @@ flush(struct nmc_buffered_output *output)
 }
 
 static ssize_t
-nmc_buffered_output_write(struct nmc_buffered_output *output, const char *string, size_t length)
+nmc_buffered_output_write(struct nmc_buffered_output *output,
+                          const char *string, size_t length,
+                          struct nmc_error *error)
 {
-        if (output->length == sizeof(output->buffer) && !flush(output))
+        if (output->length == sizeof(output->buffer) && !flush(output, error))
                 return -1;
         size_t r = sizeof(output->buffer) - output->length;
         size_t n = r < length ? r : length;
@@ -201,144 +206,177 @@ nmc_buffered_output_write(struct nmc_buffered_output *output, const char *string
 }
 
 static bool
-nmc_buffered_output_close(struct nmc_buffered_output *output)
+nmc_buffered_output_close(struct nmc_buffered_output *output,
+                          struct nmc_error *error)
 {
-        bool r = flush(output);
-        bool q = output_close(output->real);
-        return r && q;
+        if (flush(output, error))
+                return output_close(output->real, error);
+        struct nmc_error *ignored;
+        output_close(output->real, ignored);
+        return false;
 }
 
 struct xml_closure {
         struct nmc_output *output;
         size_t indent;
+        struct nmc_error *error;
 };
+
+static inline bool
+outs(struct xml_closure *closure, const char *string, size_t length)
+{
+        size_t w;
+        return write_all(closure->output, string, length, &w, closure->error);
+}
+
+static inline bool
+outc(struct xml_closure *closure, char c)
+{
+        return outs(closure, &c, 1);
+}
 
 #define MAX_INDENT 64
 
-static void
-indent(struct nmc_output *output, int n)
+static bool
+indent(struct xml_closure *closure, int n)
 {
-        output_c(output, '\n');
+        if (!outc(closure, '\n'))
+                return false;
         static char cs[2 * MAX_INDENT];
         if (cs[0] == '\0')
                 memset(cs, ' ', 2 * MAX_INDENT);
         while (n > 0) {
                 size_t i = n > MAX_INDENT ? MAX_INDENT : n;
-                output_s(output, cs, 2 * i);
+                if (!outs(closure, cs, 2 * i))
+                        return false;
                 n -= i;
         }
+        return true;
 }
 
-static const char * const text_entities[] = {
-        NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
-        NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
-        NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
-        NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
-        NULL, NULL, NULL, NULL, NULL, NULL, "&amp;", NULL,
-        NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
-        NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
-        NULL, NULL, NULL, NULL, "&lt;", NULL, "&gt;"
+struct entity {
+        const char *s;
+        size_t n;
 };
 
-static const char * const attribute_entities[] = {
-        NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
-        NULL, "&#9;", "&#10;", NULL, NULL, "&#13;", NULL, NULL,
-        NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
-        NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
-        NULL, NULL, "&#quot;", NULL, NULL, NULL, "&amp;", NULL,
-        NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
-        NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL,
-        NULL, NULL, NULL, NULL, "&lt;", NULL, "&gt;"
+#define E(s) { s, sizeof(s) - 1 }
+#define N { NULL, 0 }
+static const struct entity text_entities[] = {
+        N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,
+        N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,
+        N,N,N,N,N,N,E("&amp;"),N,N,N,N,N,N,N,N,N,
+        N,N,N,N,N,N,N,N,N,N,N,N,E("&lt;"),N,E("&gt;")
 };
 
-static void
-escape(struct nmc_output *output, const char *string, size_t n_entities, const char * const *entities)
+static const struct entity attribute_entities[] = {
+        N,N,N,N,N,N,N,N,N,E("&#9;"),E("&#10;"),N,N,E("&#13;"),N,N,
+        N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,N,
+        N,N,E("&quot;"),N,N,N,E("&amp;"),N,N,N,N,N,N,N,N,N,
+        N,N,N,N,N,N,N,N,N,N,N,N,E("&lt;"),N,E("&gt;")
+};
+#undef N
+#undef E
+
+static bool
+escape(struct xml_closure *closure, const char *string, size_t n_entities,
+       const struct entity *entities)
 {
         const char *s = string;
         const char *e = s;
         while (*e != '\0') {
-                if ((unsigned)*e < n_entities && entities[(unsigned)*e] != NULL) {
-                        output_s(output, s, e - s);
-                        output_s(output, entities[(unsigned)*e], strlen(entities[(unsigned)*e]));
+                const struct entity *p;
+                if ((unsigned char)*e < n_entities &&
+                    (p = &entities[(unsigned char)*e])->n > 0) {
+                        if (!(outs(closure, s, e - s) &&
+                              outs(closure, p->s, p->n)))
+                                return false;
                         s = e + 1;
                 }
                 e++;
         }
-        output_s(output, s, e - s);
+        return outs(closure, s, e - s);
 }
 
-static void
-element_start(struct nmc_output *output, const char *name, size_t length)
+static bool
+element_start(struct xml_closure *closure, const char *name, size_t n)
 {
-        output_c(output, '<');
-        output_s(output, name, length);
-        output_c(output, '>');
+        return outc(closure, '<') && outs(closure, name, n) && outc(closure, '>');
 }
 
-static void
-element_end(struct nmc_output *output, const char *name, size_t length)
+static bool
+element_end(struct xml_closure *closure, const char *name, size_t n)
 {
-        output_s(output, "</", 2);
-        output_s(output, name, length);
-        output_c(output, '>');
+        return outs(closure, "</", 2) && outs(closure, name, n) && outc(closure, '>');
 }
 
-static void
+static bool
 text_enter(struct node *node, struct xml_closure *closure)
 {
-        escape(closure->output, ((struct text_node *)node)->text, lengthof(text_entities), text_entities);
+        return escape(closure, ((struct text_node *)node)->text,
+                      lengthof(text_entities), text_entities);
 }
 
-static void
+static inline bool
+outattributes(struct xml_closure *closure,
+              struct auxiliary_node_attribute *attributes)
+{
+        for (struct auxiliary_node_attribute *p = attributes; p->name != NULL; p++) {
+                if (!(outc(closure, ' ') &&
+                      outs(closure, p->name, strlen(p->name)) &&
+                      outs(closure, "=\"", 2) &&
+                      escape(closure, p->value,
+                             lengthof(attribute_entities), attribute_entities) &&
+                      outc(closure, '"')))
+                        return false;
+        }
+        return true;
+}
+
+static bool
 auxiliary_enter(struct auxiliary_node *node, struct xml_closure *closure)
 {
-        output_c(closure->output, '<');
-        output_s(closure->output, node->name, strlen(node->name));
-        for (struct auxiliary_node_attribute *p = node->attributes->items; p->name != NULL; p++) {
-                output_c(closure->output, ' ');
-                output_s(closure->output, p->name, strlen(p->name));
-                output_s(closure->output, "=\"", 2);
-                escape(closure->output, p->value, lengthof(attribute_entities), attribute_entities);
-                output_c(closure->output, '"');
-        }
-        output_c(closure->output, '>');
+        return outc(closure, '<') &&
+                outs(closure, node->name, strlen(node->name)) &&
+                outattributes(closure, node->attributes->items) &&
+                outc(closure, '>');
 }
 
-static void
+static bool
 auxiliary_leave(struct auxiliary_node *node, struct xml_closure *closure)
 {
-        element_end(closure->output, node->name, strlen(node->name));
+        return element_end(closure, node->name, strlen(node->name));
 }
 
-static void block_enter(struct node *node, struct xml_closure *closure);
+static bool block_enter(struct node *node, struct xml_closure *closure);
 
-static void
+static bool
 text_block_enter(struct node *node, struct xml_closure *closure)
 {
-        block_enter(node, closure);
-        text_enter(node, closure);
+        return block_enter(node, closure) && text_enter(node, closure);
 }
 
-static void
+static bool
 indenting_block_enter(struct node *node, struct xml_closure *closure)
 {
-        block_enter(node, closure);
+        if (!block_enter(node, closure))
+                return false;
         closure->indent++;
+        return true;
 }
 
-static void leave(struct node *node, struct xml_closure *closure);
+static bool leave(struct node *node, struct xml_closure *closure);
 
-static void
+static bool
 indenting_block_leave(struct node *node, struct xml_closure *closure)
 {
         closure->indent--;
-        indent(closure->output, closure->indent);
-        leave(node, closure);
+        return indent(closure, closure->indent) &&
+                leave(node, closure);
 }
 
-static void inline_enter(struct node *node, struct xml_closure *closure);
+static bool inline_enter(struct node *node, struct xml_closure *closure);
 
-typedef void (*xmltraversefn)(struct node *, struct xml_closure *);
+typedef bool (*xmltraversefn)(struct node *, struct xml_closure *);
 
 static struct {
         const char *name;
@@ -385,40 +423,43 @@ static struct {
 #undef inline
 };
 
-static void
+static bool
 inline_enter(struct node *node, struct xml_closure *closure)
 {
-        element_start(closure->output, types[node->name].name, types[node->name].length);
-        text_enter(node, closure);
+        return element_start(closure, types[node->name].name,
+                             types[node->name].length) &&
+                text_enter(node, closure);
 }
 
-static void
+static bool
 block_enter(struct node *node, struct xml_closure *closure)
 {
-        indent(closure->output, closure->indent);
-        element_start(closure->output, types[node->name].name, types[node->name].length);
+        return indent(closure, closure->indent) &&
+                element_start(closure, types[node->name].name,
+                              types[node->name].length);
 }
 
-static void
+static bool
 leave(struct node *node, struct xml_closure *closure)
 {
-        element_end(closure->output, types[node->name].name, types[node->name].length);
+        return element_end(closure, types[node->name].name,
+                           types[node->name].length);
 }
 
-static void
+static bool
 xml_enter(struct node *node, struct xml_closure *closure)
 {
-        types[node->name].enter(node, closure);
+        return types[node->name].enter(node, closure);
 }
 
-static void
+static bool
 xml_leave(struct node *node, struct xml_closure *closure)
 {
-        types[node->name].leave(node, closure);
+        return types[node->name].leave(node, closure);
 }
 
 bool
-nmc_node_xml(struct node *node)
+nmc_node_xml(struct node *node, struct nmc_error *error)
 {
         struct nmc_fd_output fd = {
                 { (nmc_output_write_fn)nmc_fd_output_write, NULL },
@@ -433,14 +474,15 @@ nmc_node_xml(struct node *node)
         };
         struct xml_closure closure = {
                 (struct nmc_output *)&buffer,
-                0
+                0,
+                error
         };
         static char xml_header[] = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>";
-        output_s(closure.output, xml_header, sizeof(xml_header) - 1);
-        if (!nmc_node_traverse(node, (nmc_node_traverse_fn)xml_enter,
-                               (nmc_node_traverse_fn)xml_leave, &closure))
+        if (!outs(&closure, xml_header, sizeof(xml_header) - 1))
                 return false;
-        output_c(closure.output, '\n');
-        output_close(closure.output);
-        return true;
+        if (!nmc_node_traverse(node, (nmc_node_traverse_fn)xml_enter,
+                               (nmc_node_traverse_fn)xml_leave, &closure, error))
+                return false;
+        return outc(&closure, '\n') &&
+                output_close(closure.output, error);
 }

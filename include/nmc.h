@@ -1,3 +1,11 @@
+struct nmc_error {
+        void (*release)(struct nmc_error *);
+        int number;
+        char *message;
+};
+
+void nmc_error_release(struct nmc_error *error);
+
 enum node_type
 {
         PARENT,
@@ -70,15 +78,16 @@ struct auxiliary_node {
 
 #define NMC_NODE_HAS_CHILDREN(node) ((node)->type < TEXT)
 
-typedef void (*nmc_node_traverse_fn)(struct node *node, void *closure);
+typedef bool (*nmc_node_traverse_fn)(struct node *node, void *closure);
 
-void nmc_node_traverse_null(struct node *node, void *closure);
+bool nmc_node_traverse_null(struct node *node, void *closure);
 bool nmc_node_traverse(struct node *node, nmc_node_traverse_fn enter,
-                       nmc_node_traverse_fn leave, void *closure);
+                       nmc_node_traverse_fn leave, void *closure,
+                       struct nmc_error *error);
 void nmc_node_traverse_r(struct node *node, nmc_node_traverse_fn enter,
                          nmc_node_traverse_fn leave, void *closure);
 void nmc_node_free(struct node *node);
-bool nmc_node_xml(struct node *node);
+bool nmc_node_xml(struct node *node, struct nmc_error *error);
 
 struct nmc_location {
         int first_line;
@@ -101,7 +110,7 @@ void nmc_parser_error_free(struct nmc_parser_error *error);
 
 extern int nmc_grammar_debug;
 
-bool nmc_initialize(struct nmc_parser_error **error);
+bool nmc_initialize(struct nmc_error *error);
 void nmc_finalize(void);
 
 struct node *nmc_parse(const char *input, struct nmc_parser_error **errors);

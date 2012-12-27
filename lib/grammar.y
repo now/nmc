@@ -86,6 +86,24 @@ strxdup(const char *source, size_t n)
 }
 
 static void
+anchor_free1(struct anchor *anchor)
+{
+        if (anchor == NULL)
+                return;
+        free(anchor->id.string);
+        /* NOTE anchor->node is either on the stack or in the tree, so we don’t
+         * need to free it here. */
+        free(anchor);
+}
+
+static void
+anchor_free(struct anchor *anchor)
+{
+        list_for_each_safe(struct anchor, p, n, anchor)
+                anchor_free1(p);
+}
+
+static void
 anchor_unlink(struct node *node, struct parser *parser)
 {
         if (node->name != NODE_ANCHOR)
@@ -106,10 +124,12 @@ anchor_unlink(struct node *node, struct parser *parser)
 static void
 node_unlink_and_free(struct parser *parser, struct node *node)
 {
-        nmc_node_traverse(node, (nmc_node_traverse_fn)anchor_unlink,
-                          nmc_node_traverse_null, parser);
-        /* TODO Once nmc_node_traverse can actually handle reporting OOM, if
-         * that occurs, parser->anchors must be completely cleared. */
+        struct nmc_error ignored;
+        if (!nmc_node_traverse(node, (nmc_node_traverse_fn)anchor_unlink,
+                               nmc_node_traverse_null, parser, &ignored)) {
+                anchor_free(parser->anchors);
+                parser->anchors = NULL;
+        }
         nmc_node_free(node);
 }
 
@@ -465,35 +485,32 @@ struct definition {
 
 static struct definition *definitions;
 
-#pragma GCC diagnostic ignored "-Wformat-nonliteral"
-static struct nmc_parser_error *
-nmc_regerror(YYLTYPE *location, int errcode, const regex_t *regex, const char *message)
+static char *
+aregerror(int errcode, const regex_t *regex)
 {
-        size_t l = regerror(errcode, regex, NULL, 0);
-        char *s = malloc(l);
+        size_t n = regerror(errcode, regex, NULL, 0);
+        char *s = malloc(n);
         if (s == NULL)
-                return &nmc_parser_oom_error;
-        regerror(errcode, regex, s, l);
-        struct nmc_parser_error *e = nmc_parser_error_new(location, message, s);
-        free(s);
-        return e == NULL ? &nmc_parser_oom_error : e;
+                return NULL;
+        regerror(errcode, regex, s, n);
+        return s;
 }
-#pragma GCC diagnostic warning "-Wformat-nonliteral"
 
 static bool
-definitions_push(const char *pattern, definefn define, struct nmc_parser_error **error)
+definitions_push(const char *pattern, definefn define, struct nmc_error *error)
 {
         struct definition *definition = malloc(sizeof(struct definition));
-        if (definition == NULL) {
-                *error = &nmc_parser_oom_error;
-                return false;
-        }
+        if (definition == NULL)
+                return nmc_error_oom(error);
         int r = regcomp(&definition->regex, pattern, REG_EXTENDED);
         if (r != 0) {
-                *error = nmc_regerror(&(YYLTYPE){ 0, 0, 0, 0 }, r,
-                                      &definition->regex,
-                                      "definition regex compilation failed: %s");
+                char *s = aregerror(r, &definition->regex);
                 free(definition);
+                if (s == NULL)
+                        return nmc_error_oom(error);
+                nmc_error_format(error, -1,
+                                 "definition regex compilation failed: %s", s);
+                free(s);
                 return false;
         }
         definition->define = define;
@@ -565,7 +582,7 @@ ref(const char *buffer, regmatch_t *matches)
 }
 
 static bool
-definitions_init(struct nmc_parser_error **error)
+definitions_init(struct nmc_error *error)
 {
         if (definitions != NULL)
                 return true;
@@ -593,8 +610,17 @@ define(YYLTYPE *location, const char *content, struct nmc_parser_error **error)
                 if (r == 0)
                         return p->define(content, matches);
                 else if (r != REG_NOMATCH) {
-                        *error = nmc_regerror(location, r, &p->regex,
-                                              "footnote definition regex execution failed: %s");
+                        char *s = aregerror(r, &p->regex);
+                        if (s == NULL) {
+                                *error = &nmc_parser_oom_error;
+                                return NULL;
+                        }
+                        *error = nmc_parser_error_new(location,
+                                                      "footnote definition regex execution failed: %s",
+                                                      s);
+                        free(s);
+                        if (*error == NULL)
+                                *error = &nmc_parser_oom_error;
                         return NULL;
                 }
         }
@@ -1134,24 +1160,6 @@ parent_children(enum node_name name, struct node *first, struct nodes rest)
 }
 
 static void
-anchor_free1(struct anchor *anchor)
-{
-        if (anchor == NULL)
-                return;
-        free(anchor->id.string);
-        /* NOTE anchor->node is either on the stack or in the tree, so we don’t
-         * need to free it here. */
-        free(anchor);
-}
-
-static void
-anchor_free(struct anchor *anchor)
-{
-        list_for_each_safe(struct anchor, p, n, anchor)
-                anchor_free1(p);
-}
-
-static void
 report_remaining_anchors(struct parser *parser)
 {
         struct nmc_parser_error *first = NULL, *previous = NULL, *last = NULL;
@@ -1505,7 +1513,7 @@ nmc_parse(const char *input, struct nmc_parser_error **errors)
 }
 
 bool
-nmc_initialize(struct nmc_parser_error **error)
+nmc_initialize(struct nmc_error *error)
 {
         return definitions_init(error);
 }
