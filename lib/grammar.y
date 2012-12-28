@@ -1,6 +1,7 @@
 %{
 #include <config.h>
 
+#include <assert.h>
 #include <sys/types.h>
 #include <regex.h>
 #include <stdarg.h>
@@ -299,7 +300,6 @@ substring(struct parser *parser, YYLTYPE *location, YYSTYPE *value,
 static int
 dedent(struct parser *parser, YYLTYPE *location, const char *end)
 {
-        /* TODO: assert(parser->dedents > 0); */
         parser->dedents--;
         return token(parser, location, end, DEDENT);
 }
@@ -309,7 +309,6 @@ dedents(struct parser *parser, const char *begin, size_t spaces)
 {
         parser->dedents = (parser->indent - spaces) / 2;
         parser->indent -= 2 * parser->dedents;
-        /* TODO: assert(parser->indent >= 0); */
         return dedent(parser, NULL, begin + parser->indent);
 }
 
@@ -1539,8 +1538,7 @@ private_node_free(struct node *node, struct parser *parser)
                 return parent_node_free((struct parent_node *)node, parser);
         }
         default:
-                /* TODO assert(false); */
-                return NULL;
+                assert(false);
         }
 }
 
