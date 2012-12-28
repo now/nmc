@@ -95,43 +95,6 @@ anchor_free1(struct anchor *anchor)
         free(anchor);
 }
 
-static void
-anchor_free(struct anchor *anchor)
-{
-        list_for_each_safe(struct anchor, p, n, anchor)
-                anchor_free1(p);
-}
-
-static void
-anchor_unlink(struct node *node, struct parser *parser)
-{
-        if (node->name != NODE_ANCHOR)
-                return;
-        struct anchor *p = NULL;
-        list_for_each_safe(struct anchor, c, n, parser->anchors) {
-                if (c->node == (struct anchor_node *)node) {
-                        if (p == NULL)
-                                parser->anchors = n;
-                        else
-                                p->next = n;
-                        break;
-                }
-                p = c;
-        }
-}
-
-static void
-node_unlink_and_free(struct parser *parser, struct node *node)
-{
-        struct nmc_error ignored;
-        if (!nmc_node_traverse(node, (nmc_node_traverse_fn)anchor_unlink,
-                               nmc_node_traverse_null, parser, &ignored)) {
-                anchor_free(parser->anchors);
-                parser->anchors = NULL;
-        }
-        nmc_node_free(node);
-}
-
 struct footnote {
         struct footnote *next;
         YYLTYPE location;
@@ -153,6 +116,8 @@ footnote_free(struct footnote *footnote)
         list_for_each_safe(struct footnote, p, n, footnote)
                 footnote_free1(p);
 }
+
+static void nmc_node_unlink_and_free(struct node *node, struct parser *parser);
 %}
 
 %define api.pure
@@ -245,8 +210,8 @@ footnote_free(struct footnote *footnote)
                 fprintf(yyoutput, "%s (unrecognized)", $$->id.string);
 } <footnote>
 
-%destructor { node_unlink_and_free(parser, $$.first); } <nodes>
-%destructor { node_unlink_and_free(parser, $$); } <node>
+%destructor { nmc_node_unlink_and_free($$.first, parser); } <nodes>
+%destructor { nmc_node_unlink_and_free($$, parser); } <node>
 %destructor { footnote_free($$); } <footnote>
 
 %code
@@ -1537,49 +1502,63 @@ nmc_location_str(const struct nmc_location *l)
 }
 
 static struct node *
-parent_node_free(struct parent_node *node)
+parent_node_free(struct parent_node *node, UNUSED(struct parser *parser))
 {
         return node->children;
 }
 
 static struct node *
-auxiliary_node_free(struct auxiliary_node *node)
+auxiliary_node_free(struct auxiliary_node *node, struct parser *parser)
 {
         if (--node->attributes->references == 0) {
                 for (struct auxiliary_node_attribute *a = node->attributes->items; a->name != NULL; a++)
                         free(a->value);
                 free(node->attributes);
         }
-        return parent_node_free((struct parent_node *)node);
+        return parent_node_free((struct parent_node *)node, parser);
 }
 
 static struct node *
-text_node_free(struct text_node *node)
+text_node_free(struct text_node *node, UNUSED(struct parser *parser))
 {
         free(node->text);
         return NULL;
 }
 
 static struct node *
-private_node_free(struct node *node)
+private_node_free(struct node *node, struct parser *parser)
 {
         switch (node->name) {
         case NODE_BUFFER:
                 buffer_free(((struct buffer_node *)node)->u.buffer);
                 return NULL;
-        case NODE_ANCHOR:
+        case NODE_ANCHOR: {
+                if (parser != NULL) {
+                        struct anchor *p = NULL;
+                        list_for_each_safe(struct anchor, c, n, parser->anchors) {
+                                if (c->node == (struct anchor_node *)node) {
+                                        if (p == NULL)
+                                                parser->anchors = n;
+                                        else
+                                                p->next = n;
+                                        break;
+                                }
+                                p = c;
+                        }
+                }
                 anchor_free1(((struct anchor_node *)node)->u.anchor);
-                return parent_node_free((struct parent_node *)node);
+                return parent_node_free((struct parent_node *)node, parser);
+        }
         default:
                 /* TODO assert(false); */
                 return NULL;
         }
 }
 
-void
-nmc_node_free(struct node *node)
+static void
+nmc_node_unlink_and_free(struct node *node, struct parser *parser)
 {
-        typedef struct node *(*nodefreefn)(struct node *);
+        typedef struct node *(*nodefreefn)(struct node *, struct parser *);
         static nodefreefn fns[] = {
                 [PARENT] = (nodefreefn)parent_node_free,
                 [AUXILIARY] = (nodefreefn)auxiliary_node_free,
@@ -1594,7 +1573,7 @@ nmc_node_free(struct node *node)
         while (last->next != NULL)
                 last = last->next;
         while (p != NULL) {
-                struct node *children = fns[p->type](p);
+                struct node *children = fns[p->type](p, parser);
                 if (children != NULL) {
                         last->next = children;
                         while (last->next != NULL)
@@ -1604,4 +1583,10 @@ nmc_node_free(struct node *node)
                 free(p);
                 p = next;
         }
+}
+
+void
+nmc_node_free(struct node *node)
+{
+        nmc_node_unlink_and_free(node, NULL);
 }
