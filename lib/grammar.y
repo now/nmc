@@ -1502,8 +1502,6 @@ nmc_parse(const char *input, struct nmc_parser_error **errors)
 
         nmc_grammar_parse(&parser);
 
-        anchor_free(parser.anchors);
-
         *errors = parser.errors.first;
         return parser.doc;
 }

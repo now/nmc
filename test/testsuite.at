@@ -571,6 +571,18 @@ AT_NMC_CHECK_FAIL([title], [5.1-31: unreferenced footnote: ¹
 
 AT_CLEANUP
 
+AT_SETUP([Reference to undefined footnote])
+
+AT_DATA([title],
+[[Title
+
+  Word1¹
+]])
+
+AT_NMC_CHECK_FAIL([title], [3.8-9: reference to undefined footnote: ¹])
+
+AT_CLEANUP
+
 AT_SETUP([Document consisting of a title followed by a code block])
 
 AT_DATA([title],
