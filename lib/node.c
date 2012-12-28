@@ -83,7 +83,7 @@ nmc_node_traverse(struct node *node, nmc_node_traverse_fn enter,
                                         goto oom;
                                 if (NMC_NODE_HAS_CHILDREN(n) &&
                                     !push(&actions, &used, true,
-                                          ((struct parent_node *)n)->children))
+                                          nmc_node_children(n)))
                                         goto oom;
                         }
                 } else {
@@ -111,7 +111,7 @@ nmc_node_traverse_r(struct node *node, nmc_node_traverse_fn enter,
                 enter(p, closure);
                 if (NODE_IS_NESTED(p)) {
                         if (NMC_NODE_HAS_CHILDREN(p))
-                                nmc_node_traverse_r(((struct parent_node *)p)->children, enter, leave, closure);
+                                nmc_node_traverse_r(nmc_node_children(p), enter, leave, closure);
                         leave(p, closure);
                 }
         }

@@ -1223,10 +1223,10 @@ definition(struct node *term, struct node *item)
 {
         if (term == NULL)
                 return NULL;
-        term->next = parent1(NODE_DEFINITION, ((struct parent_node *)item)->children);
+        term->next = parent1(NODE_DEFINITION, nmc_node_children(item));
         if (term->next == NULL)
                 return NULL;
-        ((struct parent_node *)item)->children = term;
+        nmc_node_children(item) = term;
         return item;
 }
 
@@ -1235,7 +1235,7 @@ anchor(struct parser *parser, struct node *atom, struct node *anchor)
 {
         if (anchor == NULL)
                 return NULL;
-        ((struct parent_node *)anchor)->children = atom;
+        nmc_node_children(anchor) = atom;
         ((struct anchor_node *)anchor)->u.anchor->next = parser->anchors;
         parser->anchors = ((struct anchor_node *)anchor)->u.anchor;
         return anchor;

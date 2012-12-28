@@ -77,6 +77,7 @@ struct auxiliary_node {
 };
 
 #define NMC_NODE_HAS_CHILDREN(node) ((node)->type < TEXT)
+#define nmc_node_children(n) (((struct parent_node *)(n))->children)
 
 typedef bool (*nmc_node_traverse_fn)(struct node *node, void *closure);
 
