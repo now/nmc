@@ -1584,7 +1584,7 @@ nmc_node_free(struct node *node)
                 [PARENT] = (nodefreefn)parent_node_free,
                 [AUXILIARY] = (nodefreefn)auxiliary_node_free,
                 [TEXT] = (nodefreefn)text_node_free,
-                [PRIVATE] = (nodefreefn)private_node_free,
+                [PRIVATE] = private_node_free,
         };
 
         if (node == NULL)
