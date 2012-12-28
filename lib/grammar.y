@@ -849,7 +849,8 @@ eol(struct parser *parser, YYLTYPE *location, YYSTYPE *value)
         parser->location.first_line = parser->location.last_line;
         parser->location.first_column = 1;
 
-        const char *begin = parser->p + 1, *end = begin;
+        const char *begin = parser->p + 1;
+        const char *end = begin;
         while (*end == ' ')
                 end++;
         if (*end == '\n') {
