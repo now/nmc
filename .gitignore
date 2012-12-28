@@ -4,6 +4,8 @@
 build/autom4te.cache/
 build/ar-lib
 build/compile
+build/config.guess
+build/config.sub
 build/depcomp
 build/install-sh
 build/missing
