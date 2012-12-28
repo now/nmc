@@ -172,8 +172,7 @@ main(int argc, char *const *argv)
         struct nmc_parser_error *errors = NULL;
         struct node *doc = nmc_parse(buffer, &errors);
         free(buffer);
-        if (errors != NULL) {
-                nmc_node_free(doc);
+        if (doc == NULL) {
                 nmc_finalize();
                 list_for_each(struct nmc_parser_error, p, errors)
                         if (!report_nmc_parser_error(p))
