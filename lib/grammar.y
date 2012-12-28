@@ -39,6 +39,7 @@ struct parser {
         bool bol;
         int want;
         struct node *doc;
+        struct buffer buffer;
         struct anchor *anchors;
         struct {
                 struct nmc_parser_error *first;
@@ -1265,13 +1266,14 @@ struct buffer_node {
 };
 
 static struct node *
-buffer(struct substring substring)
+buffer(struct parser *parser, struct substring substring)
 {
         struct buffer_node *n = node_new(struct buffer_node, PRIVATE, NODE_BUFFER);
         if (n == NULL)
                 return NULL;
-        n->u.buffer = buffer_new(substring.string, substring.length);
-        if (n->u.buffer == NULL) {
+        n->u.buffer = &parser->buffer;
+        *n->u.buffer = (struct buffer)BUFFER_INIT;
+        if (!buffer_append(n->u.buffer, substring.string, substring.length)) {
                 free(n);
                 return NULL;
         }
@@ -1279,12 +1281,12 @@ buffer(struct substring substring)
 }
 
 static inline struct nodes
-append_text(struct nodes inlines, struct substring substring)
+append_text(struct parser *parser, struct nodes inlines, struct substring substring)
 {
         if (inlines.last == NULL)
                 return inlines;
         if (inlines.last->name != NODE_BUFFER)
-                return sibling(inlines, buffer(substring));
+                return sibling(inlines, buffer(parser, substring));
 
         if (!buffer_append(((struct buffer_node *)inlines.last)->u.buffer,
                            substring.string, substring.length))
@@ -1293,9 +1295,9 @@ append_text(struct nodes inlines, struct substring substring)
 }
 
 static inline struct nodes
-append_space(struct nodes inlines)
+append_space(struct parser *parser, struct nodes inlines)
 {
-        return append_text(inlines, (struct substring){ " ", 1 });
+        return append_text(parser, inlines, (struct substring){ " ", 1 });
 }
 
 static inline struct nodes
@@ -1307,11 +1309,7 @@ textify(struct nodes inlines)
                 struct buffer_node *buffer = (struct buffer_node *)inlines.last;
                 buffer->node.type = TEXT;
                 buffer->node.name = NODE_TEXT;
-                struct buffer *b = buffer->u.buffer;
-                buffer->u.text = buffer_str(b);
-                // TODO Hack until we reuse the buffer
-                b->content = NULL;
-                buffer_free(b);
+                buffer->u.text = buffer_str(buffer->u.buffer);
         }
         return inlines;
 }
@@ -1408,13 +1406,13 @@ entry: inlines { M($$ = parent(NODE_ENTRY, $1)); };
 
 inlines: ospace sinlines ospace { $$ = textify($2); };
 
-sinlines: WORD { N($$ = nodes(buffer($1))); }
+sinlines: WORD { N($$ = nodes(buffer(parser, $1))); }
 | oanchoredinline { $$ = nodes($1); }
 /* TODO $1.last can, if I see it correctly, never be NODE_BUFFER, so append_text may be unnecessary here. */
-| sinlines WORD { N($$ = append_text($1, $2)); }
+| sinlines WORD { N($$ = append_text(parser, $1, $2)); }
 | sinlines oanchoredinline { N($$ = sibling(textify($1), $2)); }
-| sinlines spaces WORD { N($$ = append_text(append_space($1), $3)); }
-| sinlines spaces oanchoredinline { N($$ = sibling(textify(append_space($1)), $3)); };
+| sinlines spaces WORD { N($$ = append_text(parser, append_space(parser, $1), $3)); }
+| sinlines spaces oanchoredinline { N($$ = sibling(textify(append_space(parser, $1)), $3)); };
 
 oanchoredinline: inline
 | anchoredinline;
@@ -1521,7 +1519,7 @@ private_node_free(struct node *node, struct parser *parser)
 {
         switch (node->name) {
         case NODE_BUFFER:
-                buffer_free(((struct buffer_node *)node)->u.buffer);
+                free(((struct buffer_node *)node)->u.buffer->content);
                 return NULL;
         case NODE_ANCHOR: {
                 if (parser != NULL) {
