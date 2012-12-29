@@ -122,7 +122,7 @@ footnote_free(struct footnote *footnote)
 static void nmc_node_unlink_and_free(struct node *node, struct parser *parser);
 %}
 
-%define api.pure
+%define api.pure full
 %parse-param {struct parser *parser}
 %lex-param {struct parser *parser}
 %name-prefix "nmc_grammar_"
