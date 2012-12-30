@@ -117,105 +117,6 @@ nmc_node_traverse_r(struct node *node, nmc_node_traverse_fn enter,
         }
 }
 
-struct nmc_output;
-
-typedef ssize_t (*nmc_output_write_fn)(struct nmc_output *, const char *,
-                                       size_t, struct nmc_error *error);
-typedef bool (*nmc_output_close_fn)(struct nmc_output *, struct nmc_error *error);
-
-struct nmc_output {
-        nmc_output_write_fn write;
-        nmc_output_close_fn close;
-};
-
-static bool
-write_all(struct nmc_output *output, const char *string, size_t length,
-          size_t *written, struct nmc_error *error)
-{
-        size_t n = 0;
-        while (n < length) {
-                ssize_t w = output->write(output, string, length, error);
-                if (w == -1) {
-                        *written = n;
-                        return false;
-                }
-                n += w;
-        }
-        *written = n;
-        return true;
-}
-
-struct nmc_fd_output {
-        struct nmc_output output;
-        int fd;
-};
-
-static bool
-output_close(struct nmc_output *output, struct nmc_error *error)
-{
-        return output->close == NULL || output->close(output, error);
-}
-
-static ssize_t
-nmc_fd_output_write(struct nmc_fd_output *output, const char *string,
-                    size_t length, struct nmc_error *error)
-{
-        if (length == 0)
-                return 0;
-        while (true) {
-                ssize_t w = write(output->fd, string, length);
-                if (w == -1) {
-                        if (errno == EAGAIN || errno == EINTR)
-                                continue;
-                        nmc_error_init(error, errno, "can’t write to file");
-                }
-                return w;
-        }
-}
-
-struct nmc_buffered_output {
-        struct nmc_output output;
-        struct nmc_output *real;
-        size_t length;
-        char buffer[4096];
-};
-
-static bool
-flush(struct nmc_buffered_output *output, struct nmc_error *error)
-{
-        size_t w;
-        bool r = write_all(output->real, output->buffer, output->length, &w, error);
-        if (w < output->length)
-                memmove(output->buffer, output->buffer + w, output->length - w);
-        output->length -= w;
-        return r;
-}
-
-static ssize_t
-nmc_buffered_output_write(struct nmc_buffered_output *output,
-                          const char *string, size_t length,
-                          struct nmc_error *error)
-{
-        if (output->length == sizeof(output->buffer) && !flush(output, error))
-                return -1;
-        size_t r = sizeof(output->buffer) - output->length;
-        size_t n = r < length ? r : length;
-        memcpy(output->buffer + output->length, string, n);
-        output->length += n;
-        return n;
-}
-
-static bool
-nmc_buffered_output_close(struct nmc_buffered_output *output,
-                          struct nmc_error *error)
-{
-        if (flush(output, error))
-                return output_close(output->real, error);
-        struct nmc_error *ignored;
-        output_close(output->real, ignored);
-        return false;
-}
-
 struct xml_closure {
         struct nmc_output *output;
         size_t indent;
@@ -226,7 +127,7 @@ static inline bool
 outs(struct xml_closure *closure, const char *string, size_t length)
 {
         size_t w;
-        return write_all(closure->output, string, length, &w, closure->error);
+        return nmc_output_write_all(closure->output, string, length, &w, closure->error);
 }
 
 static inline bool
@@ -459,28 +360,14 @@ xml_leave(struct node *node, struct xml_closure *closure)
 }
 
 bool
-nmc_node_xml(struct node *node, struct nmc_error *error)
+nmc_node_xml(struct node *node, struct nmc_output *output, struct nmc_error *error)
 {
-        struct xml_closure closure = {
-                (struct nmc_output *)&(struct nmc_buffered_output){
-                        { (nmc_output_write_fn)nmc_buffered_output_write,
-                          (nmc_output_close_fn)nmc_buffered_output_close },
-                        (struct nmc_output *)&(struct nmc_fd_output){
-                                { (nmc_output_write_fn)nmc_fd_output_write, NULL },
-                                STDOUT_FILENO
-                        },
-                        0,
-                        { '\0' }
-                },
-                0,
-                error
-        };
+        struct xml_closure closure = { output, 0, error };
         static char xml_header[] = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>";
         if (!outs(&closure, xml_header, sizeof(xml_header) - 1))
                 return false;
         if (!nmc_node_traverse(node, (nmc_node_traverse_fn)xml_enter,
                                (nmc_node_traverse_fn)xml_leave, &closure, error))
                 return false;
-        return outc(&closure, '\n') &&
-                output_close(closure.output, error);
+        return outc(&closure, '\n');
 }

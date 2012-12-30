@@ -181,15 +181,20 @@ main(int argc, char *const *argv)
                 return EXIT_FAILURE;
         }
 
-        if (!nmc_node_xml(doc, &error)) {
-                nmc_node_free(doc);
-                nmc_finalize();
+        struct nmc_fd_output fd;
+        nmc_fd_output_init(&fd, STDOUT_FILENO);
+        struct nmc_buffered_output output;
+        nmc_buffered_output_init(&output, &fd.output);
+        bool o = nmc_node_xml(doc, &output.output, &error);
+        struct nmc_error ignored;
+        nmc_output_close(&output.output, o ? &error : &ignored);
+        nmc_node_free(doc);
+        nmc_finalize();
+        if (!o) {
                 report_nmc_error(&error);
                 return EXIT_FAILURE;
         }
 
-        nmc_node_free(doc);
-        nmc_finalize();
         return EXIT_SUCCESS;
 }
 

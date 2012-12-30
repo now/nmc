@@ -6,6 +6,39 @@ struct nmc_error {
 
 void nmc_error_release(struct nmc_error *error);
 
+struct nmc_output;
+
+typedef ssize_t (*nmc_output_write_fn)(struct nmc_output *, const char *,
+                                       size_t, struct nmc_error *error);
+typedef bool (*nmc_output_close_fn)(struct nmc_output *, struct nmc_error *error);
+
+struct nmc_output {
+        nmc_output_write_fn write;
+        nmc_output_close_fn close;
+};
+
+bool nmc_output_write_all(struct nmc_output *output, const char *string,
+                          size_t length, size_t *written,
+                          struct nmc_error *error);
+bool nmc_output_close(struct nmc_output *output, struct nmc_error *error);
+
+struct nmc_fd_output {
+        struct nmc_output output;
+        int fd;
+};
+
+void nmc_fd_output_init(struct nmc_fd_output *output, int fd);
+
+struct nmc_buffered_output {
+        struct nmc_output output;
+        struct nmc_output *real;
+        size_t length;
+        char buffer[4096];
+};
+
+void nmc_buffered_output_init(struct nmc_buffered_output *output,
+                              struct nmc_output *real);
+
 enum node_type
 {
         PARENT,
@@ -88,7 +121,8 @@ bool nmc_node_traverse(struct node *node, nmc_node_traverse_fn enter,
 void nmc_node_traverse_r(struct node *node, nmc_node_traverse_fn enter,
                          nmc_node_traverse_fn leave, void *closure);
 void nmc_node_free(struct node *node);
-bool nmc_node_xml(struct node *node, struct nmc_error *error);
+bool nmc_node_xml(struct node *node, struct nmc_output *output,
+                  struct nmc_error *error);
 
 struct nmc_location {
         int first_line;

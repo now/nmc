@@ -34,6 +34,7 @@ lib_libnmc_a_SOURCES = \
 	lib/grammar.y \
 	lib/node.c \
 	lib/node.h \
+	lib/output.c \
 	lib/ucategory.h \
 	lib/unicode.c \
 	lib/unicode.h
