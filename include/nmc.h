@@ -39,12 +39,12 @@ struct nmc_buffered_output {
 void nmc_buffered_output_init(struct nmc_buffered_output *output,
                               struct nmc_output *real);
 
-enum node_type
+enum nmc_node_type
 {
-        PARENT,
-        AUXILIARY,
-        TEXT,
-        PRIVATE,
+        NMC_NODE_TYPE_PARENT,
+        NMC_NODE_TYPE_AUXILIARY,
+        NMC_NODE_TYPE_TEXT,
+        NMC_NODE_TYPE_PRIVATE,
 };
 
 enum node_name
@@ -79,7 +79,7 @@ enum node_name
 
 struct nmc_node {
         struct nmc_node *next;
-        enum node_type type;
+        enum nmc_node_type type;
         enum node_name name;
 };
 
@@ -109,7 +109,7 @@ struct nmc_auxiliary_node {
         struct nmc_auxiliary_node_attributes *attributes;
 };
 
-#define NMC_NODE_HAS_CHILDREN(node) ((node)->type < TEXT)
+#define NMC_NODE_HAS_CHILDREN(node) ((node)->type < NMC_NODE_TYPE_TEXT)
 #define nmc_node_children(n) (((struct nmc_parent_node *)(n))->children)
 
 typedef bool (*nmc_node_traverse_fn)(struct nmc_node *node, void *closure);

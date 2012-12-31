@@ -484,7 +484,7 @@ definitions_push(const char *pattern, definefn define, struct nmc_error *error)
 }
 
 static inline struct nmc_node *
-node_init(struct nmc_node *node, enum node_type type, enum node_name name)
+node_init(struct nmc_node *node, enum nmc_node_type type, enum node_name name)
 {
         if (node == NULL)
                 return NULL;
@@ -499,7 +499,9 @@ static struct nmc_auxiliary_node *
 auxiliary_node_new_matches(const char *name, const char *buffer,
                            regmatch_t *matches, int n, ...)
 {
-        struct nmc_auxiliary_node *d = node_new(struct nmc_auxiliary_node, AUXILIARY, NODE_AUXILIARY);
+        struct nmc_auxiliary_node *d = node_new(struct nmc_auxiliary_node,
+                                                NMC_NODE_TYPE_AUXILIARY,
+                                                NODE_AUXILIARY);
         if (d == NULL)
                 return NULL;
         d->node.children = NULL;
@@ -632,7 +634,8 @@ text_node_new(enum node_name name, char *text)
 {
         if (text == NULL)
                 return NULL;
-        struct nmc_text_node *n = node_new(struct nmc_text_node, TEXT, name);
+        struct nmc_text_node *n = node_new(struct nmc_text_node,
+                                           NMC_NODE_TYPE_TEXT, name);
         if (n == NULL) {
                 free(text);
                 return NULL;
@@ -977,7 +980,9 @@ struct anchor_node {
 static struct nmc_node *
 anchor_node_new(YYLTYPE *location, const char *string, size_t length)
 {
-        struct anchor_node *n = node_new(struct anchor_node, PRIVATE, NODE_ANCHOR);
+        struct anchor_node *n = node_new(struct anchor_node,
+                                         NMC_NODE_TYPE_PRIVATE,
+                                         NODE_ANCHOR);
         if (n == NULL)
                 return NULL;
         n->u.anchor = malloc(sizeof(struct anchor));
@@ -1105,7 +1110,8 @@ parent1(enum node_name name, struct nmc_node *children)
 {
         if (children == NULL)
                 return NULL;
-        struct nmc_parent_node *n = node_new(struct nmc_parent_node, PARENT, name);
+        struct nmc_parent_node *n = node_new(struct nmc_parent_node,
+                                             NMC_NODE_TYPE_PARENT, name);
         if (n == NULL)
                 return NULL;
         n->children = children;
@@ -1267,7 +1273,9 @@ struct buffer_node {
 static struct nmc_node *
 buffer(struct parser *parser, struct substring substring)
 {
-        struct buffer_node *n = node_new(struct buffer_node, PRIVATE, NODE_BUFFER);
+        struct buffer_node *n = node_new(struct buffer_node,
+                                         NMC_NODE_TYPE_PRIVATE,
+                                         NODE_BUFFER);
         if (n == NULL)
                 return NULL;
         n->u.buffer = &parser->buffer;
@@ -1306,7 +1314,7 @@ textify(struct nodes inlines)
                 return inlines;
         if (inlines.last->name == NODE_BUFFER) {
                 struct buffer_node *buffer = (struct buffer_node *)inlines.last;
-                buffer->node.type = TEXT;
+                buffer->node.type = NMC_NODE_TYPE_TEXT;
                 buffer->node.name = NODE_TEXT;
                 buffer->u.text = buffer_str(buffer->u.buffer);
         }
@@ -1547,10 +1555,10 @@ nmc_node_unlink_and_free(struct nmc_node *node, struct parser *parser)
 {
         typedef struct nmc_node *(*nodefreefn)(struct nmc_node *, struct parser *);
         static nodefreefn fns[] = {
-                [PARENT] = (nodefreefn)parent_node_free,
-                [AUXILIARY] = (nodefreefn)auxiliary_node_free,
-                [TEXT] = (nodefreefn)text_node_free,
-                [PRIVATE] = private_node_free,
+                [NMC_NODE_TYPE_PARENT] = (nodefreefn)parent_node_free,
+                [NMC_NODE_TYPE_AUXILIARY] = (nodefreefn)auxiliary_node_free,
+                [NMC_NODE_TYPE_TEXT] = (nodefreefn)text_node_free,
+                [NMC_NODE_TYPE_PRIVATE] = private_node_free,
         };
 
         if (node == NULL)
