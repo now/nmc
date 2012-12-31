@@ -17,7 +17,7 @@
 #define NODE_IS_NESTED(n) ((n)->name <= NODE_AUXILIARY)
 
 bool
-nmc_node_traverse_null(UNUSED(struct node *node), UNUSED(void *closure))
+nmc_node_traverse_null(UNUSED(struct nmc_node *node), UNUSED(void *closure))
 {
         return true;
 }
@@ -25,11 +25,11 @@ nmc_node_traverse_null(UNUSED(struct node *node), UNUSED(void *closure))
 struct action {
         struct action *next;
         bool enter;
-        struct node *nodes;
+        struct nmc_node *nodes;
 };
 
 static bool
-push(struct action **actions, struct action **used, bool enter, struct node *nodes)
+push(struct action **actions, struct action **used, bool enter, struct nmc_node *nodes)
 {
         struct action *n;
         if (*used != NULL) {
@@ -57,7 +57,7 @@ pop(struct action **actions, struct action **used)
 }
 
 bool
-nmc_node_traverse(struct node *node, nmc_node_traverse_fn enter,
+nmc_node_traverse(struct nmc_node *node, nmc_node_traverse_fn enter,
                   nmc_node_traverse_fn leave, void *closure,
                   struct nmc_error *error)
 {
@@ -70,7 +70,7 @@ nmc_node_traverse(struct node *node, nmc_node_traverse_fn enter,
                 goto oom;
         while (actions != NULL) {
                 if (actions->enter) {
-                        struct node *n = actions->nodes;
+                        struct nmc_node *n = actions->nodes;
                         actions->nodes = n->next;
                         if (actions->nodes == NULL)
                                 pop(&actions, &used);
@@ -104,10 +104,10 @@ fail:
 }
 
 void
-nmc_node_traverse_r(struct node *node, nmc_node_traverse_fn enter,
+nmc_node_traverse_r(struct nmc_node *node, nmc_node_traverse_fn enter,
                     nmc_node_traverse_fn leave, void *closure)
 {
-        list_for_each(struct node, p, node) {
+        list_for_each(struct nmc_node, p, node) {
                 enter(p, closure);
                 if (NODE_IS_NESTED(p)) {
                         if (NMC_NODE_HAS_CHILDREN(p))
@@ -211,17 +211,17 @@ element_end(struct xml_closure *closure, const char *name, size_t n)
 }
 
 static bool
-text_enter(struct node *node, struct xml_closure *closure)
+text_enter(struct nmc_node *node, struct xml_closure *closure)
 {
-        return escape(closure, ((struct text_node *)node)->text,
+        return escape(closure, ((struct nmc_text_node *)node)->text,
                       lengthof(text_entities), text_entities);
 }
 
 static inline bool
 outattributes(struct xml_closure *closure,
-              struct auxiliary_node_attribute *attributes)
+              struct nmc_auxiliary_node_attribute *attributes)
 {
-        for (struct auxiliary_node_attribute *p = attributes; p->name != NULL; p++) {
+        for (struct nmc_auxiliary_node_attribute *p = attributes; p->name != NULL; p++) {
                 if (!(outc(closure, ' ') &&
                       outs(closure, p->name, strlen(p->name)) &&
                       outs(closure, "=\"", 2) &&
@@ -234,7 +234,7 @@ outattributes(struct xml_closure *closure,
 }
 
 static bool
-auxiliary_enter(struct auxiliary_node *node, struct xml_closure *closure)
+auxiliary_enter(struct nmc_auxiliary_node *node, struct xml_closure *closure)
 {
         return outc(closure, '<') &&
                 outs(closure, node->name, strlen(node->name)) &&
@@ -243,21 +243,21 @@ auxiliary_enter(struct auxiliary_node *node, struct xml_closure *closure)
 }
 
 static bool
-auxiliary_leave(struct auxiliary_node *node, struct xml_closure *closure)
+auxiliary_leave(struct nmc_auxiliary_node *node, struct xml_closure *closure)
 {
         return element_end(closure, node->name, strlen(node->name));
 }
 
-static bool block_enter(struct node *node, struct xml_closure *closure);
+static bool block_enter(struct nmc_node *node, struct xml_closure *closure);
 
 static bool
-text_block_enter(struct node *node, struct xml_closure *closure)
+text_block_enter(struct nmc_node *node, struct xml_closure *closure)
 {
         return block_enter(node, closure) && text_enter(node, closure);
 }
 
 static bool
-indenting_block_enter(struct node *node, struct xml_closure *closure)
+indenting_block_enter(struct nmc_node *node, struct xml_closure *closure)
 {
         if (!block_enter(node, closure))
                 return false;
@@ -265,19 +265,19 @@ indenting_block_enter(struct node *node, struct xml_closure *closure)
         return true;
 }
 
-static bool leave(struct node *node, struct xml_closure *closure);
+static bool leave(struct nmc_node *node, struct xml_closure *closure);
 
 static bool
-indenting_block_leave(struct node *node, struct xml_closure *closure)
+indenting_block_leave(struct nmc_node *node, struct xml_closure *closure)
 {
         closure->indent--;
         return indent(closure, closure->indent) &&
                 leave(node, closure);
 }
 
-static bool inline_enter(struct node *node, struct xml_closure *closure);
+static bool inline_enter(struct nmc_node *node, struct xml_closure *closure);
 
-typedef bool (*xmltraversefn)(struct node *, struct xml_closure *);
+typedef bool (*xmltraversefn)(struct nmc_node *, struct xml_closure *);
 
 static struct {
         const char *name;
@@ -325,7 +325,7 @@ static struct {
 };
 
 static bool
-inline_enter(struct node *node, struct xml_closure *closure)
+inline_enter(struct nmc_node *node, struct xml_closure *closure)
 {
         return element_start(closure, types[node->name].name,
                              types[node->name].length) &&
@@ -333,7 +333,7 @@ inline_enter(struct node *node, struct xml_closure *closure)
 }
 
 static bool
-block_enter(struct node *node, struct xml_closure *closure)
+block_enter(struct nmc_node *node, struct xml_closure *closure)
 {
         return indent(closure, closure->indent) &&
                 element_start(closure, types[node->name].name,
@@ -341,26 +341,26 @@ block_enter(struct node *node, struct xml_closure *closure)
 }
 
 static bool
-leave(struct node *node, struct xml_closure *closure)
+leave(struct nmc_node *node, struct xml_closure *closure)
 {
         return element_end(closure, types[node->name].name,
                            types[node->name].length);
 }
 
 static bool
-xml_enter(struct node *node, struct xml_closure *closure)
+xml_enter(struct nmc_node *node, struct xml_closure *closure)
 {
         return types[node->name].enter(node, closure);
 }
 
 static bool
-xml_leave(struct node *node, struct xml_closure *closure)
+xml_leave(struct nmc_node *node, struct xml_closure *closure)
 {
         return types[node->name].leave(node, closure);
 }
 
 bool
-nmc_node_xml(struct node *node, struct nmc_output *output, struct nmc_error *error)
+nmc_node_xml(struct nmc_node *node, struct nmc_output *output, struct nmc_error *error)
 {
         struct xml_closure closure = { output, 0, error };
         static char xml_header[] = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>";

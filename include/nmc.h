@@ -77,51 +77,51 @@ enum node_name
         NODE_ANCHOR,
 };
 
-struct node {
-        struct node *next;
+struct nmc_node {
+        struct nmc_node *next;
         enum node_type type;
         enum node_name name;
 };
 
-struct parent_node {
-        struct node node;
-        struct node *children;
+struct nmc_parent_node {
+        struct nmc_node node;
+        struct nmc_node *children;
 };
 
-struct text_node {
-        struct node node;
+struct nmc_text_node {
+        struct nmc_node node;
         char *text;
 };
 
-struct auxiliary_node_attribute {
+struct nmc_auxiliary_node_attribute {
         const char *name;
         char *value;
 };
 
-struct auxiliary_node_attributes {
+struct nmc_auxiliary_node_attributes {
         unsigned int references;
-        struct auxiliary_node_attribute items[];
+        struct nmc_auxiliary_node_attribute items[];
 };
 
-struct auxiliary_node {
-        struct parent_node node;
+struct nmc_auxiliary_node {
+        struct nmc_parent_node node;
         const char *name;
-        struct auxiliary_node_attributes *attributes;
+        struct nmc_auxiliary_node_attributes *attributes;
 };
 
 #define NMC_NODE_HAS_CHILDREN(node) ((node)->type < TEXT)
-#define nmc_node_children(n) (((struct parent_node *)(n))->children)
+#define nmc_node_children(n) (((struct nmc_parent_node *)(n))->children)
 
-typedef bool (*nmc_node_traverse_fn)(struct node *node, void *closure);
+typedef bool (*nmc_node_traverse_fn)(struct nmc_node *node, void *closure);
 
-bool nmc_node_traverse_null(struct node *node, void *closure);
-bool nmc_node_traverse(struct node *node, nmc_node_traverse_fn enter,
+bool nmc_node_traverse_null(struct nmc_node *node, void *closure);
+bool nmc_node_traverse(struct nmc_node *node, nmc_node_traverse_fn enter,
                        nmc_node_traverse_fn leave, void *closure,
                        struct nmc_error *error);
-void nmc_node_traverse_r(struct node *node, nmc_node_traverse_fn enter,
+void nmc_node_traverse_r(struct nmc_node *node, nmc_node_traverse_fn enter,
                          nmc_node_traverse_fn leave, void *closure);
-void nmc_node_free(struct node *node);
-bool nmc_node_xml(struct node *node, struct nmc_output *output,
+void nmc_node_free(struct nmc_node *node);
+bool nmc_node_xml(struct nmc_node *node, struct nmc_output *output,
                   struct nmc_error *error);
 
 struct nmc_location {
@@ -148,4 +148,4 @@ extern int nmc_grammar_debug;
 bool nmc_initialize(struct nmc_error *error);
 void nmc_finalize(void);
 
-struct node *nmc_parse(const char *input, struct nmc_parser_error **errors);
+struct nmc_node *nmc_parse(const char *input, struct nmc_parser_error **errors);

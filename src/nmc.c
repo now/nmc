@@ -170,7 +170,7 @@ main(int argc, char *const *argv)
         char *buffer = buffer_str(&b);
 
         struct nmc_parser_error *errors = NULL;
-        struct node *doc = nmc_parse(buffer, &errors);
+        struct nmc_node *doc = nmc_parse(buffer, &errors);
         free(buffer);
         if (doc == NULL) {
                 nmc_finalize();

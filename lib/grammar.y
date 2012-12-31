@@ -28,8 +28,8 @@ struct substring {
 };
 
 struct nodes {
-        struct node *first;
-        struct node *last;
+        struct nmc_node *first;
+        struct nmc_node *last;
 };
 
 struct parser {
@@ -39,7 +39,7 @@ struct parser {
         size_t dedents;
         bool bol;
         int want;
-        struct node *doc;
+        struct nmc_node *doc;
         struct buffer buffer;
         struct anchor *anchors;
         struct {
@@ -101,14 +101,14 @@ struct footnote {
         struct footnote *next;
         YYLTYPE location;
         struct id id;
-        struct auxiliary_node *node;
+        struct nmc_auxiliary_node *node;
 };
 
 static void
 footnote_free1(struct footnote *footnote)
 {
         free(footnote->id.string);
-        nmc_node_free((struct node *)footnote->node);
+        nmc_node_free((struct nmc_node *)footnote->node);
         free(footnote);
 }
 
@@ -119,7 +119,7 @@ footnote_free(struct footnote *footnote)
                 footnote_free1(p);
 }
 
-static void nmc_node_unlink_and_free(struct node *node, struct parser *parser);
+static void nmc_node_unlink_and_free(struct nmc_node *node, struct parser *parser);
 %}
 
 %define api.pure full
@@ -192,7 +192,7 @@ static void nmc_node_unlink_and_free(struct node *node, struct parser *parser);
 %union {
         struct substring substring;
         struct nodes nodes;
-        struct node *node;
+        struct nmc_node *node;
         struct footnote *footnote;
 }
 
@@ -439,7 +439,7 @@ bol_space(struct parser *parser, size_t offset)
         return 0;
 }
 
-typedef struct auxiliary_node *(*definefn)(const char *, regmatch_t *);
+typedef struct nmc_auxiliary_node *(*definefn)(const char *, regmatch_t *);
 
 struct definition {
         struct definition *next;
@@ -483,8 +483,8 @@ definitions_push(const char *pattern, definefn define, struct nmc_error *error)
         return true;
 }
 
-static inline struct node *
-node_init(struct node *node, enum node_type type, enum node_name name)
+static inline struct nmc_node *
+node_init(struct nmc_node *node, enum node_type type, enum node_name name)
 {
         if (node == NULL)
                 return NULL;
@@ -495,24 +495,24 @@ node_init(struct node *node, enum node_type type, enum node_name name)
 }
 #define node_new(stype, type, name) ((stype *)node_init(malloc(sizeof(stype)), type, name))
 
-static struct auxiliary_node *
+static struct nmc_auxiliary_node *
 auxiliary_node_new_matches(const char *name, const char *buffer,
                            regmatch_t *matches, int n, ...)
 {
-        struct auxiliary_node *d = node_new(struct auxiliary_node, AUXILIARY, NODE_AUXILIARY);
+        struct nmc_auxiliary_node *d = node_new(struct nmc_auxiliary_node, AUXILIARY, NODE_AUXILIARY);
         if (d == NULL)
                 return NULL;
         d->node.children = NULL;
         d->name = name;
-        d->attributes = malloc(sizeof(struct auxiliary_node_attributes) +
-                               sizeof(struct auxiliary_node_attribute) * (n + 1));
+        d->attributes = malloc(sizeof(struct nmc_auxiliary_node_attributes) +
+                               sizeof(struct nmc_auxiliary_node_attribute) * (n + 1));
         if (d->attributes == NULL) {
                 free(d);
                 return NULL;
         }
         d->attributes->references = 1;
         regmatch_t *m = &matches[1];
-        struct auxiliary_node_attribute *a = d->attributes->items;
+        struct nmc_auxiliary_node_attribute *a = d->attributes->items;
         va_list args;
         va_start(args, n);
         for (int i = 0; i < n; i++) {
@@ -534,13 +534,13 @@ auxiliary_node_new_matches(const char *name, const char *buffer,
         return d;
 }
 
-static struct auxiliary_node *
+static struct nmc_auxiliary_node *
 abbreviation(const char *buffer, regmatch_t *matches)
 {
         return auxiliary_node_new_matches("abbreviation", buffer, matches, 1, "for");
 }
 
-static struct auxiliary_node *
+static struct nmc_auxiliary_node *
 ref(const char *buffer, regmatch_t *matches)
 {
         return auxiliary_node_new_matches("ref", buffer, matches, 2, "title", "uri");
@@ -565,7 +565,7 @@ definitions_free(void)
         definitions = NULL;
 }
 
-static struct auxiliary_node *
+static struct nmc_auxiliary_node *
 define(YYLTYPE *location, const char *content, struct nmc_parser_error **error)
 {
         list_for_each(struct definition, p, definitions) {
@@ -627,18 +627,18 @@ oom:
         return FOOTNOTE;
 }
 
-static struct node *
+static struct nmc_node *
 text_node_new(enum node_name name, char *text)
 {
         if (text == NULL)
                 return NULL;
-        struct text_node *n = node_new(struct text_node, TEXT, name);
+        struct nmc_text_node *n = node_new(struct nmc_text_node, TEXT, name);
         if (n == NULL) {
                 free(text);
                 return NULL;
         }
         n->text = text;
-        return (struct node *)n;
+        return (struct nmc_node *)n;
 }
 
 static int
@@ -682,7 +682,7 @@ done:
         return token(parser, location, end, CODEBLOCK);
 }
 
-static struct node *
+static struct nmc_node *
 text_node_new_dup(enum node_name name, const char *string, size_t length)
 {
         return text_node_new(name, mstrdup(string, length));
@@ -964,17 +964,17 @@ oom:
 }
 
 struct anchor_node {
-        struct parent_node node;
+        struct nmc_parent_node node;
         union {
                 struct anchor *anchor;
                 struct {
                         const char *name;
-                        struct auxiliary_node_attributes *attributes;
+                        struct nmc_auxiliary_node_attributes *attributes;
                 } auxiliary;
         } u;
 };
 
-static struct node *
+static struct nmc_node *
 anchor_node_new(YYLTYPE *location, const char *string, size_t length)
 {
         struct anchor_node *n = node_new(struct anchor_node, PRIVATE, NODE_ANCHOR);
@@ -995,7 +995,7 @@ anchor_node_new(YYLTYPE *location, const char *string, size_t length)
         }
         n->u.anchor->id = id_new(id);
         n->u.anchor->node = n;
-        return (struct node *)n;
+        return (struct nmc_node *)n;
 }
 
 #define U_SINGLE_LEFT_POINTING_ANGLE_QUOTATION_MARK ((uchar)0x2039)
@@ -1079,13 +1079,13 @@ nmc_grammar_error(YYLTYPE *location, struct parser *parser, const char *message)
 }
 
 static inline struct nodes
-nodes(struct node *node)
+nodes(struct nmc_node *node)
 {
         return (struct nodes){ node, node };
 }
 
 static inline struct nodes
-sibling(struct nodes siblings, struct node *sibling)
+sibling(struct nodes siblings, struct nmc_node *sibling)
 {
         if (siblings.last == NULL)
                 return siblings;
@@ -1100,26 +1100,26 @@ siblings(struct nodes siblings, struct nodes rest)
         return (struct nodes){ siblings.first, rest.last };
 }
 
-static inline struct node *
-parent1(enum node_name name, struct node *children)
+static inline struct nmc_node *
+parent1(enum node_name name, struct nmc_node *children)
 {
         if (children == NULL)
                 return NULL;
-        struct parent_node *n = node_new(struct parent_node, PARENT, name);
+        struct nmc_parent_node *n = node_new(struct nmc_parent_node, PARENT, name);
         if (n == NULL)
                 return NULL;
         n->children = children;
-        return (struct node *)n;
+        return (struct nmc_node *)n;
 }
 
-static inline struct node *
+static inline struct nmc_node *
 parent(enum node_name name, struct nodes children)
 {
         return parent1(name, children.first);
 }
 
-static inline struct node *
-parent_children(enum node_name name, struct node *first, struct nodes rest)
+static inline struct nmc_node *
+parent_children(enum node_name name, struct nmc_node *first, struct nodes rest)
 {
         first->next = rest.first;
         return parent1(name, first);
@@ -1217,8 +1217,8 @@ fibling(struct parser *parser, struct footnote *footnotes, struct footnote *foot
         return footnotes;
 }
 
-static struct node *
-definition(struct node *term, struct node *item)
+static struct nmc_node *
+definition(struct nmc_node *term, struct nmc_node *item)
 {
         if (term == NULL)
                 return NULL;
@@ -1229,8 +1229,8 @@ definition(struct node *term, struct node *item)
         return item;
 }
 
-static inline struct node *
-anchor(struct parser *parser, struct node *atom, struct node *anchor)
+static inline struct nmc_node *
+anchor(struct parser *parser, struct nmc_node *atom, struct nmc_node *anchor)
 {
         if (anchor == NULL)
                 return NULL;
@@ -1240,15 +1240,15 @@ anchor(struct parser *parser, struct node *atom, struct node *anchor)
         return anchor;
 }
 
-static inline struct node *
-wanchor(struct parser *parser, struct substring substring, struct node *a)
+static inline struct nmc_node *
+wanchor(struct parser *parser, struct substring substring, struct nmc_node *a)
 {
         if (a == NULL)
                 return NULL;
-        struct node *n = text_node_new_dup(NODE_TEXT, substring.string, substring.length);
+        struct nmc_node *n = text_node_new_dup(NODE_TEXT, substring.string, substring.length);
         if (n == NULL)
                 return NULL;
-        struct node *r = anchor(parser, n, a);
+        struct nmc_node *r = anchor(parser, n, a);
         if (r == NULL) {
                 nmc_node_free(n);
                 return NULL;
@@ -1257,14 +1257,14 @@ wanchor(struct parser *parser, struct substring substring, struct node *a)
 }
 
 struct buffer_node {
-        struct node node;
+        struct nmc_node node;
         union {
                 char *text;
                 struct buffer *buffer;
         } u;
 };
 
-static struct node *
+static struct nmc_node *
 buffer(struct parser *parser, struct substring substring)
 {
         struct buffer_node *n = node_new(struct buffer_node, PRIVATE, NODE_BUFFER);
@@ -1276,7 +1276,7 @@ buffer(struct parser *parser, struct substring substring)
                 free(n);
                 return NULL;
         }
-        return (struct node *)n;
+        return (struct nmc_node *)n;
 }
 
 static inline struct nodes
@@ -1439,7 +1439,7 @@ oblocks: /* empty */ { $$ = nodes(NULL); }
 
 %%
 
-struct node *
+struct nmc_node *
 nmc_parse(const char *input, struct nmc_parser_error **errors)
 {
         struct parser parser;
@@ -1489,32 +1489,32 @@ nmc_location_str(const struct nmc_location *l)
         return s;
 }
 
-static struct node *
-parent_node_free(struct parent_node *node, UNUSED(struct parser *parser))
+static struct nmc_node *
+parent_node_free(struct nmc_parent_node *node, UNUSED(struct parser *parser))
 {
         return node->children;
 }
 
-static struct node *
-auxiliary_node_free(struct auxiliary_node *node, struct parser *parser)
+static struct nmc_node *
+auxiliary_node_free(struct nmc_auxiliary_node *node, struct parser *parser)
 {
         if (--node->attributes->references == 0) {
-                for (struct auxiliary_node_attribute *a = node->attributes->items; a->name != NULL; a++)
+                for (struct nmc_auxiliary_node_attribute *a = node->attributes->items; a->name != NULL; a++)
                         free(a->value);
                 free(node->attributes);
         }
-        return parent_node_free((struct parent_node *)node, parser);
+        return parent_node_free((struct nmc_parent_node *)node, parser);
 }
 
-static struct node *
-text_node_free(struct text_node *node, UNUSED(struct parser *parser))
+static struct nmc_node *
+text_node_free(struct nmc_text_node *node, UNUSED(struct parser *parser))
 {
         free(node->text);
         return NULL;
 }
 
-static struct node *
-private_node_free(struct node *node, struct parser *parser)
+static struct nmc_node *
+private_node_free(struct nmc_node *node, struct parser *parser)
 {
         switch (node->name) {
         case NODE_BUFFER:
@@ -1535,7 +1535,7 @@ private_node_free(struct node *node, struct parser *parser)
                         }
                 }
                 anchor_free1(((struct anchor_node *)node)->u.anchor);
-                return parent_node_free((struct parent_node *)node, parser);
+                return parent_node_free((struct nmc_parent_node *)node, parser);
         }
         default:
                 assert(false);
@@ -1543,9 +1543,9 @@ private_node_free(struct node *node, struct parser *parser)
 }
 
 static void
-nmc_node_unlink_and_free(struct node *node, struct parser *parser)
+nmc_node_unlink_and_free(struct nmc_node *node, struct parser *parser)
 {
-        typedef struct node *(*nodefreefn)(struct node *, struct parser *);
+        typedef struct nmc_node *(*nodefreefn)(struct nmc_node *, struct parser *);
         static nodefreefn fns[] = {
                 [PARENT] = (nodefreefn)parent_node_free,
                 [AUXILIARY] = (nodefreefn)auxiliary_node_free,
@@ -1555,25 +1555,25 @@ nmc_node_unlink_and_free(struct node *node, struct parser *parser)
 
         if (node == NULL)
                 return;
-        struct node *p = node;
-        struct node *last = p;
+        struct nmc_node *p = node;
+        struct nmc_node *last = p;
         while (last->next != NULL)
                 last = last->next;
         while (p != NULL) {
-                struct node *children = fns[p->type](p, parser);
+                struct nmc_node *children = fns[p->type](p, parser);
                 if (children != NULL) {
                         last->next = children;
                         while (last->next != NULL)
                                 last = last->next;
                 }
-                struct node *next = p->next;
+                struct nmc_node *next = p->next;
                 free(p);
                 p = next;
         }
 }
 
 void
-nmc_node_free(struct node *node)
+nmc_node_free(struct nmc_node *node)
 {
         nmc_node_unlink_and_free(node, NULL);
 }
