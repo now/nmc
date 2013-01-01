@@ -313,10 +313,7 @@ static struct {
         [NMC_NODE_EMPHASIS] = { NAME("emphasis"), inline },
         [NMC_NODE_GROUP] = { NULL, 0, (xmltraversefn)nmc_node_traverse_null, (xmltraversefn)nmc_node_traverse_null },
         [NMC_NODE_AUXILIARY] = { NULL, 0, (xmltraversefn)auxiliary_enter, (xmltraversefn)auxiliary_leave },
-        /* TODO Could have assertions for the NULLs here instead. */
         [NMC_NODE_TEXT] = { NULL, 0, text_enter, NULL },
-        [NMC_NODE_BUFFER] = { NULL, 0, NULL, NULL },
-        [NMC_NODE_ANCHOR] = { NULL, 0, NULL, NULL },
 #undef NAME
 #undef indenting_block
 #undef text_block
