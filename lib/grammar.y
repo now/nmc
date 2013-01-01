@@ -484,7 +484,7 @@ definitions_push(const char *pattern, definefn define, struct nmc_error *error)
 }
 
 static inline struct nmc_node *
-node_init(struct nmc_node *node, enum nmc_node_type type, enum node_name name)
+node_init(struct nmc_node *node, enum nmc_node_type type, enum nmc_node_name name)
 {
         if (node == NULL)
                 return NULL;
@@ -501,7 +501,7 @@ auxiliary_node_new_matches(const char *name, const char *buffer,
 {
         struct nmc_auxiliary_node *d = node_new(struct nmc_auxiliary_node,
                                                 NMC_NODE_TYPE_AUXILIARY,
-                                                NODE_AUXILIARY);
+                                                NMC_NODE_AUXILIARY);
         if (d == NULL)
                 return NULL;
         d->node.children = NULL;
@@ -630,7 +630,7 @@ oom:
 }
 
 static struct nmc_node *
-text_node_new(enum node_name name, char *text)
+text_node_new(enum nmc_node_name name, char *text)
 {
         if (text == NULL)
                 return NULL;
@@ -677,7 +677,7 @@ codeblock(struct parser *parser, YYLTYPE *location, YYSTYPE *value)
                 parser->location.last_line += lines;
         }
 
-        value->node = text_node_new(NODE_CODEBLOCK, buffer_str(&b));
+        value->node = text_node_new(NMC_NODE_CODEBLOCK, buffer_str(&b));
         goto done;
 oom:
         value->node = NULL;
@@ -686,7 +686,7 @@ done:
 }
 
 static struct nmc_node *
-text_node_new_dup(enum node_name name, const char *string, size_t length)
+text_node_new_dup(enum nmc_node_name name, const char *string, size_t length)
 {
         return text_node_new(name, mstrdup(string, length));
 }
@@ -704,7 +704,7 @@ term(struct parser *parser, YYLTYPE *location, YYSTYPE *value)
                         while (*end == ' ')
                                 end++;
                         if (*end == '=' && is_space_or_end(end + 1)) {
-                                value->node = text_node_new_dup(NODE_TERM, begin, send - begin);
+                                value->node = text_node_new_dup(NMC_NODE_TERM, begin, send - begin);
                                 return token(parser, location, end + 1, TERM);
                         }
                 }
@@ -939,7 +939,7 @@ code(struct parser *parser, YYLTYPE *location, YYSTYPE *value)
                         end += length;
                 send = end - length;
         }
-        value->node = text_node_new_dup(NODE_CODE, begin, send - begin);
+        value->node = text_node_new_dup(NMC_NODE_CODE, begin, send - begin);
 oom:
         return token(parser, location, end, CODE);
 }
@@ -961,7 +961,7 @@ emphasis(struct parser *parser, YYLTYPE *location, YYSTYPE *value)
                 }
         } else
                 end++;
-        value->node = text_node_new_dup(NODE_EMPHASIS, begin, send - begin);
+        value->node = text_node_new_dup(NMC_NODE_EMPHASIS, begin, send - begin);
 oom:
         return token(parser, location, end, EMPHASIS);
 }
@@ -982,7 +982,7 @@ anchor_node_new(YYLTYPE *location, const char *string, size_t length)
 {
         struct anchor_node *n = node_new(struct anchor_node,
                                          NMC_NODE_TYPE_PRIVATE,
-                                         NODE_ANCHOR);
+                                         NMC_NODE_ANCHOR);
         if (n == NULL)
                 return NULL;
         n->u.anchor = malloc(sizeof(struct anchor));
@@ -1019,7 +1019,7 @@ parser_lex(struct parser *parser, YYLTYPE *location, YYSTYPE *value)
 
         if (parser->want == TITLE) {
                 parser->want = ERROR;
-                value->node = text_node_new(NODE_TEXT, text(parser, location, end));
+                value->node = text_node_new(NMC_NODE_TEXT, text(parser, location, end));
                 return TITLE;
         }
 
@@ -1106,7 +1106,7 @@ siblings(struct nodes siblings, struct nodes rest)
 }
 
 static inline struct nmc_node *
-parent1(enum node_name name, struct nmc_node *children)
+parent1(enum nmc_node_name name, struct nmc_node *children)
 {
         if (children == NULL)
                 return NULL;
@@ -1119,13 +1119,13 @@ parent1(enum node_name name, struct nmc_node *children)
 }
 
 static inline struct nmc_node *
-parent(enum node_name name, struct nodes children)
+parent(enum nmc_node_name name, struct nodes children)
 {
         return parent1(name, children.first);
 }
 
 static inline struct nmc_node *
-parent_children(enum node_name name, struct nmc_node *first, struct nodes rest)
+parent_children(enum nmc_node_name name, struct nmc_node *first, struct nodes rest)
 {
         first->next = rest.first;
         return parent1(name, first);
@@ -1228,7 +1228,7 @@ definition(struct nmc_node *term, struct nmc_node *item)
 {
         if (term == NULL)
                 return NULL;
-        term->next = parent1(NODE_DEFINITION, nmc_node_children(item));
+        term->next = parent1(NMC_NODE_DEFINITION, nmc_node_children(item));
         if (term->next == NULL)
                 return NULL;
         nmc_node_children(item) = term;
@@ -1251,7 +1251,7 @@ wanchor(struct parser *parser, struct substring substring, struct nmc_node *a)
 {
         if (a == NULL)
                 return NULL;
-        struct nmc_node *n = text_node_new_dup(NODE_TEXT, substring.string, substring.length);
+        struct nmc_node *n = text_node_new_dup(NMC_NODE_TEXT, substring.string, substring.length);
         if (n == NULL)
                 return NULL;
         struct nmc_node *r = anchor(parser, n, a);
@@ -1275,7 +1275,7 @@ buffer(struct parser *parser, struct substring substring)
 {
         struct buffer_node *n = node_new(struct buffer_node,
                                          NMC_NODE_TYPE_PRIVATE,
-                                         NODE_BUFFER);
+                                         NMC_NODE_BUFFER);
         if (n == NULL)
                 return NULL;
         n->u.buffer = &parser->buffer;
@@ -1292,7 +1292,7 @@ append_text(struct parser *parser, struct nodes inlines, struct substring substr
 {
         if (inlines.last == NULL)
                 return inlines;
-        if (inlines.last->name != NODE_BUFFER)
+        if (inlines.last->name != NMC_NODE_BUFFER)
                 return sibling(inlines, buffer(parser, substring));
 
         if (!buffer_append(((struct buffer_node *)inlines.last)->u.buffer,
@@ -1312,10 +1312,10 @@ textify(struct nodes inlines)
 {
         if (inlines.last == NULL)
                 return inlines;
-        if (inlines.last->name == NODE_BUFFER) {
+        if (inlines.last->name == NMC_NODE_BUFFER) {
                 struct buffer_node *buffer = (struct buffer_node *)inlines.last;
                 buffer->node.type = NMC_NODE_TYPE_TEXT;
-                buffer->node.name = NODE_TEXT;
+                buffer->node.name = NMC_NODE_TEXT;
                 buffer->u.text = buffer_str(buffer->u.buffer);
         }
         return inlines;
@@ -1328,11 +1328,11 @@ textify(struct nodes inlines)
 %%
 
 nmc: documenttitle oblockssections0 {
-        M(parser->doc = parent_children(NODE_DOCUMENT, $1, $2));
+        M(parser->doc = parent_children(NMC_NODE_DOCUMENT, $1, $2));
         report_remaining_anchors(parser);
 };
 
-documenttitle: TITLE { M($$ = parent1(NODE_TITLE, $1)); };
+documenttitle: TITLE { M($$ = parent1(NMC_NODE_TITLE, $1)); };
 
 oblockssections0: /* empty */ { $$ = nodes(NULL); }
 | blockssections { $$ = $1; };
@@ -1345,13 +1345,13 @@ blocks: block { $$ = nodes($1); }
 | blocks block { $$ = sibling($1, $2); }
 | blocks footnotes %prec NotFootnote { N($$ = reference(parser, &$2) ? $1 : nodes(NULL)); };
 
-block: PARAGRAPH inlines { M($$ = parent(NODE_PARAGRAPH, $2)); }
-| itemizationitems %prec NotBlock { M($$ = parent(NODE_ITEMIZATION, $1)); }
-| enumerationitems %prec NotBlock { M($$ = parent(NODE_ENUMERATION, $1)); }
-| definitionitems %prec NotBlock { M($$ = parent(NODE_DEFINITIONS, $1)); }
-| quotecontent { M($$ = parent(NODE_QUOTE, $1)); }
+block: PARAGRAPH inlines { M($$ = parent(NMC_NODE_PARAGRAPH, $2)); }
+| itemizationitems %prec NotBlock { M($$ = parent(NMC_NODE_ITEMIZATION, $1)); }
+| enumerationitems %prec NotBlock { M($$ = parent(NMC_NODE_ENUMERATION, $1)); }
+| definitionitems %prec NotBlock { M($$ = parent(NMC_NODE_DEFINITIONS, $1)); }
+| quotecontent { M($$ = parent(NMC_NODE_QUOTE, $1)); }
 | CODEBLOCK { M($$ = $1); }
-| headbody { M($$ = parent(NODE_TABLE, $1)); };
+| headbody { M($$ = parent(NMC_NODE_TABLE, $1)); };
 
 sections: footnotedsection { $$ = nodes($1); }
 | sections footnotedsection { $$ = sibling($1, $2); };
@@ -1359,9 +1359,9 @@ sections: footnotedsection { $$ = nodes($1); }
 footnotedsection: section
 | section footnotes { M($$ = reference(parser, &$2) ? $1 : NULL); };
 
-section: SECTION { parser->want = INDENT; } title oblockssections { M($$ = parent_children(NODE_SECTION, $3, $4)); };
+section: SECTION { parser->want = INDENT; } title oblockssections { M($$ = parent_children(NMC_NODE_SECTION, $3, $4)); };
 
-title: inlines { M($$ = parent(NODE_TITLE, $1)); };
+title: inlines { M($$ = parent(NMC_NODE_TITLE, $1)); };
 
 oblockssections: /* empty */ { $$ = nodes(NULL); }
 | INDENT blockssections DEDENT { $$ = $2; };
@@ -1390,26 +1390,26 @@ quotecontent: lines %prec NotBlock
 lines: line { $$ = nodes($1); }
 | lines line { $$ = sibling($1, $2); };
 
-line: QUOTE inlines { M($$ = parent(NODE_LINE, $2)); };
+line: QUOTE inlines { M($$ = parent(NMC_NODE_LINE, $2)); };
 
-attribution: ATTRIBUTION inlines { M($$ = parent(NODE_ATTRIBUTION, $2)); };
+attribution: ATTRIBUTION inlines { M($$ = parent(NMC_NODE_ATTRIBUTION, $2)); };
 
 headbody: head body { $$ = sibling(nodes($1), $2); }
 | body { $$ = nodes($1); };
 
-head: row TABLESEPARATOR { M($$ = parent1(NODE_HEAD, $1)); };
+head: row TABLESEPARATOR { M($$ = parent1(NMC_NODE_HEAD, $1)); };
 
-body: rows %prec NotBlock { M($$ = parent(NODE_BODY, $1)); };
+body: rows %prec NotBlock { M($$ = parent(NMC_NODE_BODY, $1)); };
 
 rows: row { $$ = nodes($1); }
 | rows row { $$ = sibling($1, $2); };
 
-row: ROW entries ENTRYSEPARATOR { M($$ = parent(NODE_ROW, $2)); };
+row: ROW entries ENTRYSEPARATOR { M($$ = parent(NMC_NODE_ROW, $2)); };
 
 entries: entry { $$ = nodes($1); }
 | entries ENTRYSEPARATOR entry { $$ = sibling($1, $3); };
 
-entry: inlines { M($$ = parent(NODE_ENTRY, $1)); };
+entry: inlines { M($$ = parent(NMC_NODE_ENTRY, $1)); };
 
 inlines: ospace sinlines ospace { $$ = textify($2); };
 
@@ -1430,7 +1430,7 @@ anchoredinline: inline ANCHOR { M($$ = anchor(parser, $1, $2)); }
 
 inline: CODE { M($$ = $1); }
 | EMPHASIS { M($$ = $1); }
-| BEGINGROUP sinlines ENDGROUP { M($$ = parent(NODE_GROUP, textify($2))); };
+| BEGINGROUP sinlines ENDGROUP { M($$ = parent(NMC_NODE_GROUP, textify($2))); };
 
 ospace: /* empty */
 | SPACE;
@@ -1438,9 +1438,9 @@ ospace: /* empty */
 spaces: SPACE
 | spaces SPACE;
 
-item: { parser->want = ITEMINDENT; } firstparagraph oblocks { M($$ = parent_children(NODE_ITEM, $2, $3)); };
+item: { parser->want = ITEMINDENT; } firstparagraph oblocks { M($$ = parent_children(NMC_NODE_ITEM, $2, $3)); };
 
-firstparagraph: inlines { M($$ = parent(NODE_PARAGRAPH, $1)); }
+firstparagraph: inlines { M($$ = parent(NMC_NODE_PARAGRAPH, $1)); }
 
 oblocks: /* empty */ { $$ = nodes(NULL); }
 | ITEMINDENT blocks DEDENT { $$ = $2; };
@@ -1525,10 +1525,10 @@ static struct nmc_node *
 private_node_free(struct nmc_node *node, struct parser *parser)
 {
         switch (node->name) {
-        case NODE_BUFFER:
+        case NMC_NODE_BUFFER:
                 free(((struct buffer_node *)node)->u.buffer->content);
                 return NULL;
-        case NODE_ANCHOR: {
+        case NMC_NODE_ANCHOR: {
                 if (parser != NULL) {
                         struct anchor *p = NULL;
                         list_for_each_safe(struct anchor, c, n, parser->anchors) {

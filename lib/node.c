@@ -14,7 +14,7 @@
 
 #include "error.h"
 
-#define NODE_IS_NESTED(n) ((n)->name <= NODE_AUXILIARY)
+#define NODE_IS_NESTED(n) ((n)->name <= NMC_NODE_AUXILIARY)
 
 bool
 nmc_node_traverse_null(UNUSED(struct nmc_node *node), UNUSED(void *closure))
@@ -290,33 +290,33 @@ static struct {
 #define block block_enter, leave
 #define inline inline_enter, leave
 #define NAME(n) n, sizeof(n) - 1
-        [NODE_DOCUMENT] = { NAME("nml"), indenting_block },
-        [NODE_TITLE] = { NAME("title"), block },
-        [NODE_PARAGRAPH] = { NAME("p"), block },
-        [NODE_ITEMIZATION] = { NAME("itemization"), indenting_block },
-        [NODE_ENUMERATION] = { NAME("enumeration"), indenting_block },
-        [NODE_DEFINITIONS] = { NAME("definitions"), indenting_block },
-        [NODE_DEFINITION] = { NAME("definition"), indenting_block },
-        [NODE_TERM] = { NAME("term"), text_block },
-        [NODE_ITEM] = { NAME("item"), indenting_block },
-        [NODE_QUOTE] = { NAME("quote"), indenting_block },
-        [NODE_LINE] = { NAME("line"), block },
-        [NODE_ATTRIBUTION] = { NAME("attribution"), block },
-        [NODE_CODEBLOCK] = { NAME("code"), text_block },
-        [NODE_TABLE] = { NAME("table"), indenting_block },
-        [NODE_HEAD] = { NAME("head"), indenting_block },
-        [NODE_BODY] = { NAME("body"), indenting_block },
-        [NODE_ROW] = { NAME("row"), indenting_block },
-        [NODE_ENTRY] = { NAME("entry"), block },
-        [NODE_SECTION] = { NAME("section"), indenting_block },
-        [NODE_CODE] = { NAME("code"), inline },
-        [NODE_EMPHASIS] = { NAME("emphasis"), inline },
-        [NODE_GROUP] = { NULL, 0, (xmltraversefn)nmc_node_traverse_null, (xmltraversefn)nmc_node_traverse_null },
-        [NODE_AUXILIARY] = { NULL, 0, (xmltraversefn)auxiliary_enter, (xmltraversefn)auxiliary_leave },
+        [NMC_NODE_DOCUMENT] = { NAME("nml"), indenting_block },
+        [NMC_NODE_TITLE] = { NAME("title"), block },
+        [NMC_NODE_PARAGRAPH] = { NAME("p"), block },
+        [NMC_NODE_ITEMIZATION] = { NAME("itemization"), indenting_block },
+        [NMC_NODE_ENUMERATION] = { NAME("enumeration"), indenting_block },
+        [NMC_NODE_DEFINITIONS] = { NAME("definitions"), indenting_block },
+        [NMC_NODE_DEFINITION] = { NAME("definition"), indenting_block },
+        [NMC_NODE_TERM] = { NAME("term"), text_block },
+        [NMC_NODE_ITEM] = { NAME("item"), indenting_block },
+        [NMC_NODE_QUOTE] = { NAME("quote"), indenting_block },
+        [NMC_NODE_LINE] = { NAME("line"), block },
+        [NMC_NODE_ATTRIBUTION] = { NAME("attribution"), block },
+        [NMC_NODE_CODEBLOCK] = { NAME("code"), text_block },
+        [NMC_NODE_TABLE] = { NAME("table"), indenting_block },
+        [NMC_NODE_HEAD] = { NAME("head"), indenting_block },
+        [NMC_NODE_BODY] = { NAME("body"), indenting_block },
+        [NMC_NODE_ROW] = { NAME("row"), indenting_block },
+        [NMC_NODE_ENTRY] = { NAME("entry"), block },
+        [NMC_NODE_SECTION] = { NAME("section"), indenting_block },
+        [NMC_NODE_CODE] = { NAME("code"), inline },
+        [NMC_NODE_EMPHASIS] = { NAME("emphasis"), inline },
+        [NMC_NODE_GROUP] = { NULL, 0, (xmltraversefn)nmc_node_traverse_null, (xmltraversefn)nmc_node_traverse_null },
+        [NMC_NODE_AUXILIARY] = { NULL, 0, (xmltraversefn)auxiliary_enter, (xmltraversefn)auxiliary_leave },
         /* TODO Could have assertions for the NULLs here instead. */
-        [NODE_TEXT] = { NULL, 0, text_enter, NULL },
-        [NODE_BUFFER] = { NULL, 0, NULL, NULL },
-        [NODE_ANCHOR] = { NULL, 0, NULL, NULL },
+        [NMC_NODE_TEXT] = { NULL, 0, text_enter, NULL },
+        [NMC_NODE_BUFFER] = { NULL, 0, NULL, NULL },
+        [NMC_NODE_ANCHOR] = { NULL, 0, NULL, NULL },
 #undef NAME
 #undef indenting_block
 #undef text_block

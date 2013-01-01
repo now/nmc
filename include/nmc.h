@@ -47,40 +47,40 @@ enum nmc_node_type
         NMC_NODE_TYPE_PRIVATE,
 };
 
-enum node_name
+enum nmc_node_name
 {
-        NODE_DOCUMENT,
-        NODE_TITLE,
-        NODE_PARAGRAPH,
-        NODE_ITEMIZATION,
-        NODE_ENUMERATION,
-        NODE_DEFINITIONS,
-        NODE_DEFINITION,
-        NODE_TERM,
-        NODE_ITEM,
-        NODE_QUOTE,
-        NODE_LINE,
-        NODE_ATTRIBUTION,
-        NODE_CODEBLOCK,
-        NODE_TABLE,
-        NODE_HEAD,
-        NODE_BODY,
-        NODE_ROW,
-        NODE_ENTRY,
-        NODE_SECTION,
-        NODE_CODE,
-        NODE_EMPHASIS,
-        NODE_GROUP,
-        NODE_AUXILIARY,
-        NODE_TEXT,
-        NODE_BUFFER,
-        NODE_ANCHOR,
+        NMC_NODE_DOCUMENT,
+        NMC_NODE_TITLE,
+        NMC_NODE_PARAGRAPH,
+        NMC_NODE_ITEMIZATION,
+        NMC_NODE_ENUMERATION,
+        NMC_NODE_DEFINITIONS,
+        NMC_NODE_DEFINITION,
+        NMC_NODE_TERM,
+        NMC_NODE_ITEM,
+        NMC_NODE_QUOTE,
+        NMC_NODE_LINE,
+        NMC_NODE_ATTRIBUTION,
+        NMC_NODE_CODEBLOCK,
+        NMC_NODE_TABLE,
+        NMC_NODE_HEAD,
+        NMC_NODE_BODY,
+        NMC_NODE_ROW,
+        NMC_NODE_ENTRY,
+        NMC_NODE_SECTION,
+        NMC_NODE_CODE,
+        NMC_NODE_EMPHASIS,
+        NMC_NODE_GROUP,
+        NMC_NODE_AUXILIARY,
+        NMC_NODE_TEXT,
+        NMC_NODE_BUFFER,
+        NMC_NODE_ANCHOR,
 };
 
 struct nmc_node {
         struct nmc_node *next;
         enum nmc_node_type type;
-        enum node_name name;
+        enum nmc_node_name name;
 };
 
 struct nmc_parent_node {
