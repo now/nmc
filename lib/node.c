@@ -364,10 +364,9 @@ nmc_node_xml(struct nmc_node *node, struct nmc_output *output, struct nmc_error 
 {
         struct xml_closure closure = { output, 0, error };
         static char xml_header[] = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>";
-        if (!outs(&closure, xml_header, sizeof(xml_header) - 1))
-                return false;
-        if (!nmc_node_traverse(node, (nmc_node_traverse_fn)xml_enter,
-                               (nmc_node_traverse_fn)xml_leave, &closure, error))
-                return false;
-        return outc(&closure, '\n');
+        return outs(&closure, xml_header, sizeof(xml_header) - 1) &&
+                nmc_node_traverse(node, (nmc_node_traverse_fn)xml_enter,
+                                  (nmc_node_traverse_fn)xml_leave, &closure,
+                                  error) &&
+                outc(&closure, '\n');
 }
