@@ -1,6 +1,7 @@
 typedef int32_t uchar;
 
 bool uc_issolid(uchar c);
+bool uc_isaletterornumeric(uchar c);
 
 #define U_BAD_INPUT_CHAR ((uchar)-1)
 

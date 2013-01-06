@@ -909,11 +909,18 @@ is_group_end(const char *end)
         return false;
 }
 
+// TODO Rename to be more explicit
 static inline bool
-is_inline_end(const char *end)
+is_word_end(const char *end)
 {
         return is_superscript_or_space_or_end(end) ||
                 is_group_end(end);
+}
+
+static inline bool
+is_inline_end(const char *end)
+{
+        return is_word_end(end);
 }
 
 #define U_SINGLE_RIGHT_POINTING_ANGLE_QUOTATION_MARK ((uchar)0x203a)
@@ -935,6 +942,7 @@ code(struct parser *parser, YYLTYPE *location, YYSTYPE *value)
                         goto oom;
                 }
         } else {
+                // TODO do { … } while (…) instead?
                 while (u_dref(end) == U_SINGLE_RIGHT_POINTING_ANGLE_QUOTATION_MARK)
                         end += length;
                 send = end - length;
@@ -944,13 +952,16 @@ oom:
         return token(parser, location, end, CODE);
 }
 
+// TODO Also, in ‹//›, second ‹/› shouldn’t be seen as an end.
+// TODO Also, in ‹/…//›, second ‹/› shouldn’t be seen as an end.
 static int
 emphasis(struct parser *parser, YYLTYPE *location, YYSTYPE *value)
 {
         const char *begin = parser->p + 1;
         const char *end = begin;
         while (!is_end(end) &&
-               (*end != '/' || !is_inline_end(end + 1)))
+               !(*end == '/' && (is_space_or_end(end + 1) ||
+                                 !uc_isaletterornumeric(u_dref(end + 1)))))
                 end++;
         const char *send = end;
         if (is_end(end)) {
@@ -1057,7 +1068,7 @@ parser_lex(struct parser *parser, YYLTYPE *location, YYSTYPE *value)
                 return r;
         }
 
-        while (!is_inline_end(end))
+        while (!is_word_end(end))
                 end++;
         if (end == parser->p)
                 return token(parser, location, parser->p, END);

@@ -803,6 +803,36 @@ AT_NMC_CHECK_FAIL([title], [3:3: missing ending ‘/’ for emphasis inline])
 
 AT_CLEANUP
 
+AT_SETUP([Inline termination rules: ,])
+
+AT_DATA([title],
+[[T
+
+  /Yes/, please.
+]])
+
+AT_NMC_CHECK([title],
+[[  <title>T</title>
+  <p><emphasis>Yes</emphasis>, please.</p>]])
+
+AT_CLEANUP
+
+AT_SETUP([Inline termination rules: ²])
+
+AT_DATA([title],
+[[T
+
+  /Yes/²
+
+² Abbreviation for A
+]])
+
+AT_NMC_CHECK([title],
+[[  <title>T</title>
+  <p><abbreviation for="A"><emphasis>Yes</emphasis></abbreviation></p>]])
+
+AT_CLEANUP
+
 AT_SETUP([Document consisting of a title followed by a paragraph containing a group])
 
 AT_DATA([title],

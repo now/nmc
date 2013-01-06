@@ -9,7 +9,9 @@ build/config.sub
 build/depcomp
 build/install-sh
 build/missing
+build/ubreak
 build/ucategory
+build/uscript
 build/ylwrap
 .dirstamp
 Makefile

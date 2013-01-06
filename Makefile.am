@@ -4,10 +4,20 @@ AM_CPPFLAGS = -I$(top_srcdir)/common -I$(top_srcdir)/include
 AM_YFLAGS = --warnings=all,error --report=all
 
 noinst_PROGRAMS = \
-	build/ucategory
+	build/ubreak \
+	build/ucategory \
+	build/uscript
+
+build_ubreak_SOURCES = \
+	build/ubreak.c \
+	build/udata.h
 
 build_ucategory_SOURCES = \
-	build/ucategory.c
+	build/ucategory.c \
+	build/udata.h
+
+build_uscript_SOURCES = \
+	build/uscript.c
 
 include_HEADERS = \
 	include/nmc.h
@@ -50,8 +60,14 @@ src_nmc_LDADD = \
 	lib/libbuffer.a \
 	lib/libnmc.a
 
-src/ucategory.h: $(srcdir)/build/ucategory
+lib/ubreak.h: $(srcdir)/build/ubreak
+	$(srcdir)/build/ubreak < LineBreak.txt > $@
+
+lib/ucategory.h: $(srcdir)/build/ucategory
 	$(srcdir)/build/ucategory < UnicodeData.txt > $@
+
+lib/uscript.h: $(srcdir)/build/uscript
+	$(srcdir)/build/uscript < Scripts.txt > $@
 
 check_SCRIPTS = test/nmc
 
