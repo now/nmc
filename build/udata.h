@@ -6,15 +6,25 @@ datanamecmp(const void *a, const void *b)
         return strcmp((const char *)a, ((struct dataname *)b)->u);
 }
 
+static void die(const char *message, ...) NORETURN;
+
+static void
+die(const char *message, ...)
+{
+        va_list args;
+        va_start(args, message);
+        vfprintf(stderr, message, args);
+        va_end(args);
+        exit(EXIT_FAILURE);
+}
+
 static const char *
 data_name(const char *u)
 {
         struct dataname *name = bsearch(u, names, lengthof(names), sizeof(names[0]), datanamecmp);
 
-        if (name == NULL) {
-                fprintf(stderr, "unknown Unicode " DATA_NAME " name: %s\n", u);
-                exit(EXIT_FAILURE);
-        }
+        if (name == NULL)
+                die("unknown Unicode " DATA_NAME " name: %s\n", u);
 
         return name->c;
 }
@@ -72,7 +82,7 @@ parts(int last_char_part_1)
         puts("enum unicode_" DATA_NAME " {");
         for (int i = 0; i < (int)lengthof(names); i++)
                 printf("\tUNICODE_%s,\n", names[i].c);
-        puts("};\nstatic const int8_t " DATA_NAME "_data[][256] = {");
+        puts("};\n\nstatic const int8_t " DATA_NAME "_data[][256] = {");
         for (int i = 0, l = 0; i < (int)lengthof(pages); i++)
                 if (!pages[i].homogenous) {
                         printf("\t{ // page %d, index %d\n", i, l);

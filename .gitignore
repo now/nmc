@@ -9,10 +9,11 @@ build/config.sub
 build/depcomp
 build/install-sh
 build/missing
-build/ubreak
 build/ucategory
-build/uscript
+build/uwordbreak
 build/ylwrap
+data/UnicodeData-*.txt
+data/WordBreakProperty-*.txt
 .dirstamp
 Makefile
 Makefile.in

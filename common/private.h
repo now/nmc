@@ -7,6 +7,10 @@
 #define NMC_PRINTF(format_index, first_argument_index) \
         __attribute__((format(printf, format_index, first_argument_index)))
 
+#ifndef NORETURN
+#  define NORETURN __attribute__((noreturn))
+#endif
+
 #ifndef PURE
 #  define PURE __attribute__((pure))
 #endif

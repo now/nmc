@@ -4,20 +4,16 @@ AM_CPPFLAGS = -I$(top_srcdir)/common -I$(top_srcdir)/include
 AM_YFLAGS = --warnings=all,error --report=all
 
 noinst_PROGRAMS = \
-	build/ubreak \
 	build/ucategory \
-	build/uscript
-
-build_ubreak_SOURCES = \
-	build/ubreak.c \
-	build/udata.h
+	build/uwordbreak
 
 build_ucategory_SOURCES = \
 	build/ucategory.c \
 	build/udata.h
 
-build_uscript_SOURCES = \
-	build/uscript.c
+build_uwordbreak_SOURCES = \
+	build/uwordbreak.c \
+	build/udata.h
 
 include_HEADERS = \
 	include/nmc.h
@@ -60,14 +56,33 @@ src_nmc_LDADD = \
 	lib/libbuffer.a \
 	lib/libnmc.a
 
-lib/ubreak.h: $(srcdir)/build/ubreak
-	$(srcdir)/build/ubreak < LineBreak.txt > $@
+UNICODE_VERSION = 6.3.0
+UNICODE_BASE_URL = http://www.unicode.org/Public/$(UNICODE_VERSION)/ucd
+UNICODE_AUXILIARY_URL = http://www.unicode.org/Public/$(UNICODE_VERSION)/ucd/auxiliary
+UNICODE_DATA_TXT = UnicodeData-$(UNICODE_VERSION)d1.txt
+UNICODE_WORD_BREAK_PROPERTY_TXT = WordBreakProperty-$(UNICODE_VERSION)d1.txt
 
-lib/ucategory.h: $(srcdir)/build/ucategory
-	$(srcdir)/build/ucategory < UnicodeData.txt > $@
+data/$(UNICODE_DATA_TXT):
+	$(AM_V_GEN)rm -f $@ $@.tmp
+	$(AM_V_at)$(MKDIR_P) $(srcdir)/data
+	$(AM_V_at)$(WGET) -O$@.tmp $(UNICODE_BASE_URL)/$(UNICODE_DATA_TXT)
+	$(AM_V_at)mv $@.tmp $@
 
-lib/uscript.h: $(srcdir)/build/uscript
-	$(srcdir)/build/uscript < Scripts.txt > $@
+data/$(UNICODE_WORD_BREAK_PROPERTY_TXT):
+	$(AM_V_GEN)rm -f $@ $@.tmp
+	$(AM_V_at)$(MKDIR_P) $(srcdir)/data
+	$(AM_V_at)$(WGET) -O$@.tmp $(UNICODE_AUXILIARY_URL)/$(UNICODE_WORD_BREAK_PROPERTY_TXT)
+	$(AM_V_at)mv $@.tmp $@
+
+lib/ucategory.h: $(srcdir)/build/ucategory data/$(UNICODE_DATA_TXT)
+	$(AM_V_GEN)rm -f $@ $@.tmp
+	$(AM_V_at)$(srcdir)/build/ucategory < data/$(UNICODE_DATA_TXT) > $@.tmp
+	$(AM_V_at)mv $@.tmp $@
+
+lib/uwordbreak.h: $(srcdir)/build/uwordbreak data/$(UNICODE_WORD_BREAK_PROPERTY_TXT)
+	$(AM_V_GEN)rm -f $@ $@.tmp
+	$(AM_V_at)$(srcdir)/build/uwordbreak < data/$(UNICODE_WORD_BREAK_PROPERTY_TXT) > $@.tmp
+	$(AM_V_at)mv $@.tmp $@
 
 check_SCRIPTS = test/nmc
 
