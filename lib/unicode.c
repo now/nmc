@@ -91,6 +91,72 @@ uc_isaletterornumeric(uchar c)
         }
 }
 
+#define ROW(other, cr, lf, newline, aletter, numeric, katakana, extendnumlet, \
+            regional_indicator, midletter, midnumlet, midnum, format, extend) \
+        { [UNICODE_WORD_BREAK_OTHER] = other, \
+          [UNICODE_WORD_BREAK_CR] = cr, \
+          [UNICODE_WORD_BREAK_LF] = lf, \
+          [UNICODE_WORD_BREAK_NEWLINE] = newline, \
+          [UNICODE_WORD_BREAK_FORMAT] = format, \
+          [UNICODE_WORD_BREAK_EXTEND] = extend, \
+          [UNICODE_WORD_BREAK_ALETTER] = aletter, \
+          [UNICODE_WORD_BREAK_NUMERIC] = numeric, \
+          [UNICODE_WORD_BREAK_KATAKANA] = katakana, \
+          [UNICODE_WORD_BREAK_EXTENDNUMLET] = extendnumlet, \
+          [UNICODE_WORD_BREAK_REGIONAL_INDICATOR] = regional_indicator, \
+          [UNICODE_WORD_BREAK_MIDLETTER] = midletter, \
+          [UNICODE_WORD_BREAK_MIDNUMLET] = midnumlet, \
+          [UNICODE_WORD_BREAK_MIDNUM] = midnum }
+#define K(s) (s | (1 << 4))
+#define S(s) (s | (2 << 4))
+#define D(s) (s | (3 << 4))
+static const uint8_t wb_dfa[][UNICODE_WORD_BREAK_REGIONAL_INDICATOR + 1] = {
+        ROW(0,1,  2 ,2,  3 ,  4 ,  5 ,  6 ,  7 ,  0 ,  0 ,  0 ,K(0),K(0)), // Other
+        ROW(0,1,K(2),2,  3 ,  4 ,  5 ,  6 ,  7 ,  0 ,  0 ,  0 ,  0 ,  0 ), // CR
+        ROW(0,1,  2 ,2,  3 ,  4 ,  5 ,  6 ,  7 ,  0 ,  0 ,  0 ,  0 ,  0 ), // LF | Newline
+        ROW(0,1,  2 ,2,K(3),K(4),  5 ,K(6),  7 ,S(8),S(8),  0 ,K(3),K(3)), // ALetter
+        ROW(0,1,  2 ,2,K(3),K(4),  5 ,K(6),  7 ,  0 ,S(9),S(9),K(4),K(4)), // Numeric
+        ROW(0,1,  2 ,2,  3 ,  4 ,K(5),K(6),  7 ,  0 ,  0 ,  0 ,K(5),K(5)), // Katakana
+        ROW(0,1,  2 ,2,K(3),K(4),K(5),K(6),  7 ,  0 ,  0 ,  0 ,K(6),K(6)), // ExtendNumLet
+        ROW(0,1,  2 ,2,  3 ,  4 ,  5 ,  6 ,K(7),  0 ,  0 ,  0 ,K(7),K(7)), // Regional_Indicator
+        ROW(0,1,  2 ,2,D(3),  4 ,  5 ,  6 ,  7 ,  0 ,  0 ,  0 ,K(8),K(8)), // ALetter (MidLetter | MidNumLet)
+        ROW(0,1,  2 ,2,  3 ,D(4),  5 ,  6 ,  7 ,  0 ,  0 ,  0 ,K(9),K(9)), // Numeric (MidNum | MidNumLet)
+};
+#undef D
+#undef S
+#undef K
+
+void
+u_word_breaks(const char *string, size_t n, bool *breaks)
+{
+        const char *p = string;
+        const char *end = p + n;
+        bool *q = breaks;
+        bool *s = NULL;
+        uint8_t state = 2;
+        while (p < end) {
+                size_t l;
+                state = wb_dfa[state & 0xf][s_word_break(u_lref(p, &l))];
+                switch (state >> 4) {
+                case 1:
+                        *q = false;
+                        break;
+                case 2:
+                        s = q;
+                        *q = true;
+                        break;
+                case 3:
+                        *s = false;
+                        *q = false;
+                        break;
+                default:
+                        *q = true;
+                }
+                p += l;
+                q += l;
+        }
+}
+
 // The dfa table and decode function is © 2008–2010 Björn Höhrmann
 // <bjoern@hoehrmann.de>.  See http://bjoern.hoehrmann.de/utf-8/decoder/dfa/
 // for details.

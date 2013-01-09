@@ -56,32 +56,44 @@ src_nmc_LDADD = \
 	lib/libbuffer.a \
 	lib/libnmc.a
 
-UNICODE_VERSION = 6.3.0
+check_PROGRAMS = \
+	test/wordbreak
+
+test_wordbreak_SOURCES = \
+	test/wordbreak.c
+test_wordbreak_CFLAGS = -Ilib
+test_wordbreak_LDADD = lib/libnmc.a
+
+UNICODE_VERSION = 6.2.0
 UNICODE_BASE_URL = http://www.unicode.org/Public/$(UNICODE_VERSION)/ucd
 UNICODE_AUXILIARY_URL = http://www.unicode.org/Public/$(UNICODE_VERSION)/ucd/auxiliary
-UNICODE_DATA_TXT = UnicodeData-$(UNICODE_VERSION)d1.txt
-UNICODE_WORD_BREAK_PROPERTY_TXT = WordBreakProperty-$(UNICODE_VERSION)d1.txt
 
-data/$(UNICODE_DATA_TXT):
+data/UnicodeData.txt:
 	$(AM_V_GEN)rm -f $@ $@.tmp
 	$(AM_V_at)$(MKDIR_P) $(srcdir)/data
-	$(AM_V_at)$(WGET) -O$@.tmp $(UNICODE_BASE_URL)/$(UNICODE_DATA_TXT)
+	$(AM_V_at)$(WGET) -O$@.tmp $(UNICODE_BASE_URL)/UnicodeData.txt
 	$(AM_V_at)mv $@.tmp $@
 
-data/$(UNICODE_WORD_BREAK_PROPERTY_TXT):
+data/WordBreakProperty.txt:
 	$(AM_V_GEN)rm -f $@ $@.tmp
 	$(AM_V_at)$(MKDIR_P) $(srcdir)/data
-	$(AM_V_at)$(WGET) -O$@.tmp $(UNICODE_AUXILIARY_URL)/$(UNICODE_WORD_BREAK_PROPERTY_TXT)
+	$(AM_V_at)$(WGET) -O$@.tmp $(UNICODE_AUXILIARY_URL)/WordBreakProperty.txt
 	$(AM_V_at)mv $@.tmp $@
 
-lib/ucategory.h: $(srcdir)/build/ucategory data/$(UNICODE_DATA_TXT)
+test/data/WordBreakTest.txt:
 	$(AM_V_GEN)rm -f $@ $@.tmp
-	$(AM_V_at)$(srcdir)/build/ucategory < data/$(UNICODE_DATA_TXT) > $@.tmp
+	$(AM_V_at)$(MKDIR_P) $(testdir)/data
+	$(AM_V_at)$(WGET) -O$@.tmp $(UNICODE_AUXILIARY_URL)/WordBreakTest.txt
 	$(AM_V_at)mv $@.tmp $@
 
-lib/uwordbreak.h: $(srcdir)/build/uwordbreak data/$(UNICODE_WORD_BREAK_PROPERTY_TXT)
+lib/ucategory.h: $(srcdir)/build/ucategory data/UnicodeData.txt
 	$(AM_V_GEN)rm -f $@ $@.tmp
-	$(AM_V_at)$(srcdir)/build/uwordbreak < data/$(UNICODE_WORD_BREAK_PROPERTY_TXT) > $@.tmp
+	$(AM_V_at)$(srcdir)/build/ucategory < data/UnicodeData.txt > $@.tmp
+	$(AM_V_at)mv $@.tmp $@
+
+lib/uwordbreak.h: $(srcdir)/build/uwordbreak data/WordBreakProperty.txt
+	$(AM_V_GEN)rm -f $@ $@.tmp
+	$(AM_V_at)$(srcdir)/build/uwordbreak < data/WordBreakProperty.txt > $@.tmp
 	$(AM_V_at)mv $@.tmp $@
 
 check_SCRIPTS = test/nmc
@@ -137,8 +149,12 @@ maintainer-check-valgrind: $(BUILT_SOURCES) all-am $(testdir)/atconfig $(testdir
 	  echo '$(TESTSUITE): Leaving directory `$(testdir)'\'; \
 	fi
 
+.PHONY: maintainer-check-wordbreak
+maintainer-check-wordbreak: $(testdir)/wordbreak $(testdir)/data/WordBreakTest.txt
+	$(testdir)/wordbreak < $(testdir)/data/WordBreakTest.txt
+
 .PHONY: maintainer-check
-maintainer-check: maintainer-check-valgrind
+maintainer-check: maintainer-check-valgrind maintainer-check-wordbreak
 
 EXTRA_DIST = \
 	     $(testdir)/atlocal.in \

@@ -3,6 +3,8 @@ typedef int32_t uchar;
 bool uc_issolid(uchar c);
 bool uc_isaletterornumeric(uchar c);
 
+void u_word_breaks(const char *string, size_t n, bool *breaks);
+
 #define U_BAD_INPUT_CHAR ((uchar)-1)
 
 extern const char * const u_skip_lengths;

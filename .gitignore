@@ -12,8 +12,8 @@ build/missing
 build/ucategory
 build/uwordbreak
 build/ylwrap
-data/UnicodeData-*.txt
-data/WordBreakProperty-*.txt
+data/UnicodeData.txt
+data/WordBreakProperty.txt
 .dirstamp
 Makefile
 Makefile.in
@@ -32,8 +32,10 @@ src/nmc
 stamp-h1
 test/atconfig
 test/atlocal
+test/data/WordBreakTest.txt
 test/nmc
 test/package.m4
 test/testsuite
 test/testsuite.dir
+test/wordbreak
 testsuite.log
