@@ -708,6 +708,20 @@ AT_NMC_CHECK([title],
 
 AT_CLEANUP
 
+AT_SETUP([Code inline termination: ‹››])
+
+AT_DATA([title],
+[[T
+
+  ‹››
+]])
+
+AT_NMC_CHECK([title],
+[[  <title>T</title>
+  <p><code>›</code></p>]])
+
+AT_CLEANUP
+
 AT_SETUP([Document consisting of a title followed by a paragraph containing a code inline containing code inline end characters])
 
 AT_DATA([title],
@@ -1363,4 +1377,3 @@ AT_NMC_CHECK([title],
   <p>—</p>]])
 
 AT_CLEANUP
-
