@@ -315,12 +315,12 @@ dedents(struct parser *parser, const char *begin, size_t spaces)
 typedef bool (*isfn)(uchar);
 
 static inline size_t
-length_of_run(struct parser *parser, isfn is)
+length_of_run(const char *p, isfn is)
 {
-        const char *end = parser->p;
+        const char *end = p;
         while (is(u_dref(end)))
                 end = u_next(end);
-        return end - parser->p;
+        return end - p;
 }
 
 #define U_SUPERSCRIPT_0 ((uchar)0x2070)
@@ -345,9 +345,9 @@ is_superscript(uchar c)
 }
 
 static inline size_t
-superscript(struct parser *parser)
+superscript(const char *p)
 {
-        return length_of_run(parser, is_superscript);
+        return length_of_run(p, is_superscript);
 }
 
 #define U_SUBSCRIPT_0 ((uchar)0x2080)
@@ -360,9 +360,9 @@ is_subscript(uchar c)
 }
 
 static inline size_t
-subscript(struct parser *parser)
+subscript(const char *p)
 {
-        return length_of_run(parser, is_subscript);
+        return length_of_run(p, is_subscript);
 }
 
 static inline bool
@@ -755,9 +755,9 @@ bol(struct parser *parser, YYLTYPE *location, YYSTYPE *value)
         parser->bol = false;
 
         size_t length;
-        if ((length = subscript(parser)) > 0)
+        if ((length = subscript(parser->p)) > 0)
                 return bol_token(parser, location, length, ENUMERATION);
-        else if ((length = superscript(parser)) > 0)
+        else if ((length = superscript(parser->p)) > 0)
                 return footnote(parser, location, value, length);
 
         uchar c = u_lref(parser->p, &length);
@@ -890,39 +890,6 @@ eol(struct parser *parser, YYLTYPE *location, YYSTYPE *value)
         }
 }
 
-static inline bool
-is_superscript_or_space_or_end(const char *end)
-{
-        return is_space_or_end(end) || is_superscript(u_dref(end));
-}
-
-static inline bool
-is_group_end(const char *end)
-{
-        if (*end == '}') {
-                do {
-                        end++;
-                } while (*end == '}');
-                return is_superscript_or_space_or_end(end);
-        }
-
-        return false;
-}
-
-// TODO Rename to be more explicit
-static inline bool
-is_word_end(const char *end)
-{
-        return is_superscript_or_space_or_end(end) ||
-                is_group_end(end);
-}
-
-static inline bool
-is_inline_end(const char *end)
-{
-        return is_word_end(end);
-}
-
 #define U_SINGLE_RIGHT_POINTING_ANGLE_QUOTATION_MARK ((uchar)0x203a)
 
 static int
@@ -1017,6 +984,34 @@ anchor_node_new(YYLTYPE *location, const char *string, size_t length)
 #define U_SINGLE_LEFT_POINTING_ANGLE_QUOTATION_MARK ((uchar)0x2039)
 #define U_SUPERSCRIPT_PLUS_SIGN ((uchar)0x207a)
 
+static inline bool
+is_inline_symbol(const char *end)
+{
+        switch (u_dref(end)) {
+        case '|':
+        case '/':
+        case '{':
+        case U_SINGLE_LEFT_POINTING_ANGLE_QUOTATION_MARK:
+        // NOTE This isn’t matched, as it may only appear after a superscript.
+        // case U_SUPERSCRIPT_PLUS_SIGN:
+                return true;
+        default:
+                return false;
+        }
+}
+
+static inline bool
+is_word_end(const char *string, const char *end)
+{
+        uchar c;
+        size_t l;
+        return is_space_or_end(end) ||
+                (is_inline_symbol(end) &&
+                 !u_isafteraletterornumeric(string, end)) ||
+                (((c = u_lref(end, &l)) == '}' || is_superscript(c)) &&
+                 !uc_isaletterornumeric(u_dref(end + l)));
+}
+
 static int
 parser_lex(struct parser *parser, YYLTYPE *location, YYSTYPE *value)
 {
@@ -1050,6 +1045,8 @@ parser_lex(struct parser *parser, YYLTYPE *location, YYSTYPE *value)
                 return emphasis(parser, location, value);
         case '{':
                 return token(parser, location, parser->p + length, BEGINGROUP);
+        case '}':
+                return token(parser, location, parser->p + length, ENDGROUP);
         case U_SINGLE_LEFT_POINTING_ANGLE_QUOTATION_MARK:
                 return code(parser, location, value);
         case U_SUPERSCRIPT_PLUS_SIGN:
@@ -1058,21 +1055,20 @@ parser_lex(struct parser *parser, YYLTYPE *location, YYSTYPE *value)
                 return token(parser, location, parser->p + length, ANCHORSEPARATOR);
         }
 
-        if (is_group_end(end))
-                return token(parser, location, parser->p + 1, ENDGROUP);
-        else if ((length = superscript(parser)) > 0) {
-                // TODO Only catch this if followed by is_inline_end().
+        // TODO We might not need to check for uc_isaletterornumeric.
+        if (is_superscript(c) &&
+            (length += superscript(parser->p + length),
+             !uc_isaletterornumeric(u_dref(parser->p + length)))) {
                 const char *begin = parser->p;
                 int r = token(parser, location, parser->p + length, ANCHOR);
                 value->node = anchor_node_new(location, begin, length);
                 return r;
         }
 
-        while (!is_word_end(end))
+        while (!is_word_end(parser->p, end))
                 end++;
         if (end == parser->p)
                 return token(parser, location, parser->p, END);
-
         return substring(parser, location, value, end, WORD);
 }
 

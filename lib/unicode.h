@@ -3,6 +3,7 @@ typedef int32_t uchar;
 bool uc_issolid(uchar c);
 bool uc_isaletterornumeric(uchar c);
 
+bool u_isafteraletterornumeric(const char *string, const char *p);
 void u_word_breaks(const char *string, size_t n, bool *breaks);
 
 #define U_BAD_INPUT_CHAR ((uchar)-1)
@@ -10,6 +11,7 @@ void u_word_breaks(const char *string, size_t n, bool *breaks);
 extern const char * const u_skip_lengths;
 
 #define u_next(p) ((p) + u_skip_lengths[*(const unsigned char *)(p)])
+char *u_prev_s(const char *string, const char *p);
 
 PURE uchar u_dref(const char *u);
 

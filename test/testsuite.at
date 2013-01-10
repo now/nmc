@@ -803,6 +803,34 @@ AT_NMC_CHECK_FAIL([title], [3:3: missing ending ‘/’ for emphasis inline])
 
 AT_CLEANUP
 
+AT_SETUP([Inline non-termination rules: a/…])
+
+AT_DATA([title],
+[[T
+
+  /Truë/False/
+]])
+
+AT_NMC_CHECK([title],
+[[  <title>T</title>
+  <p><emphasis>Truë/False</emphasis></p>]])
+
+AT_CLEANUP
+
+AT_SETUP([Inline non-termination rules: …²a])
+
+AT_DATA([title],
+[[T
+
+  2²a=4a
+]])
+
+AT_NMC_CHECK([title],
+[[  <title>T</title>
+  <p>2²a=4a</p>]])
+
+AT_CLEANUP
+
 AT_SETUP([Inline termination rules: ,])
 
 AT_DATA([title],
@@ -830,6 +858,20 @@ AT_DATA([title],
 AT_NMC_CHECK([title],
 [[  <title>T</title>
   <p><abbreviation for="A"><emphasis>Yes</emphasis></abbreviation></p>]])
+
+AT_CLEANUP
+
+AT_SETUP([Inline start/termination rules: (…)])
+
+AT_DATA([title],
+[[T
+
+  (/Parenthetical./)
+]])
+
+AT_NMC_CHECK([title],
+[[  <title>T</title>
+  <p>(<emphasis>Parenthetical.</emphasis>)</p>]])
 
 AT_CLEANUP
 

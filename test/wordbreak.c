@@ -62,7 +62,7 @@ main(void)
                 }
                 *q = '\0';
                 bool actual[lengthof(expected)];
-                u_word_breaks(chars, q - chars, actual, false);
+                u_word_breaks(chars, q - chars, actual);
                 actual[q - chars] = true;
                 for (const char *r = chars; *r != '\0'; r = u_next(r))
                         if (actual[r - chars] != expected[r - chars]) {
@@ -71,7 +71,6 @@ main(void)
                                 fputs("≠", stderr);
                                 output_breaks(expected, chars);
                                 fputc('\n', stderr);
-                                u_word_breaks(chars, q - chars, actual, true);
                                 break;
                         }
         }

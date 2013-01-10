@@ -91,6 +91,37 @@ uc_isaletterornumeric(uchar c)
         }
 }
 
+char *
+u_prev_s(const char *string, const char *p)
+{
+        for (p--; p >= string; p--)
+                if ((*p & 0xc0) != 0x80)
+                        return (char *)p;
+        return NULL;
+}
+
+bool
+u_isafteraletterornumeric(const char *string, const char *p)
+{
+        while (p >= string) {
+                p = u_prev_s(string, p);
+                if (p == NULL)
+                        return false;
+                uchar c = u_dref(p);
+                switch (s_word_break(c)) {
+                case UNICODE_WORD_BREAK_ALETTER:
+                case UNICODE_WORD_BREAK_NUMERIC:
+                        return true;
+                case UNICODE_WORD_BREAK_FORMAT:
+                case UNICODE_WORD_BREAK_EXTEND:
+                        break;
+                default:
+                        return false;
+                }
+        }
+        return true;
+}
+
 #define ROW(other, cr, lf, newline, aletter, numeric, katakana, extendnumlet, \
             regional_indicator, midletter, midnumlet, midnum, format, extend) \
         { [UNICODE_WORD_BREAK_OTHER] = other, \
