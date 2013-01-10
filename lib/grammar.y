@@ -919,17 +919,21 @@ oom:
         return token(parser, location, end, CODE);
 }
 
-// TODO Also, in ‹//›, second ‹/› shouldn’t be seen as an end.
-// TODO Also, in ‹/…//›, second ‹/› shouldn’t be seen as an end.
 static int
 emphasis(struct parser *parser, YYLTYPE *location, YYSTYPE *value)
 {
         const char *begin = parser->p + 1;
         const char *end = begin;
-        while (!is_end(end) &&
-               !(*end == '/' && (is_space_or_end(end + 1) ||
-                                 !uc_isaletterornumeric(u_dref(end + 1)))))
+        while (!is_end(end)) {
+                if (*end == '/' && end - begin > 0) {
+                        while (*(end + 1) == '/')
+                                end++;
+                        if (is_space_or_end(end + 1) ||
+                            !uc_isaletterornumeric(u_dref(end + 1)))
+                                break;
+                }
                 end++;
+        }
         const char *send = end;
         if (is_end(end)) {
                 if (!parser_error(parser, &parser->location,
