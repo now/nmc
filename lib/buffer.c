@@ -15,26 +15,6 @@
 
 #include "buffer.h"
 
-struct buffer *
-buffer_new(const char *string, size_t length)
-{
-        struct buffer *n = malloc(sizeof(struct buffer));
-        n->length = n->allocated = 0;
-        n->content = NULL;
-        if (!buffer_append(n, string, length)) {
-                free(n);
-                return NULL;
-        }
-        return n;
-}
-
-void
-buffer_free(struct buffer *buffer)
-{
-        free(buffer->content);
-        free(buffer);
-}
-
 static bool
 resize(struct buffer *buffer, size_t n)
 {
