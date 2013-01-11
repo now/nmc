@@ -518,7 +518,8 @@ auxiliary_node_new_matches(const char *name, const char *buffer,
         va_list args;
         va_start(args, n);
         for (int i = 0; i < n; i++) {
-                /* TODO Check that rm_so/rm_eo ≠ -1 */
+                assert(m->rm_so != -1);
+                assert(m->rm_eo != -1);
                 a->name = va_arg(args, const char *);
                 a->value = mstrdup(buffer + m->rm_so, m->rm_eo - m->rm_so);
                 if (a->value == NULL) {
@@ -783,8 +784,7 @@ bol(struct parser *parser, YYLTYPE *location, YYSTYPE *value)
                 return bol_token(parser, location, length, QUOTE);
         case '|':
                 if (*(parser->p + 1) == '-') {
-                        // TODO This should probably be + 2.
-                        const char *end = parser->p + 3;
+                        const char *end = parser->p + 2;
                         while (!is_end(end))
                                 end++;
                         return token(parser, location, end, TABLESEPARATOR);
@@ -878,7 +878,6 @@ eol(struct parser *parser, YYLTYPE *location, YYSTYPE *value)
                 } else if (spaces < parser->indent) {
                         locate(parser, location, spaces + 1);
                         parser->location.last_column--;
-                        // TODO Complain about invalid dedent?
                         if (spaces % 2 != 0)
                                 return token(parser, NULL, end, SPACE);
                         parser->bol = true;
@@ -910,9 +909,9 @@ code(struct parser *parser, YYLTYPE *location, YYSTYPE *value)
                         goto oom;
                 }
         } else {
-                // TODO do { … } while (…) instead?
-                while (u_dref(end) == U_SINGLE_RIGHT_POINTING_ANGLE_QUOTATION_MARK)
+                do {
                         end += length;
+                } while (u_dref(end) == U_SINGLE_RIGHT_POINTING_ANGLE_QUOTATION_MARK);
                 send = end - length;
         }
         value->node = text_node_new_dup(NMC_NODE_CODE, begin, send - begin);

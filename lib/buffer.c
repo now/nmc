@@ -51,8 +51,6 @@ available(struct buffer *buffer, size_t size)
 {
         if (size <= buffer->allocated)
                 return true;
-        // TODO libxml2 uses 4096 as default size.  We might want something
-        // slightly larger here.
         size_t n = buffer->allocated > 0 ? buffer->allocated * 2 : size + 32;
         while (n < size) {
                 if (n > SIZE_MAX / 2)
@@ -67,9 +65,6 @@ buffer_append(struct buffer *buffer, const char *string, size_t length)
 {
         if (length == 0)
                 return true;
-        // TODO Is this check needed?
-        if (string == NULL)
-                return false;
         if (!available(buffer, buffer->length + length + 1))
                 return false;
         memcpy(buffer->content + buffer->length, string, length);
