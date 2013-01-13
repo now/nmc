@@ -889,6 +889,25 @@ eol(struct parser *parser, YYLTYPE *location, YYSTYPE *value)
         }
 }
 
+#define U_SINGLE_RIGHT_QUOTATION_MARK ((uchar)0x2019)
+
+static int
+quoted(struct parser *parser, YYLTYPE *location, YYSTYPE *value, const char **parsed)
+{
+        const char *begin = parser->p;
+        const char *end = begin + 3;
+        if (is_end(end)) {
+                *parsed = end;
+                return END;
+        }
+        end = u_next(end);
+        if (u_dref(end) != U_SINGLE_RIGHT_QUOTATION_MARK) {
+                *parsed = end;
+                return END;
+        }
+        return substring(parser, location, value, end, WORD);
+}
+
 #define U_SINGLE_RIGHT_POINTING_ANGLE_QUOTATION_MARK ((uchar)0x203a)
 
 static int
@@ -985,6 +1004,7 @@ anchor_node_new(YYLTYPE *location, const char *string, size_t length)
         return (struct nmc_node *)n;
 }
 
+#define U_SINGLE_LEFT_QUOTATION_MARK ((uchar)0x2018)
 #define U_SINGLE_LEFT_POINTING_ANGLE_QUOTATION_MARK ((uchar)0x2039)
 #define U_SUPERSCRIPT_PLUS_SIGN ((uchar)0x207a)
 
@@ -995,6 +1015,7 @@ is_inline_symbol(const char *end)
         case '|':
         case '/':
         case '{':
+        case U_SINGLE_LEFT_QUOTATION_MARK:
         case U_SINGLE_LEFT_POINTING_ANGLE_QUOTATION_MARK:
         // NOTE This isn’t matched, as it may only appear after a superscript.
         // case U_SUPERSCRIPT_PLUS_SIGN:
@@ -1051,6 +1072,12 @@ parser_lex(struct parser *parser, YYLTYPE *location, YYSTYPE *value)
                 return token(parser, location, parser->p + length, BEGINGROUP);
         case '}':
                 return token(parser, location, parser->p + length, ENDGROUP);
+        case U_SINGLE_LEFT_QUOTATION_MARK: {
+                int r = quoted(parser, location, value, &end);
+                if (r != END)
+                        return r;
+                goto word;
+        }
         case U_SINGLE_LEFT_POINTING_ANGLE_QUOTATION_MARK:
                 return code(parser, location, value);
         case U_SUPERSCRIPT_PLUS_SIGN:
@@ -1069,6 +1096,7 @@ parser_lex(struct parser *parser, YYLTYPE *location, YYSTYPE *value)
                 return r;
         }
 
+word:
         while (!is_word_end(parser->p, end))
                 end++;
         if (end == parser->p)

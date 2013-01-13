@@ -126,9 +126,9 @@
 
     = Definitions. = A list of definitions consist of one definition or more.
     = Definition. = A definition consists of a term followed by one more blocks
-      that define the meaning of the term.
+        that define the meaning of the term.
     = Term. = A term consists of a “= ” tag in the indent followed by
-      unprocessed text up until a terminating “. =”.
+        unprocessed text up until a terminating “. =”.
 
       The above list of definitions was thus written as
 
@@ -194,7 +194,7 @@
 
     | Part  | Consists of |
     |-------+-------------|
-    | Table | Head, Body  |
+    | Table | Head?, Body |
     | Head  | Row         |
     | Body  | Rows        |
     | Row   | Cells       |
@@ -205,7 +205,7 @@
 
         | Part  | Consists of |
         |-------+-------------|
-        | Table | Head, Body  |
+        | Table | Head?, Body |
         | Head  | Row         |
         | Body  | Rows        |
         | Row   | Cells       |
