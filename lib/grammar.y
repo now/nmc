@@ -889,22 +889,58 @@ eol(struct parser *parser, YYLTYPE *location, YYSTYPE *value)
         }
 }
 
+#define U_SINGLE_LEFT_QUOTATION_MARK ((uchar)0x2018)
+#define U_SINGLE_LEFT_POINTING_ANGLE_QUOTATION_MARK ((uchar)0x2039)
+#define U_SUPERSCRIPT_PLUS_SIGN ((uchar)0x207a)
+
+static inline bool
+is_inline_symbol(const char *end)
+{
+        switch (u_dref(end)) {
+        case '|':
+        case '/':
+        case '{':
+        case U_SINGLE_LEFT_QUOTATION_MARK:
+        case U_SINGLE_LEFT_POINTING_ANGLE_QUOTATION_MARK:
+        // NOTE This isn’t matched, as it may only appear after a superscript.
+        // case U_SUPERSCRIPT_PLUS_SIGN:
+                return true;
+        default:
+                return false;
+        }
+}
+
+static inline bool
+is_word_end(const char *string, const char *end)
+{
+        uchar c;
+        size_t l;
+        return is_space_or_end(end) ||
+                (is_inline_symbol(end) &&
+                 !u_isafteraletterornumeric(string, end)) ||
+                (((c = u_lref(end, &l)) == '}' || is_superscript(c)) &&
+                 !uc_isaletterornumeric(u_dref(end + l)));
+}
+
+static inline int
+word(struct parser *parser, YYLTYPE *location, YYSTYPE *value, const char *end)
+{
+        while (!is_word_end(parser->p, end))
+                end++;
+        if (end == parser->p)
+                return token(parser, location, parser->p, END);
+        return substring(parser, location, value, end, WORD);
+}
+
 #define U_SINGLE_RIGHT_QUOTATION_MARK ((uchar)0x2019)
 
 static int
-quoted(struct parser *parser, YYLTYPE *location, YYSTYPE *value, const char **parsed)
+quoted(struct parser *parser, YYLTYPE *location, YYSTYPE *value)
 {
-        const char *begin = parser->p;
-        const char *end = begin + 3;
-        if (is_end(end)) {
-                *parsed = end;
-                return END;
-        }
-        end = u_next(end);
-        if (u_dref(end) != U_SINGLE_RIGHT_QUOTATION_MARK) {
-                *parsed = end;
-                return END;
-        }
+        const char *end = parser->p + 3;
+        if (is_end(end) ||
+            (u_dref(end = u_next(end)) != U_SINGLE_RIGHT_QUOTATION_MARK))
+                return word(parser, location, value, end);
         return substring(parser, location, value, end, WORD);
 }
 
@@ -1004,39 +1040,6 @@ anchor_node_new(YYLTYPE *location, const char *string, size_t length)
         return (struct nmc_node *)n;
 }
 
-#define U_SINGLE_LEFT_QUOTATION_MARK ((uchar)0x2018)
-#define U_SINGLE_LEFT_POINTING_ANGLE_QUOTATION_MARK ((uchar)0x2039)
-#define U_SUPERSCRIPT_PLUS_SIGN ((uchar)0x207a)
-
-static inline bool
-is_inline_symbol(const char *end)
-{
-        switch (u_dref(end)) {
-        case '|':
-        case '/':
-        case '{':
-        case U_SINGLE_LEFT_QUOTATION_MARK:
-        case U_SINGLE_LEFT_POINTING_ANGLE_QUOTATION_MARK:
-        // NOTE This isn’t matched, as it may only appear after a superscript.
-        // case U_SUPERSCRIPT_PLUS_SIGN:
-                return true;
-        default:
-                return false;
-        }
-}
-
-static inline bool
-is_word_end(const char *string, const char *end)
-{
-        uchar c;
-        size_t l;
-        return is_space_or_end(end) ||
-                (is_inline_symbol(end) &&
-                 !u_isafteraletterornumeric(string, end)) ||
-                (((c = u_lref(end, &l)) == '}' || is_superscript(c)) &&
-                 !uc_isaletterornumeric(u_dref(end + l)));
-}
-
 static int
 parser_lex(struct parser *parser, YYLTYPE *location, YYSTYPE *value)
 {
@@ -1046,22 +1049,22 @@ parser_lex(struct parser *parser, YYLTYPE *location, YYSTYPE *value)
         if (parser->bol)
                 return bol(parser, location, value);
 
-        const char *end = parser->p;
-
         if (parser->want == TITLE) {
                 parser->want = ERROR;
-                value->node = text_node_new(NMC_NODE_TEXT, text(parser, location, end));
+                value->node = text_node_new(NMC_NODE_TEXT, text(parser, location, parser->p));
                 return TITLE;
         }
 
         size_t length;
-        uchar c = u_lref(end, &length);
+        uchar c = u_lref(parser->p, &length);
         switch (c) {
-        case ' ':
+        case ' ': {
+                const char *end = parser->p;
                 do {
                         end++;
                 } while (*end == ' ');
                 return token(parser, location, end, SPACE);
+        }
         case '\n':
                 return eol(parser, location, value);
         case '|':
@@ -1072,12 +1075,8 @@ parser_lex(struct parser *parser, YYLTYPE *location, YYSTYPE *value)
                 return token(parser, location, parser->p + length, BEGINGROUP);
         case '}':
                 return token(parser, location, parser->p + length, ENDGROUP);
-        case U_SINGLE_LEFT_QUOTATION_MARK: {
-                int r = quoted(parser, location, value, &end);
-                if (r != END)
-                        return r;
-                goto word;
-        }
+        case U_SINGLE_LEFT_QUOTATION_MARK:
+                return quoted(parser, location, value);
         case U_SINGLE_LEFT_POINTING_ANGLE_QUOTATION_MARK:
                 return code(parser, location, value);
         case U_SUPERSCRIPT_PLUS_SIGN:
@@ -1096,12 +1095,7 @@ parser_lex(struct parser *parser, YYLTYPE *location, YYSTYPE *value)
                 return r;
         }
 
-word:
-        while (!is_word_end(parser->p, end))
-                end++;
-        if (end == parser->p)
-                return token(parser, location, parser->p, END);
-        return substring(parser, location, value, end, WORD);
+        return word(parser, location, value, parser->p);
 }
 
 static int
