@@ -741,7 +741,7 @@ is_bol_symbol(const char *end)
         case U_SECTION_SIGN:
         case U_BULLET:
         case U_EM_DASH:
-        case '/':
+        case '=':
         case '>':
         case '|':
                 return true;

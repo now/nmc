@@ -21,7 +21,7 @@ struct nmc_option {
         const char *help;
 } options[] = {
         { 'h', "help", no_argument, NULL, "Display this help" },
-        { 'v', "version", no_argument, NULL, "Display version string" },
+        { 'V', "version", no_argument, NULL, "Display version string" },
         { '\0', NULL, no_argument, NULL, NULL }
 };
 #define options_for_each(item) \
