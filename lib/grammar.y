@@ -938,10 +938,11 @@ static int
 quoted(struct parser *parser, YYLTYPE *location, YYSTYPE *value)
 {
         const char *end = parser->p + 3;
+        const char *nend;
         if (is_end(end) ||
-            (u_dref(end = u_next(end)) != U_SINGLE_RIGHT_QUOTATION_MARK))
+            (u_dref(nend = u_next(end)) != U_SINGLE_RIGHT_QUOTATION_MARK))
                 return word(parser, location, value, end);
-        return substring(parser, location, value, end, WORD);
+        return substring(parser, location, value, nend, WORD);
 }
 
 #define U_SINGLE_RIGHT_POINTING_ANGLE_QUOTATION_MARK ((uchar)0x203a)

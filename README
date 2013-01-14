@@ -183,12 +183,12 @@
       Tables consist of zero or one rows that make up the head of the table,
       followed by one or more rows that make up its body.  The head is, if
       present, separated from the body by a separator line.  Each row consists
-      of one or more cells demarkated by ‘|’ symbols, where the first cells
+      of one or more cells demarkated by ‘‹|›’ symbols, where the first cells
       left demarkation symbol appears, as is usual, in the indent.  The
-      separator line is tagged by “|-” and may be followed by any content.  For
-      clarity, it should display nicely with the rest of the table, continuing
-      the sequence of ‘-’ across each column, using ‘+’ signs where it
-      intersects with columns, and be terminated by a ‘|’.
+      separator line is tagged by “‹|-›” and may be followed by any content.
+      For clarity, it should display nicely with the rest of the table,
+      continuing the sequence of ‘-’ across each column, using ‘+’ signs where
+      it intersects with columns, and be terminated by a ‘‹|›’.
 
       Thus, the table
 
