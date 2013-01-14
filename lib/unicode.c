@@ -104,10 +104,16 @@ bool
 u_isafteraletterornumeric(const char *string, const char *p)
 {
         while (p >= string) {
+        next:
                 p = u_prev_s(string, p);
                 if (p == NULL)
                         return false;
                 uchar c = u_dref(p);
+                switch (c) {
+                case ':':
+                case '/':
+                        goto next;
+                }
                 switch (s_word_break(c)) {
                 case UNICODE_WORD_BREAK_ALETTER:
                 case UNICODE_WORD_BREAK_NUMERIC:
