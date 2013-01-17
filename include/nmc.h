@@ -66,7 +66,7 @@ enum nmc_node_name
         NMC_NODE_HEAD,
         NMC_NODE_BODY,
         NMC_NODE_ROW,
-        NMC_NODE_ENTRY,
+        NMC_NODE_CELL,
         NMC_NODE_SECTION,
         NMC_NODE_CODE,
         NMC_NODE_EMPHASIS,

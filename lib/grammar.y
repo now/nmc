@@ -145,7 +145,7 @@ static void nmc_node_unlink_and_free(struct nmc_node *node, struct parser *parse
 %token ATTRIBUTION
 %token TABLESEPARATOR
 %token ROW
-%token ENTRYSEPARATOR "entry separator"
+%token CELLSEPARATOR "cell separator"
 %token <node> CODEBLOCK
 %token <footnote> FOOTNOTE
 %token SECTION
@@ -182,8 +182,8 @@ static void nmc_node_unlink_and_free(struct nmc_node *node, struct parser *parse
 %type <nodes> definitionitems
 %type <node> line attribution
 %type <nodes> quotecontent lines
-%type <node> head body row entry
-%type <nodes> headbody rows entries
+%type <node> head body row cell
+%type <nodes> headbody rows cells
 %type <nodes> inlines sinlines
 %type <node> oanchoredinline anchoredinline inline
 %type <node> item firstparagraph
@@ -1069,7 +1069,7 @@ parser_lex(struct parser *parser, YYLTYPE *location, YYSTYPE *value)
         case '\n':
                 return eol(parser, location, value);
         case '|':
-                return token(parser, location, parser->p + length, ENTRYSEPARATOR);
+                return token(parser, location, parser->p + length, CELLSEPARATOR);
         case '/':
                 return emphasis(parser, location, value);
         case '{':
@@ -1438,12 +1438,12 @@ body: rows %prec NotBlock { M($$ = parent(NMC_NODE_BODY, $1)); };
 rows: row { $$ = nodes($1); }
 | rows row { $$ = sibling($1, $2); };
 
-row: ROW entries ENTRYSEPARATOR { M($$ = parent(NMC_NODE_ROW, $2)); };
+row: ROW cells CELLSEPARATOR { M($$ = parent(NMC_NODE_ROW, $2)); };
 
-entries: entry { $$ = nodes($1); }
-| entries ENTRYSEPARATOR entry { $$ = sibling($1, $3); };
+cells: cell { $$ = nodes($1); }
+| cells CELLSEPARATOR cell { $$ = sibling($1, $3); };
 
-entry: inlines { M($$ = parent(NMC_NODE_ENTRY, $1)); };
+cell: inlines { M($$ = parent(NMC_NODE_CELL, $1)); };
 
 inlines: ospace sinlines ospace { $$ = textify($2); };
 
