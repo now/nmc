@@ -1,0 +1,42 @@
+                                    NMC(1)
+
+§ Name
+
+    nmc - convert NoMarks text to NoMarks XML
+
+§ Synopsis
+
+      nmc [OPTION]... < INPUT > OUTPUT
+
+§ Description
+
+    The ‹nmc› command processes its input as NoMarks text and outputs it as
+    NoMarks XML.
+
+§ Options
+
+  = -h, --help. = Display usage information
+  = -V, --version. = Display version information
+
+§ Exit Status
+
+    The exit status of ‹nmc› will be one of the following:
+
+  = 0. = The conversion completed successfully
+  = 1. = The conversion failed
+
+    In case of failure, any errors will be output on the standard error stream.
+
+§ Examples
+
+    Convert NoMarks text ‹document.nmt› to NoMarks XML ‹document.nml›:
+
+      % nmc < document.nmt > document.nml
+
+§ See Also
+
+    You can read about the NoMarks text format in nmt(7).
+
+§ Authors
+
+    Nikolai Weibull wrote nmc.

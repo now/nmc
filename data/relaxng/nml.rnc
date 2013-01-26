@@ -1,0 +1,191 @@
+common.number.datatype = xsd:nonNegativeInteger { pattern = '\d+' }
+
+common.xml.base.attribute = attribute xml:base { xsd:anyURI }
+common.xml.id.attribute = attribute xml:id { xsd:ID }
+common.xml.lang.attribute = attribute xml:lang { xsd:language }
+common.class.attribute = attribute class { xsd:NMTOKENS }
+
+common.attributes =
+  common.xml.base.attribute?,
+  common.xml.id.attribute?,
+  common.xml.lang.attribute?,
+  common.class.attribute?
+
+common.inline.elements = notAllowed
+# TODO This seems wrong.
+common.block.elements = common.inline.elements
+
+common.inline.content = (text | common.inline.elements)*
+common.block.content = common.block.elements*
+
+start = nml
+
+nml = element nml { nml.attributes, nml.content }
+nml.attributes = common.attributes
+nml.content = title, common.block.content
+
+# TODO Separate title for document?
+
+title = element title { title.attributes, title.content }
+title.attributes = common.attributes
+title.content = common.inline.content
+
+p = element p { p.attributes, p.content }
+p.attributes = common.attributes
+p.content = common.inline.content
+common.block.elements |= p
+
+itemization = element itemization { itemization.attributes, itemization.content }
+itemization.attributes = common.attributes
+itemization.content = item+
+common.block.elements |= itemization
+
+enumeration = element enumeration { enumeration.attributes, enumeration.content }
+enumeration.attributes = common.attributes
+enumeration.content = item+
+common.block.elements |= enumeration
+
+definitions = element definitions { definitions.attributes, definitions.content }
+definitions.attributes = common.attributes
+definitions.content = definitions.item+
+common.block.elements |= definitions
+
+block.quote = element quote { block.quote.attributes, block.quote.content }
+block.quote.attributes = common.attributes
+block.quote.content = line+, attribution?
+common.block.elements |= block.quote
+
+block.code = element code { block.code.attributes, block.code.content }
+block.code.language.attribute = attribute language { text }
+block.code.attributes = common.attributes, block.code.language.attribute?
+block.code.content = common.inline.content
+common.block.elements |= block.code
+
+section = element section { section.attributes, section.content }
+section.attributes = common.attributes
+section.content = title, common.block.content
+common.block.elements |= section
+
+definitions.item = element item {
+  definitions.item.attributes,
+  definitions.item.content
+}
+definitions.item.attributes = common.attributes
+definitions.item.content = term+, definition
+
+term = element term { term.attributes, common.inline.content }
+term.attributes = common.attributes
+
+definition = element definition { definition.attributes, definition.content }
+definition.attributes = common.attributes
+definition.content = common.block.content
+
+line = element line { line.attributes, line.content }
+line.attributes = common.attributes
+line.content = common.inline.content
+
+attribution = element attribution { attribution.attributes, attribution.content }
+attribution.attributes = common.attributes
+attribution.content = common.inline.content
+
+table = element table { table.attributes, table.content }
+table.attributes = common.attributes
+table.content = head?, body
+common.block.elements |= table
+
+head = element head { head.attributes, head.content }
+head.attributes = common.attributes
+head.content = row
+
+body = element body { body.attributes, body.content }
+body.attributes = common.attributes
+body.content = row+
+
+row = element row { row.attributes, row.content }
+row.attributes = common.attributes
+row.content = cell+
+
+cell = element cell { cell.attributes, cell.content }
+cell.attributes = common.attributes
+cell.content = common.inline.content
+
+abbreviation = element abbreviation { abbreviation.attributes, abbreviation.content }
+abbreviation.for.attribute = attribute for { text }
+abbreviation.attributes = common.attributes, abbreviation.for.attribute
+abbreviation.content = common.inline.content
+common.inline.elements |= abbreviation
+
+code = element code { code.attributes, code.content }
+code.language.attribute = attribute language { text }
+code.attributes = common.attributes, code.language.attribute?
+code.content = common.inline.content
+common.inline.elements |= code
+
+emphasis = element emphasis { emphasis.attributes, emphasis.content }
+emphasis.attributes = common.attributes
+emphasis.content = common.inline.content
+common.inline.elements |= emphasis
+
+ref = element ref { ref.attributes, ref.content }
+ref.relation.attribute = attribute relation { text }
+ref.title.attribute = attribute title { text }
+ref.uri.attribute = attribute uri { xsd:anyURI }
+ref.attributes =
+  common.attributes,
+  ref.relation.attribute?,
+  ref.title.attribute?,
+  ref.uri.attribute
+ref.content = common.inline.content
+common.inline.elements |= ref
+
+span = element span { span.attributes, span.content }
+span.attributes = common.attributes
+span.content = common.inline.content
+common.inline.elements |= span
+
+item = element item { item.attributes, item.content }
+item.attributes = common.attributes
+item.content = common.block.content
+
+# figure = element figure { figure.attributes, figure.content }
+# figure.float.attribute = attribute float { 'left' | 'right' }
+# figure.attributes =
+#   common.attributes,
+#   figure.float.attribute?
+# figure.content = image
+# common.block.elements |= figure
+
+# define = element define { define.attributes, define.content }
+# define.uri.attribute = attribute uri { text }
+# define.attributes =
+#   common.attributes,
+#   define.uri.attribute?
+# define.content = common.inline.content
+# common.inline.elements |= define
+
+# image = element image { image.attributes, empty }
+# image.uri.attribute = attribute uri { xsd:anyURI }
+# image.attributes =
+#   common.attributes,
+#   image.uri.attribute
+# common.inline.elements |= image
+
+# quote = element quote { quote.attributes, quote.content }
+# quote.source.attribute = attribute source { xsd:anyURI }
+# quote.attributes =
+#   common.attributes,
+#   quote.source.attribute?
+# quote.content = common.inline.content
+# common.inline.elements |= quote
+
+# subscript = element subscript { subscript.attributes, subscript.content }
+# subscript.attributes =
+#   common.attributes
+# subscript.content = common.inline.content
+# common.inline.elements |= subscript
+
+# superscript = element superscript { superscript.attributes, superscript.content }
+# superscript.attributes =
+#   common.attributes
+# superscript.content = common.inline.content
+# common.inline.elements |= superscript
