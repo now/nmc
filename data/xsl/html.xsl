@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
                 xmlns:func="http://exslt.org/functions"
-                xmlns:nml="http://disu.se/xsl/nml"
-                xmlns:string="http://disu.se/xsl/string"
+                xmlns:nml="http://disu.se/software/nml"
+                xmlns:string="http://disu.se/software/nml/xsl/include/string"
                 extension-element-prefixes="func">
   <xsl:include href="include/string.xsl"/>
 

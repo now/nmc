@@ -3,9 +3,9 @@
                 xmlns:date="http://exslt.org/dates-and-times"
                 xmlns:exsl="http://exslt.org/common"
                 xmlns:func="http://exslt.org/functions"
-                xmlns:man="http://disu.se/xsl/man"
+                xmlns:man="http://disu.se/software/nml/xsl/man"
                 xmlns:str="http://exslt.org/strings"
-                xmlns:string="http://disu.se/xsl/string"
+                xmlns:string="http://disu.se/software/nml/xsl/include/string"
                 extension-element-prefixes="date exsl func str">
   <xsl:include href="include/string.xsl"/>
 

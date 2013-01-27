@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
                 xmlns:func="http://exslt.org/functions"
-                xmlns:string="http://disu.se/xsl/string"
+                xmlns:string="http://disu.se/software/nml/xsl/include/string"
                 extension-element-prefixes="func">
   <xsl:output method="xml" encoding="utf-8"/>
 

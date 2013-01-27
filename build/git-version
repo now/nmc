@@ -1,0 +1,11 @@
+#! /bin/sh
+
+if test -f .tarball-version; then
+  v=`cat .tarball-version` || exit 1
+elif test -d .git && vv=`git describe --abbrev=4 --match='v[0-9]*' HEAD 2>/dev/null`; then
+  v=`echo "$vv" | sed 's/^v//'`
+else
+  v=1.0.0
+fi
+
+echo "$v" | tr -d '\012'

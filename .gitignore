@@ -15,9 +15,12 @@ build/missing
 build/ucategory
 build/uwordbreak
 build/ylwrap
+data/catalog.xml
 data/UnicodeData.txt
 data/WordBreakProperty.txt
 .dirstamp
+.tarball-version
+.version
 Makefile
 Makefile.in
 TAGS

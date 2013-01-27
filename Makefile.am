@@ -1,3 +1,10 @@
+BUILT_SOURCES = $(top_srcdir)/.version
+$(top_srcdir)/.version: configure
+	$(AM_V_GEN)echo $(VERSION) > $@.tmp
+	$(AM_V_at)mv $@.tmp $@
+dist-hook:
+	$(AM_V_GEN)echo $(VERSION) > $(distdir)/.tarball-version
+
 AM_CFLAGS = $(WARN_CFLAGS) $(WERROR_CFLAGS)
 AM_CPPFLAGS = -I$(top_srcdir)/common -I$(top_srcdir)/include
 
@@ -55,6 +62,55 @@ src_nmc_SOURCES = \
 src_nmc_LDADD = \
 	lib/libbuffer.a \
 	lib/libnmc.a
+
+nmldir = $(datadir)/xml/nml/$(PACKAGE_VERSION_MM)
+
+dist_nml_DATA = \
+	data/catalog.xml
+
+NML_URI = http://disu.se/software/nml
+RELAXNG_URI = $(NML_URI)/relaxng/$(PACKAGE_VERSION_MM)/
+XSL_URI = $(NML_URI)/xsl/$(PACKAGE_VERSION_MM)/
+
+data/catalog.xml: $(srcdir)/data/catalog.xml.in Makefile
+	$(AM_V_GEN)rm -f $@ $@.tmp
+	$(AM_V_at)sed \
+	  -e 's|@RELAXNG_URI[@]|$(RELAXNG_URI)|g' \
+	  -e 's|@XSL_URI[@]|$(XSL_URI)|g' $< > $@.tmp
+	$(AM_V_at)chmod a-w $@.tmp
+	$(AM_V_at)mv $@.tmp $@
+
+if XML_CATALOG_UPDATE
+install-data-hook:
+	@if $(AM_V_P); then set -x; fi; if test x$(XMLCATALOG) != x; then \
+	  sysxmldir='$(sysconfdir)/xml'; \
+	  syscatalog=$$sysxmldir/catalog; \
+	  if test -f "$$syscatalog"; then \
+	    if $(AM_V_P); then :; else echo "  UPDATE  " "$$syscatalog"; fi; \
+	  else \
+	    if $(AM_V_P); then :; else echo "  CREATE  " "$$syscatalog"; fi; \
+	    $(MKDIR_P) "$$sysxmldir" && \
+	    $(XMLCATALOG) --create > "$$syscatalog.tmp" && \
+	      mv "$$syscatalog.tmp" "$$syscatalog" || exit $$?; \
+	  fi; \
+	  $(XMLCATALOG) --add nextCatalog 'file://$(nmldir)/catalog.xml'; \
+	    "$$syscatalog" > "$$syscatalog.tmp" && \
+	    mv "$$syscatalog.tmp" "$$syscatalog" || exit $$?; \
+	fi
+endif
+
+relaxngdir = $(nmldir)/relaxng
+dist_relaxng_DATA = \
+	data/relaxng/nml.rnc
+
+xsldir = $(nmldir)/xsl
+dist_xsl_DATA = \
+	data/xsl/html.xsl \
+	data/xsl/man.xsl
+
+xslincludedir = $(xsldir)/include
+dist_xslinclude_DATA = \
+	data/xsl/include/string.xsl
 
 dist_man1_MANS = \
 	man/nmc.1

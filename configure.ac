@@ -1,4 +1,6 @@
-AC_INIT([nmc], [1.0.0], [now@bitwi.se])
+AC_INIT([nmc], m4_esyscmd([build/git-version]), [now@bitwi.se])
+PACKAGE_VERSION_MM=m4_bpatsubst(AC_PACKAGE_VERSION, [^\([0-9][0-9]*\.[0-9][0-9]*\).*$], [\1])
+AC_SUBST([PACKAGE_VERSION_MM])
 AC_CONFIG_LIBOBJ_DIR([lib])
 AC_CONFIG_SRCDIR([src/nmc.c])
 AC_CONFIG_TESTDIR([test], [test])
@@ -10,6 +12,7 @@ AC_PROG_CC_C99
 AM_PROG_CC_C_O
 AC_PROG_RANLIB
 AM_PROG_AR
+AC_PATH_PROG([XMLCATALOG], [xmlcatalog])
 AC_PATH_PROG([XSLTPROC], [xsltproc])
 
 AC_DEFUN([nmc_WARN_ADD],
@@ -28,7 +31,7 @@ AS_VAR_POPDEF([nmc_Flags])dnl
 AS_VAR_POPDEF([nmc_Warn])dnl
 m4_ifval([$2], [AS_LITERAL_IF([$2], [AC_SUBST([$2])], [])], [AC_SUBST([WARN_CFLAGS])])dnl
 ])
-AC_ARG_ENABLE(gcc-warnings,
+AC_ARG_ENABLE([gcc-warnings],
 [  --enable-gcc-warnings   turn on lots of GCC warnings],
 [case "${enableval}" in
     yes|no) ;;
@@ -75,6 +78,16 @@ AC_CHECK_HEADERS([getopt.h])
 AC_CHECK_FUNCS([getopt_long],,
   [AC_CHECK_LIB([gnugetopt],[getopt_long],[AC_DEFINE([HAVE_GETOPT_LONG])])])
 AC_REPLACE_FUNCS([asprintf vasprintf])
+
+AC_ARG_ENABLE([xml-catalog-update],
+[  --enable-xml-catalog-update
+                           update system XML catalog during installation],
+[case "${enableval}" in
+    yes|no) ;;
+    *)      AC_MSG_ERROR([bad value ${enableval} for xml-catalog-update option]) ;;
+ esac],
+ [enableval=yes])
+AM_CONDITIONAL([XML_CATALOG_UPDATE], [test x$enableval = xyes])
 
 AC_CONFIG_HEADERS([config.h])
 AC_CONFIG_FILES([
