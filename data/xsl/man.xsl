@@ -5,7 +5,10 @@
                 xmlns:func="http://exslt.org/functions"
                 xmlns:man="http://disu.se/xsl/man"
                 xmlns:str="http://exslt.org/strings"
+                xmlns:string="http://disu.se/xsl/string"
                 extension-element-prefixes="date exsl func str">
+  <xsl:include href="include/string.xsl"/>
+
   <xsl:output method="text" encoding="utf-8"/>
   <xsl:strip-space elements="nml section itemization enumeration definitions
                              item term definition table head body row"/>
@@ -23,14 +26,6 @@
   <xsl:param name="man:indent.list" select="$man:indent"/>
   <xsl:param name="man:indent.code" select="$man:indent"/>
   <xsl:param name="man:indent.table" select="$man:indent"/>
-
-  <func:function name="man:upcase-ascii">
-    <xsl:param name="string"/>
-
-    <func:result select="translate($string,
-                                   'abcdefghijklmnopqrstuvwxyz',
-                                   'ABCDEFGHIJKLMNOPQRSTUVWXYZ')"/>
-  </func:function>
 
   <!-- TODO Escape ‘"’ -->
   <func:function name="man:param">
@@ -58,7 +53,7 @@
       </xsl:choose>
     </xsl:variable>
     <xsl:text>.TH </xsl:text>
-    <xsl:value-of select="man:param(man:upcase-ascii($title))"/>
+    <xsl:value-of select="man:param(string:upcase-ascii($title))"/>
     <xsl:text> </xsl:text>
     <xsl:choose>
       <xsl:when test="substring-before(substring-after(., '('), ')') != ''">
@@ -81,7 +76,7 @@
 
   <xsl:template match="nml/section">
     <xsl:text>.SH </xsl:text>
-    <xsl:value-of select="man:param(man:upcase-ascii(title))"/>
+    <xsl:value-of select="man:param(string:upcase-ascii(title))"/>
     <xsl:text>&#10;</xsl:text>
     <xsl:apply-templates/>
   </xsl:template>
