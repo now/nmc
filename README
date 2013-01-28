@@ -237,7 +237,9 @@
       title will be “Email me”.  In the NoMarks XML serialization, known as
       NML, this will be converted to
 
-        <p>Drop me a <ref title="Email me" uri="mailto:example@example.com">line</ref></p>
+        <p>Drop me a
+          <ref title="Email me"
+               uri="mailto:example@example.com">line</ref></p>
 
       The identifiers don’t have to come in order, which means that you don’t
       have to re-order them in the event that footnotes are added and deleted
