@@ -128,7 +128,7 @@
     = Definition. = A definition consists of a term followed by one more blocks
         that define the meaning of the term.
     = Term. = A term consists of a “= ” tag in the indent followed by
-        unprocessed text up until a terminating “. =”.
+        unprocessed text up until a terminating “. = ”.
 
       The above list of definitions was thus written as
 
@@ -136,7 +136,10 @@
         = Definition. = A definition consists of a term followed by one more blocks
           that define the meaning of the term.
         = Term. = A term consists of a “= ” tag in the indent followed by
-          unprocessed text up until a terminating “. =”.
+          unprocessed text up until a terminating “. = ”.
+
+      There may be any number of spaces between ‘.’ and ‘=’ in the termination
+      of a term.
 
   § Quotes
 
