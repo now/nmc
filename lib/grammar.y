@@ -708,8 +708,8 @@ term(struct parser *parser, YYLTYPE *location, YYSTYPE *value)
                                 value->node = text_node_new_dup(NMC_NODE_TERM, begin, send - begin);
                                 return token(parser, location, end + 1, TERM);
                         }
-                }
-                end++;
+                } else
+                        end++;
         }
 
         int r = token(parser, location, end, AGAIN);
@@ -1447,7 +1447,6 @@ inlines: ospace sinlines ospace { $$ = textify($2); };
 
 sinlines: WORD { N($$ = nodes(buffer(parser, $1))); }
 | oanchoredinline { $$ = nodes($1); }
-/* TODO $1.last can, if I see it correctly, never be NODE_BUFFER, so append_text may be unnecessary here. */
 | sinlines WORD { N($$ = append_text(parser, $1, $2)); }
 | sinlines oanchoredinline { N($$ = sibling(textify($1), $2)); }
 | sinlines spaces WORD { N($$ = append_text(parser, append_space(parser, $1), $3)); }
