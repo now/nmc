@@ -13,6 +13,34 @@ AT_NMC_CHECK([title],
 
 AT_CLEANUP
 
+AT_SETUP([Trailing space after title])
+
+AT_DATA([title],
+[[T
+
+
+]])
+
+AT_NMC_CHECK([title],
+[[  <title>T</title>]])
+
+AT_CLEANUP
+
+AT_SETUP([Trailing space after paragraph])
+
+AT_DATA([title],
+[[T
+
+  P
+
+]])
+
+AT_NMC_CHECK([title],
+[[  <title>T</title>
+  <p>P</p>]])
+
+AT_CLEANUP
+
 AT_SETUP([Document only consisting of a title with multiple words])
 
 AT_DATA([title],

@@ -134,7 +134,6 @@ static void nmc_node_unlink_and_free(struct nmc_node *node, struct parser *parse
 %token END 0 "end of file"
 %token ERROR
 %token AGAIN
-%token <node> TITLE
 %token <substring> WORD
 %token PARAGRAPH
 %token SPACE
@@ -171,6 +170,7 @@ static void nmc_node_unlink_and_free(struct nmc_node *node, struct parser *parse
 %left ROW
 
 %type <node> documenttitle
+%type <nodes> words
 %type <nodes> oblockssections0 blockssections blocks sections oblockssections
 %type <node> block footnotedsection section title
 %type <footnote> footnotes
@@ -1050,12 +1050,6 @@ parser_lex(struct parser *parser, YYLTYPE *location, YYSTYPE *value)
         if (parser->bol)
                 return bol(parser, location, value);
 
-        if (parser->want == TITLE) {
-                parser->want = ERROR;
-                value->node = text_node_new(NMC_NODE_TEXT, text(parser, location, parser->p));
-                return TITLE;
-        }
-
         size_t length;
         uchar c = u_lref(parser->p, &length);
         switch (c) {
@@ -1361,12 +1355,16 @@ textify(struct nodes inlines)
 
 %%
 
-nmc: documenttitle oblockssections0 {
-        M(parser->doc = parent_children(NMC_NODE_DOCUMENT, $1, $2));
+nmc: ospace documenttitle oblockssections0 {
+        M(parser->doc = parent_children(NMC_NODE_DOCUMENT, $2, $3));
         report_remaining_anchors(parser);
 };
 
-documenttitle: TITLE { M($$ = parent1(NMC_NODE_TITLE, $1)); };
+documenttitle: words { M($$ = parent1(NMC_NODE_TITLE, textify($1).first)); };
+
+words: WORD { N($$ = nodes(buffer(parser, $1))); }
+| words WORD { N($$ = append_text(parser, $1, $2)); }
+| words spaces WORD { N($$ = append_text(parser, append_space(parser, $1), $3)); };
 
 oblockssections0: /* empty */ { $$ = nodes(NULL); }
 | blockssections { $$ = $1; };
@@ -1490,7 +1488,7 @@ nmc_parse(const char *input, struct nmc_parser_error **errors)
         parser.dedents = 0;
         parser.indent = 0;
         parser.bol = false;
-        parser.want = TITLE;
+        parser.want = ERROR;
         parser.doc = NULL;
         parser.anchors = NULL;
         parser.errors.first = parser.errors.last = NULL;
