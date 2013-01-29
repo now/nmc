@@ -807,6 +807,61 @@ AT_NMC_CHECK([title],
 
 AT_CLEANUP
 
+AT_SETUP([Code inline: complex continuation 2])
+
+AT_DATA([title],
+[[T
+
+  ‹a››››‹bc›
+]])
+
+AT_NMC_CHECK([title],
+[[  <title>T</title>
+  <p><code>a›››bc</code></p>]])
+
+AT_CLEANUP
+
+AT_SETUP([Code inline: complex continuation 3])
+
+AT_DATA([title],
+[[T
+
+  ‹a››‹bc›››‹def›
+]])
+
+AT_NMC_CHECK([title],
+[[  <title>T</title>
+  <p><code>a›bc››def</code></p>]])
+
+AT_CLEANUP
+
+
+AT_SETUP([Code inline: complex continuation 4])
+
+AT_DATA([title],
+[[T
+
+  ‹a››‹›
+]])
+
+AT_NMC_CHECK([title],
+[[  <title>T</title>
+  <p><code>a›</code></p>]])
+
+AT_CLEANUP
+
+AT_SETUP([Code inline: continuation without end])
+
+AT_DATA([title],
+[[T
+
+  ‹a››‹bc
+]])
+
+AT_NMC_CHECK_FAIL([title], [3:3: missing ending ‘›’ for code inline])
+
+AT_CLEANUP
+
 AT_SETUP([Document consisting of a title followed by a paragraph containing an unterminated code inline])
 
 AT_DATA([title],

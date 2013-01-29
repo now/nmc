@@ -953,6 +953,7 @@ code(struct parser *parser, YYLTYPE *location, YYSTYPE *value)
 {
         const char *begin = parser->p + 3;
         const char *end = begin;
+        size_t compact = 0;
         size_t length;
 again:
         while (!is_end(end) &&
@@ -973,35 +974,35 @@ again:
                 } while ((c = u_dref(end)) ==
                          U_SINGLE_RIGHT_POINTING_ANGLE_QUOTATION_MARK);
                 if (c == U_SINGLE_LEFT_POINTING_ANGLE_QUOTATION_MARK) {
-                        // NOTE left and right are the same number of bytes
+                        if (compact == 0)
+                                // NOTE left and right are the same number of bytes
+                                compact = end - length - begin;
                         end += length;
                         goto again;
                 }
                 send = end - length;
         }
         value->node = text_node_new_dup(NMC_NODE_CODE, begin, send - begin);
-        char *p = ((struct nmc_text_node *)value->node)->text;
-        while (*p != '\0' &&
-               u_lref(p, &length) != U_SINGLE_RIGHT_POINTING_ANGLE_QUOTATION_MARK)
-                p += length;
-        p += length;
-        char *q = p;
-        while (*q != '\0') {
-                char *r = q;
-                uchar c;
-                while ((c = u_lref(r, &length)) ==
-                       U_SINGLE_RIGHT_POINTING_ANGLE_QUOTATION_MARK)
-                        r += length;
-                if (c == U_SINGLE_LEFT_POINTING_ANGLE_QUOTATION_MARK) {
-                        // NOTE left and right are the same number of bytes
-                        p = r - length;
-                        q = r + length;
+        if (compact > 0) {
+                char *p = ((struct nmc_text_node *)value->node)->text + compact;
+                char *q = p + 3 * 2;
+                while (*q != '\0') {
+                        uchar c = u_lref(q, &length);
+                        if (c == U_SINGLE_RIGHT_POINTING_ANGLE_QUOTATION_MARK) {
+                                while ((c = u_lref(q + length, &length)) ==
+                                       U_SINGLE_RIGHT_POINTING_ANGLE_QUOTATION_MARK) {
+                                        for (size_t i = 0; i < length; i++)
+                                                *p++ = *q++;
+                                }
+                                if (c == U_SINGLE_LEFT_POINTING_ANGLE_QUOTATION_MARK) {
+                                        // NOTE left and right are the same number of bytes
+                                        q += 3 * 2;
+                                        continue;
+                                }
+                        }
+                        for (size_t i = 0; i < length; i++)
+                                *p++ = *q++;
                 }
-                *p = *q;
-                p++;
-                q++;
-        }
-        if (q != p) {
                 *p = '\0';
                 char *t = realloc(((struct nmc_text_node *)value->node)->text,
                                   p - ((struct nmc_text_node *)value->node)->text + 1);
