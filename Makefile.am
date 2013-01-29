@@ -98,7 +98,7 @@ install-data-hook:
 	    mv "$$syscatalog.tmp" "$$syscatalog" || exit $$?; \
 	fi
 
-uninstall-data-hook:
+uninstall-hook:
 	@if $(AM_V_P); then set -x; fi; if test x$(XMLCATALOG) != x; then \
 	  syscatalog='$(sysconfdir)/xml/catalog'; \
 	  if test -f "$$syscatalog"; then \

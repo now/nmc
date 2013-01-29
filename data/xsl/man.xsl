@@ -27,9 +27,30 @@
   <xsl:param name="man:indent.code" select="$man:indent"/>
   <xsl:param name="man:indent.table" select="$man:indent"/>
 
-  <!-- TODO Escape ‘"’ -->
+  <xsl:variable name="man:param-escapes-rfc">
+    <escape what="\" with="\e"/>
+    <escape what='"' with='\(dq'/>
+  </xsl:variable>
+
+  <xsl:variable name="man:param-escapes"
+                select="exsl:node-set($man:param-escapes-rfc)"/>
+
   <func:function name="man:param">
     <xsl:param name="string"/>
+    <xsl:param name="escape" select="true()"/>
+
+    <xsl:variable name="escaped">
+      <xsl:choose>
+        <xsl:when test="$escape">
+          <xsl:value-of select="str:replace(.,
+                                            $man:param-escapes/@what,
+                                            $man:param-escapes/@with)"/>
+        </xsl:when>
+        <xsl:otherwise>
+          <xsl:value-of select="$string"/>
+        </xsl:otherwise>
+      </xsl:choose>
+    </xsl:variable>
 
     <xsl:choose>
       <xsl:when test="not($string) or contains($string, ' ')">
@@ -110,8 +131,7 @@
 
   <xsl:variable name="man:text-escapes-rfc">
     <escape what="\" with="\e"/>
-    <!-- TODO Why is this needed? -->
-    <!-- <escape what="-" with="\-"/> -->
+    <escape what="-" with="\-"/>
   </xsl:variable>
 
   <xsl:variable name="man:text-escapes"
@@ -145,9 +165,8 @@
     <xsl:text>\h'+0</xsl:text>
     <xsl:value-of select="$man:indent.list - $length"/>
     <xsl:text>'\c&#10;.\}&#10;.el \{\&#10;</xsl:text>
-    <!-- TODO Skip .sp above in this case -->
     <xsl:text>.sp -1&#10;.IP </xsl:text>
-    <xsl:value-of select="man:param($designator)"/>
+    <xsl:value-of select="man:param($designator, false)"/>
     <xsl:text> </xsl:text>
     <xsl:value-of select="$indent"/>
     <xsl:text>&#10;.\}&#10;</xsl:text>
