@@ -93,9 +93,20 @@ install-data-hook:
 	    $(XMLCATALOG) --create > "$$syscatalog.tmp" && \
 	      mv "$$syscatalog.tmp" "$$syscatalog" || exit $$?; \
 	  fi; \
-	  $(XMLCATALOG) --add nextCatalog 'file://$(nmldir)/catalog.xml'; \
+	  $(XMLCATALOG) --add nextCatalog 'file://$(nmldir)/catalog.xml' \
 	    "$$syscatalog" > "$$syscatalog.tmp" && \
 	    mv "$$syscatalog.tmp" "$$syscatalog" || exit $$?; \
+	fi
+
+uninstall-data-hook:
+	@if $(AM_V_P); then set -x; fi; if test x$(XMLCATALOG) != x; then \
+	  syscatalog='$(sysconfdir)/xml/catalog'; \
+	  if test -f "$$syscatalog"; then \
+	    if $(AM_V_P); then :; else echo "  UPDATE  " "$$syscatalog"; fi; \
+	    $(XMLCATALOG) --del 'file://$(nmldir)/catalog.xml' \
+	    "$$syscatalog" > "$$syscatalog.tmp" && \
+	    mv "$$syscatalog.tmp" "$$syscatalog" || exit $$?; \
+	  fi; \
 	fi
 endif
 
