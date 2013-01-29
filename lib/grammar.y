@@ -918,7 +918,8 @@ is_word_end(const char *string, const char *end)
         return is_space_or_end(end) ||
                 (is_inline_symbol(end) &&
                  !u_isafteraletterornumeric(string, end)) ||
-                (((c = u_lref(end, &l)) == '}' || is_superscript(c)) &&
+                (((c = u_lref(end, &l)) == '}' ||
+                  (is_superscript(c) && (l += superscript(string + l), true))) &&
                  !uc_isaletterornumeric(u_dref(end + l)));
 }
 
@@ -953,6 +954,7 @@ code(struct parser *parser, YYLTYPE *location, YYSTYPE *value)
         const char *begin = parser->p + 3;
         const char *end = begin;
         size_t length;
+again:
         while (!is_end(end) &&
                !(u_lref(end, &length) == U_SINGLE_RIGHT_POINTING_ANGLE_QUOTATION_MARK &&
                  end - begin > 0))
@@ -965,12 +967,47 @@ code(struct parser *parser, YYLTYPE *location, YYSTYPE *value)
                         goto oom;
                 }
         } else {
+                uchar c;
                 do {
                         end += length;
-                } while (u_dref(end) == U_SINGLE_RIGHT_POINTING_ANGLE_QUOTATION_MARK);
+                } while ((c = u_dref(end)) ==
+                         U_SINGLE_RIGHT_POINTING_ANGLE_QUOTATION_MARK);
+                if (c == U_SINGLE_LEFT_POINTING_ANGLE_QUOTATION_MARK) {
+                        // NOTE left and right are the same number of bytes
+                        end += length;
+                        goto again;
+                }
                 send = end - length;
         }
         value->node = text_node_new_dup(NMC_NODE_CODE, begin, send - begin);
+        char *p = ((struct nmc_text_node *)value->node)->text;
+        while (*p != '\0' &&
+               u_lref(p, &length) != U_SINGLE_RIGHT_POINTING_ANGLE_QUOTATION_MARK)
+                p += length;
+        p += length;
+        char *q = p;
+        while (*q != '\0') {
+                char *r = q;
+                uchar c;
+                while ((c = u_lref(r, &length)) ==
+                       U_SINGLE_RIGHT_POINTING_ANGLE_QUOTATION_MARK)
+                        r += length;
+                if (c == U_SINGLE_LEFT_POINTING_ANGLE_QUOTATION_MARK) {
+                        // NOTE left and right are the same number of bytes
+                        p = r - length;
+                        q = r + length;
+                }
+                *p = *q;
+                p++;
+                q++;
+        }
+        if (q != p) {
+                *p = '\0';
+                char *t = realloc(((struct nmc_text_node *)value->node)->text,
+                                  p - ((struct nmc_text_node *)value->node)->text + 1);
+                if (t != NULL)
+                        ((struct nmc_text_node *)value->node)->text = t;
+        }
 oom:
         return token(parser, location, end, CODE);
 }
@@ -1075,15 +1112,11 @@ parser_lex(struct parser *parser, YYLTYPE *location, YYSTYPE *value)
         case U_SINGLE_LEFT_POINTING_ANGLE_QUOTATION_MARK:
                 return code(parser, location, value);
         case U_SUPERSCRIPT_PLUS_SIGN:
-                // TODO Only catch this if followed by is_inline_end()
-                // (or perhaps only if followed by superscript()).
                 return token(parser, location, parser->p + length, ANCHORSEPARATOR);
         }
 
-        // TODO We might not need to check for uc_isaletterornumeric.
-        if (is_superscript(c) &&
-            (length += superscript(parser->p + length),
-             !uc_isaletterornumeric(u_dref(parser->p + length)))) {
+        if (is_superscript(c)) {
+                length += superscript(parser->p + length);
                 const char *begin = parser->p;
                 int r = token(parser, location, parser->p + length, ANCHOR);
                 value->node = anchor_node_new(location, begin, length);
