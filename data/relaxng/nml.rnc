@@ -109,6 +109,19 @@ cell = element cell { cell.attributes, cell.content }
 cell.attributes = common.attributes
 cell.content = common.inline.content
 
+figure = element figure { figure.attributes, figure.content }
+figure.float.attribute = attribute float { 'left' | 'right' }
+figure.attributes = common.attributes, figure.float.attribute?
+figure.content = caption?, image
+common.block.elements |= figure
+
+caption = element caption { caption.attributes, caption.content }
+caption.attributes = common.attributes
+caption.content = common.inline.content
+
+image = element image { image.attributes, xsd:anyURI }
+image.attributes = common.attributes
+
 abbreviation = element abbreviation { abbreviation.attributes, abbreviation.content }
 abbreviation.for.attribute = attribute for { text }
 abbreviation.attributes = common.attributes, abbreviation.for.attribute
@@ -147,14 +160,6 @@ item = element item { item.attributes, item.content }
 item.attributes = common.attributes
 item.content = common.block.content
 
-# figure = element figure { figure.attributes, figure.content }
-# figure.float.attribute = attribute float { 'left' | 'right' }
-# figure.attributes =
-#   common.attributes,
-#   figure.float.attribute?
-# figure.content = image
-# common.block.elements |= figure
-
 # define = element define { define.attributes, define.content }
 # define.uri.attribute = attribute uri { text }
 # define.attributes =
@@ -162,13 +167,6 @@ item.content = common.block.content
 #   define.uri.attribute?
 # define.content = common.inline.content
 # common.inline.elements |= define
-
-# image = element image { image.attributes, empty }
-# image.uri.attribute = attribute uri { xsd:anyURI }
-# image.attributes =
-#   common.attributes,
-#   image.uri.attribute
-# common.inline.elements |= image
 
 # quote = element quote { quote.attributes, quote.content }
 # quote.source.attribute = attribute source { xsd:anyURI }

@@ -1224,6 +1224,27 @@ AT_NMC_CHECK([title],
 
 AT_CLEANUP
 
+AT_SETUP([Block: Figure])
+
+AT_DATA([title],
+[[T
+
+Fig.
+
+                                     a.jpg
+
+                                    Caption
+]])
+
+AT_NMC_CHECK([title],
+[[  <title>T</title>
+  <figure>
+    <caption>Caption</caption>
+    <image>a.jpg</image>
+  </figure>]])
+
+AT_CLEANUP
+
 AT_SETUP([Document consisting of a title followed by a broken beginning of line])
 
 AT_DATA([title],

@@ -140,6 +140,7 @@ static void nmc_node_unlink_and_free(struct nmc_node *node, struct parser *parse
 %token ITEMIZATION
 %token ENUMERATION
 %token <node> TERM
+%token <node> FIGURE
 %token QUOTE
 %token ATTRIBUTION
 %token TABLESEPARATOR
@@ -184,6 +185,8 @@ static void nmc_node_unlink_and_free(struct nmc_node *node, struct parser *parse
 %type <nodes> quotecontent lines
 %type <node> head body row cell
 %type <nodes> headbody rows cells
+%type <nodes> figure
+%type <node> caption
 %type <nodes> inlines sinlines
 %type <node> oanchoredinline anchoredinline inline
 %type <node> item firstparagraph
@@ -719,6 +722,31 @@ term(struct parser *parser, YYLTYPE *location, YYSTYPE *value)
 }
 
 static int
+figure(struct parser *parser, YYLTYPE *location, YYSTYPE *value)
+{
+        const char *end = parser->p + 4;
+        if (!(*end == ' ' || *end == '\n'))
+                parser_error(parser, &parser->location,
+                             "missing ‘ ’ or newline after “Fig.” at beginning of line");
+        else
+                end++;
+        while (*end == ' ' || *end == '\n')
+                end++;
+        if (*end == '\0') {
+                int r = token(parser, location, parser->p, END);
+                parser_error(parser, location, "missing URL for figure");
+                return r;
+        }
+        const char *begin = end;
+        while (!is_end(end) && *end != ' ')
+                end++;
+        value->node = text_node_new_dup(NMC_NODE_IMAGE, begin, end - begin);
+        while (*end == ' ' || *end == '\n')
+                end++;
+        return token(parser, location, end, FIGURE);
+}
+
+static int
 bol_token(struct parser *parser, YYLTYPE *location, size_t length, int type)
 {
         return token(parser,
@@ -745,6 +773,8 @@ is_bol_symbol(const char *end)
         case '>':
         case '|':
                 return true;
+        case 'F':
+                return end[1] == 'i' && end[2] == 'g' && end[3] == '.';
         default:
                 return is_subscript(c) || is_superscript(c);
         }
@@ -790,6 +820,10 @@ bol(struct parser *parser, YYLTYPE *location, YYSTYPE *value)
                         return token(parser, location, end, TABLESEPARATOR);
                 }
                 return bol_token(parser, location, length, ROW);
+        case 'F':
+                if (parser->p[1] == 'i' && parser->p[2] == 'g' &&
+                    parser->p[3] == '.')
+                        return figure(parser, location, value);
         case '\0':
                 return token(parser, location, parser->p, END);
         }
@@ -1417,7 +1451,8 @@ block: PARAGRAPH inlines { M($$ = parent(NMC_NODE_PARAGRAPH, $2)); }
 | definitionitems %prec NotBlock { M($$ = parent(NMC_NODE_DEFINITIONS, $1)); }
 | quotecontent { M($$ = parent(NMC_NODE_QUOTE, $1)); }
 | CODEBLOCK { M($$ = $1); }
-| headbody { M($$ = parent(NMC_NODE_TABLE, $1)); };
+| headbody { M($$ = parent(NMC_NODE_TABLE, $1)); }
+| figure { M($$ = parent(NMC_NODE_FIGURE, $1)); };
 
 sections: footnotedsection { $$ = nodes($1); }
 | sections footnotedsection { $$ = sibling($1, $2); };
@@ -1476,6 +1511,10 @@ cells: cell { $$ = nodes($1); }
 | cells CELLSEPARATOR cell { $$ = sibling($1, $3); };
 
 cell: inlines { M($$ = parent(NMC_NODE_CELL, $1)); };
+
+figure: FIGURE caption { N($$ = sibling(nodes($2), $1)); };
+
+caption: inlines { M($$ = parent(NMC_NODE_CAPTION, $1)); };
 
 inlines: ospace sinlines ospace { $$ = textify($2); };
 
