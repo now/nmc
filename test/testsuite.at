@@ -929,6 +929,22 @@ AT_NMC_CHECK_FAIL([title], [3:3: missing ending ‘/’ for emphasis inline])
 
 AT_CLEANUP
 
+AT_SETUP([Inline figure])
+
+AT_DATA([title],
+[[T
+
+  A¹
+
+¹ For reference, see a.jpg
+]])
+
+AT_NMC_CHECK([title],
+[[  <title>T</title>
+  <p><ref title="For reference" uri="a.jpg" relation="figure">A</ref></p>]])
+
+AT_CLEANUP
+
 AT_SETUP([Inline non-termination rules: a/…])
 
 AT_DATA([title],

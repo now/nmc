@@ -1,9 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform"
+                xmlns:exsl="http://exslt.org/common"
                 xmlns:func="http://exslt.org/functions"
                 xmlns:nml="http://disu.se/software/nml"
                 xmlns:string="http://disu.se/software/nml/xsl/include/string"
-                extension-element-prefixes="func">
+                exclude-result-prefixes="nml string"
+                extension-element-prefixes="exsl func">
   <xsl:include href="include/string.xsl"/>
 
   <xsl:output method="html"/>
@@ -129,11 +131,68 @@
   <xsl:template name="html.body.article">
     <article>
       <xsl:call-template name="id-by-title"/>
-      <xsl:apply-templates/>
+      <xsl:variable name="moved">
+        <xsl:apply-templates mode="move.figures"/>
+      </xsl:variable>
+      <xsl:apply-templates select="exsl:node-set($moved)"/>
     </article>
   </xsl:template>
 
   <xsl:template name="html.body.footer"/>
+
+  <xsl:template mode="move.figures" match="@*|node()">
+    <xsl:copy>
+      <xsl:apply-templates mode="move.figures" select="@*|node()"/>
+    </xsl:copy>
+  </xsl:template>
+
+  <xsl:template mode="move.figures" match="p|nml/quote|section/quote|item/quote|
+                                           definition/quote|table">
+    <xsl:for-each select=".//ref[@relation='figure']">
+      <xsl:call-template name="create.figure.from.ref"/>
+    </xsl:for-each>
+    <xsl:copy>
+      <xsl:apply-templates mode="remove" select="@*|node()"/>
+    </xsl:copy>
+  </xsl:template>
+
+  <xsl:template name="create.figure.from.ref">
+    <figure>
+      <xsl:attribute name="class">
+        <xsl:variable name="lr">
+          <xsl:choose>
+            <xsl:when test="position() mod 2 = 0">
+              <xsl:text>left</xsl:text>
+            </xsl:when>
+            <xsl:otherwise>
+              <xsl:text>right</xsl:text>
+            </xsl:otherwise>
+          </xsl:choose>
+        </xsl:variable>
+        <xsl:value-of select="nml:push-nmtoken(concat('figure-', $lr),
+                                               @class)"/>
+      </xsl:attribute>
+      <img src="{@uri}"/>
+      <figcaption><xsl:value-of select="@title"/></figcaption>
+    </figure>
+  </xsl:template>
+
+  <xsl:template match="figure|img|figcaption">
+    <xsl:copy>
+      <xsl:copy-of select="@*"/>
+      <xsl:apply-templates/>
+    </xsl:copy>
+  </xsl:template>
+
+  <xsl:template mode="remove.figures" match="@*|node()">
+    <xsl:copy>
+      <xsl:apply-templates mode="remove.figures" select="@*|node()"/>
+    </xsl:copy>
+  </xsl:template>
+
+  <xsl:template mode="remove.figures" match="figure">
+    <xsl:apply-templates mode="move"/>
+  </xsl:template>
 
   <xsl:template match="section">
     <section>

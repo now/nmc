@@ -499,8 +499,7 @@ node_init(struct nmc_node *node, enum nmc_node_type type, enum nmc_node_name nam
 #define node_new(stype, type, name) ((stype *)node_init(malloc(sizeof(stype)), type, name))
 
 static struct nmc_auxiliary_node *
-auxiliary_node_new_matches(const char *name, const char *buffer,
-                           regmatch_t *matches, int n, ...)
+auxiliary_node_new(const char *name, int n)
 {
         struct nmc_auxiliary_node *d = node_new(struct nmc_auxiliary_node,
                                                 NMC_NODE_TYPE_AUXILIARY,
@@ -516,34 +515,75 @@ auxiliary_node_new_matches(const char *name, const char *buffer,
                 return NULL;
         }
         d->attributes->references = 1;
+        return d;
+}
+
+static struct nmc_auxiliary_node *
+auxiliary_node_add_matchesv(struct nmc_auxiliary_node *node,
+                            const char *buffer, regmatch_t *matches, int n,
+                            va_list args)
+{
+        if (node == NULL)
+                return NULL;
         regmatch_t *m = &matches[1];
-        struct nmc_auxiliary_node_attribute *a = d->attributes->items;
-        va_list args;
-        va_start(args, n);
+        struct nmc_auxiliary_node_attribute *a = node->attributes->items;
         for (int i = 0; i < n; i++) {
                 assert(m->rm_so != -1);
                 assert(m->rm_eo != -1);
                 a->name = va_arg(args, const char *);
                 a->value = mstrdup(buffer + m->rm_so, m->rm_eo - m->rm_so);
                 if (a->value == NULL) {
-                        va_end(args);
-                        free(d->attributes);
-                        free(d);
+                        free(node->attributes);
+                        free(node);
                         return NULL;
                 }
                 m++;
                 a++;
         }
-        va_end(args);
         a->name = NULL;
         a->value = NULL;
-        return d;
+        return node;
+}
+
+static struct nmc_auxiliary_node *
+auxiliary_node_add_matches(struct nmc_auxiliary_node *node,
+                           const char *buffer, regmatch_t *matches, int n, ...)
+{
+        va_list args;
+        va_start(args, n);
+        struct nmc_auxiliary_node *r =
+                auxiliary_node_add_matchesv(node, buffer, matches, n, args);
+        va_end(args);
+        return r;
+}
+
+static struct nmc_auxiliary_node *
+auxiliary_node_new_matches(const char *name, const char *buffer,
+                           regmatch_t *matches, int n, ...)
+{
+        va_list args;
+        va_start(args, n);
+        return auxiliary_node_add_matchesv(auxiliary_node_new(name, n),
+                                           buffer, matches, n, args);
 }
 
 static struct nmc_auxiliary_node *
 abbreviation(const char *buffer, regmatch_t *matches)
 {
         return auxiliary_node_new_matches("abbreviation", buffer, matches, 1, "for");
+}
+
+static struct nmc_auxiliary_node *
+inline_figure(const char *buffer, regmatch_t *matches)
+{
+        struct nmc_auxiliary_node *d =
+                auxiliary_node_add_matches(auxiliary_node_new("ref", 3),
+                                           buffer, matches, 2, "title", "uri");
+        if (d != NULL) {
+                d->attributes->items[2].name = "relation";
+                d->attributes->items[2].value = mstrdup("figure", 6);
+        }
+        return d;
 }
 
 static struct nmc_auxiliary_node *
@@ -558,6 +598,7 @@ definitions_init(struct nmc_error *error)
         if (definitions != NULL)
                 return true;
         return  definitions_push("^(.+) +at +(.+)", ref, error) &&
+                definitions_push("^(.+), +see +(.+)", inline_figure, error) &&
                 definitions_push("^Abbreviation +for +(.+)", abbreviation, error);
 }
 
