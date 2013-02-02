@@ -319,7 +319,9 @@
       this meshes with the standard practice of surrounding a character with
       single quotes in English when you are referring to the character itself.
       Also note that the single quotes will be retained in any output, as the
-      whole sequence is simply seen as text.
+      whole sequence is simply seen as text.  Only sequences where only one
+      character appears between single quotes are handled this way, so you can
+      use unescaped sequences inside nested quotes (“…‘…’…”) if you so wish.
 
   § Groups
 
