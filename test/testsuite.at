@@ -1059,6 +1059,20 @@ AT_NMC_CHECK([title],
 
 AT_CLEANUP
 
+AT_SETUP([Emphasis space normalization])
+
+AT_DATA([title],
+[[T
+
+  /a  b/
+]])
+
+AT_NMC_CHECK([title],
+[[  <title>T</title>
+  <p><emphasis>a b</emphasis></p>]])
+
+AT_CLEANUP
+
 AT_SETUP([Document consisting of a title followed by a paragraph containing a group])
 
 AT_DATA([title],

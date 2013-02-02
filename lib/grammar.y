@@ -735,6 +735,30 @@ text_node_new_dup(enum nmc_node_name name, const char *string, size_t length)
         return text_node_new(name, mstrdup(string, length));
 }
 
+static struct nmc_node *
+text_node_new_normalize(enum nmc_node_name name, const char *string, size_t length)
+{
+        struct nmc_node *n = text_node_new_dup(name, string, length);
+        char *p = ((struct nmc_text_node *)n)->text;
+        while (*p != '\0' && *p != ' ')
+                p++;
+        char *q = p;
+        while (*q != '\0') {
+                if (*q == ' ')
+                        while (q[1] == ' ')
+                                q++;
+                *p++ = *q++;
+        }
+        if (p != q) {
+                *p = '\0';
+                char *t = realloc(((struct nmc_text_node *)n)->text,
+                                  p - ((struct nmc_text_node *)n)->text + 1);
+                if (t != NULL)
+                        ((struct nmc_text_node *)n)->text = t;
+        }
+        return n;
+}
+
 static int
 term(struct parser *parser, YYLTYPE *location, YYSTYPE *value)
 {
@@ -748,7 +772,7 @@ term(struct parser *parser, YYLTYPE *location, YYSTYPE *value)
                         while (*end == ' ')
                                 end++;
                         if (*end == '=' && is_space_or_end(end + 1)) {
-                                value->node = text_node_new_dup(NMC_NODE_TERM, begin, send - begin);
+                                value->node = text_node_new_normalize(NMC_NODE_TERM, begin, send - begin);
                                 return token(parser, location, end + 1, TERM);
                         }
                 } else
@@ -1108,7 +1132,7 @@ emphasis(struct parser *parser, YYLTYPE *location, YYSTYPE *value)
                 }
         } else
                 end++;
-        value->node = text_node_new_dup(NMC_NODE_EMPHASIS, begin, send - begin);
+        value->node = text_node_new_normalize(NMC_NODE_EMPHASIS, begin, send - begin);
 oom:
         return token(parser, location, end, EMPHASIS);
 }
