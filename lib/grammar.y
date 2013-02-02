@@ -435,11 +435,11 @@ static size_t
 bol_space(struct parser *parser, size_t offset)
 {
         if (*(parser->p + offset) == ' ')
-                return 1;
+                return offset + 1;
         parser_error(parser, &parser->location,
                      "missing ‘ ’ after ‘%.*s’ at beginning of line",
                      (int)(u_next(parser->p) - parser->p), parser->p);
-        return 0;
+        return offset;
 }
 
 typedef struct nmc_auxiliary_node *(*definefn)(const char *, regmatch_t *);
@@ -652,8 +652,7 @@ footnote(struct parser *parser, YYLTYPE *location, YYSTYPE *value, size_t length
         if (id == NULL)
                 goto oom;
         value->footnote->id = id_new(id);
-        char *content = text(parser, location,
-                             parser->p + length + bol_space(parser, length));
+        char *content = text(parser, location, parser->p + bol_space(parser, length));
         if (content == NULL)
                 goto oom_id;
         struct nmc_parser_error *error = NULL;
@@ -739,7 +738,7 @@ text_node_new_dup(enum nmc_node_name name, const char *string, size_t length)
 static int
 term(struct parser *parser, YYLTYPE *location, YYSTYPE *value)
 {
-        const char *begin = parser->p + 1 + bol_space(parser, 1);
+        const char *begin = parser->p + bol_space(parser, 1);
         const char *end = begin;
 
         while (!is_end(end)) {
@@ -790,10 +789,7 @@ figure(struct parser *parser, YYLTYPE *location, YYSTYPE *value)
 static int
 bol_token(struct parser *parser, YYLTYPE *location, size_t length, int type)
 {
-        return token(parser,
-                     location,
-                     parser->p + length + bol_space(parser, length),
-                     type);
+        return token(parser, location, parser->p + bol_space(parser, length), type);
 }
 
 #define U_PILCROW_SIGN ((uchar)0x00b6)
