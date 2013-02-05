@@ -152,7 +152,7 @@
       <xsl:call-template name="create.figure.from.ref"/>
     </xsl:for-each>
     <xsl:copy>
-      <xsl:apply-templates mode="remove" select="@*|node()"/>
+      <xsl:apply-templates mode="remove.figures" select="@*|node()"/>
     </xsl:copy>
   </xsl:template>
 
@@ -190,8 +190,18 @@
     </xsl:copy>
   </xsl:template>
 
-  <xsl:template mode="remove.figures" match="figure">
-    <xsl:apply-templates mode="move"/>
+  <xsl:template mode="remove.figures" match="ref[@relation='figure']">
+    <xsl:apply-templates mode="remove.figures"/>
+  </xsl:template>
+
+  <xsl:template match="image">
+    <img src="{.}"/>
+  </xsl:template>
+
+  <xsl:template match="caption">
+    <figcaption>
+      <xsl:apply-templates select="@*|node()"/>
+    </figcaption>
   </xsl:template>
 
   <xsl:template match="section">
@@ -356,23 +366,6 @@
   </xsl:template>
 
   <!--
-  <xsl:template match="figure">
-    <p>
-      <xsl:apply-templates select="@xml:id|@xml:lang"/>
-      <xsl:variable name="class">
-        <xsl:text>figure</xsl:text>
-        <xsl:if test="@float">
-          <xsl:text> figure.float.</xsl:text>
-          <xsl:value-of select="@float"/>
-        </xsl:if>
-      </xsl:variable>
-      <xsl:attribute name="class">
-        <xsl:value-of select="nml:push-nmtoken($class, @class)"/>
-      </xsl:attribute>
-      <xsl:apply-templates/>
-    </p>
-  </xsl:template>
-
   <xsl:template match="define">
     <xsl:choose>
       <xsl:when test="@uri">
