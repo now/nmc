@@ -6,7 +6,7 @@
   unambigiuous as possible in how it treats your content.  This is achieved by
   using indentation for structural nesting and placing various symbols (or,
   well, marks) in said indentation to define what content follows.  This is of
-  course similar to how, for example Markdown works.  The difference is that a
+  course similar to how, for example, Markdown works.  The difference is that a
   symbol appearing at the beginning of the textual content of a line can never
   be misinterpreted as a symbol/mark.  The indentation also makes it easy to
   see what level of nesting you’re content is at, making it easy to navigate.
@@ -257,6 +257,43 @@
       footnotes sprinkled inside your lists makes for very messy lists.  In
       fact, having blocks in your lists at all is sort of messy, but let’s not
       digress…)
+
+  § Figures
+
+      Figures may be used to place content to the right or left of the current
+      content.  We can, for example, place the NoMarks logo to the left of this
+      paragraph¹.  This was introduced via a footnote:
+
+          We can, for example, place the NoMarks logo to the left of this
+          paragraph¹.
+
+        ¹ The NoMarks logo, see data/nomarks.svg
+
+    ¹ The NoMarks logo, see data/nomarks.svg
+
+      Such a footnote consists of a title, followed by “, see ” and a URL.
+
+      Figures can also be displayed in line with other content.  Here’s a
+      bigger version of the NoMarks logo displayed in this manner:
+
+    Fig.
+                             data/nomarks-256.svg
+
+                      A big version of the NoMarks logo.
+
+      This was rendered via
+
+            Fig.
+                                     data/nomarks-256.svg
+
+                              A big version of the NoMarks logo.
+
+      We thus have “Fig.” as a tag, followed by a URL to the image that we want
+      to display, followed by a title for the figure.  Whitespace and newlines
+      between the tag and the URL and between the URL and the figure are
+      ignored, so you’re free to lay it out in a manner that makes it clear to
+      someone reading the text that a figure would take up quite a bit of
+      space at this point.
 
 § Sections
 

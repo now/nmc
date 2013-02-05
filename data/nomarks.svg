@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="128" height="128">
+  <circle fill="red" cx="64" cy="64" r="64"/>
+  <circle fill="white" cx="64" cy="64" r="53"/>
+  <path fill="none" stroke="black" stroke-width="20" d="m 34,97 0,-56 6,0 24,28 24,-28 6,0 0,56"/>
+  <path fill="white" d="m 34,31 -10,11 7,0 0,12 6,0 0,-12 7,0 z"/>
+  <path fill="white" d="m 94,97 -10,-11 7,0 0,-12 6,0 0,12 7,0 z"/>
+  <line stroke="red" stroke-width="11" x1="25" y1="103" x2="103" y2="25"/>
+</svg>

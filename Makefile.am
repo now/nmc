@@ -123,6 +123,16 @@ xslincludedir = $(xsldir)/include
 dist_xslinclude_DATA = \
 	data/xsl/include/string.xsl
 
+dist_pkgdata_DATA = \
+	data/nomarks.svg \
+	data/nomarks-256.svg
+
+data/nomarks-256.svg: $(srcdir)/data/nomarks.svg $(srcdir)/data/svg-scale.xsl
+	$(AM_V_GEN)rm -f $@ $@.tmp
+	$(AM_V_at)$(XSLTPROC) --param scale 2 $(srcdir)/data/svg-scale.xsl $< > $@.tmp
+	$(AM_V_at)chmod a-w $@.tmp
+	$(AM_V_at)mv $@.tmp $@
+
 dist_man1_MANS = \
 	man/nmc.1
 
