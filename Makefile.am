@@ -93,7 +93,7 @@ install-data-hook:
 	    $(XMLCATALOG) --create > "$$syscatalog.tmp" && \
 	      mv "$$syscatalog.tmp" "$$syscatalog" || exit $$?; \
 	  fi; \
-	  $(XMLCATALOG) --add nextCatalog 'file://$(nmldir)/catalog.xml' \
+	  $(XMLCATALOG) --add nextCatalog '' 'file://$(nmldir)/catalog.xml' \
 	    "$$syscatalog" > "$$syscatalog.tmp" && \
 	    mv "$$syscatalog.tmp" "$$syscatalog" || exit $$?; \
 	fi
