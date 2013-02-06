@@ -126,7 +126,7 @@
 
   <xsl:template name="html.body.footer"/>
 
-  <xsl:template match="caption">
+  <xsl:template match="figure/title">
     <figcaption>
       <xsl:apply-templates select="@*|node()"/>
     </figcaption>

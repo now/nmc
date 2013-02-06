@@ -34,7 +34,7 @@
         <xsl:value-of select="string:push-nmtoken(@class,
                                                   concat('figure-', $lr))"/>
       </xsl:attribute>
-      <caption><xsl:value-of select="@title"/></caption>
+      <title><xsl:value-of select="@title"/></title>
       <image><xsl:value-of select="@uri"/></image>
     </figure>
   </xsl:template>

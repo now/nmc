@@ -186,7 +186,6 @@ static void nmc_node_unlink_and_free(struct nmc_node *node, struct parser *parse
 %type <node> head body row cell
 %type <nodes> headbody rows cells
 %type <nodes> figure
-%type <node> caption
 %type <nodes> inlines sinlines
 %type <node> oanchoredinline anchoredinline inline
 %type <node> item firstparagraph
@@ -1573,9 +1572,7 @@ cells: cell { $$ = nodes($1); }
 
 cell: inlines { M($$ = parent(NMC_NODE_CELL, $1)); };
 
-figure: FIGURE caption { N($$ = sibling(nodes($2), $1)); };
-
-caption: inlines { M($$ = parent(NMC_NODE_CAPTION, $1)); };
+figure: FIGURE title { N($$ = sibling(nodes($2), $1)); };
 
 inlines: ospace sinlines ospace { $$ = textify($2); };
 

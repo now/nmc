@@ -69,7 +69,6 @@ enum nmc_node_name
         NMC_NODE_ROW,
         NMC_NODE_CELL,
         NMC_NODE_FIGURE,
-        NMC_NODE_CAPTION,
         NMC_NODE_IMAGE,
         NMC_NODE_CODE,
         NMC_NODE_EMPHASIS,

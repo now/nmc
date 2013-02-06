@@ -358,7 +358,7 @@
     <xsl:text>.RE&#10;</xsl:text>
   </xsl:template>
 
-  <xsl:template match="caption">
+  <xsl:template match="figure/title">
     <xsl:text>.sp&#10;\fB</xsl:text>
     <xsl:apply-templates/>
     <xsl:text>\fR&#10;</xsl:text>

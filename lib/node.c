@@ -310,7 +310,6 @@ static struct {
         [NMC_NODE_ROW] = { NAME("row"), indenting_block },
         [NMC_NODE_CELL] = { NAME("cell"), block },
         [NMC_NODE_FIGURE] = { NAME("figure"), indenting_block },
-        [NMC_NODE_CAPTION] = { NAME("caption"), text_block },
         [NMC_NODE_IMAGE] = { NAME("image"), text_block },
         [NMC_NODE_CODE] = { NAME("code"), inline },
         [NMC_NODE_EMPHASIS] = { NAME("emphasis"), inline },

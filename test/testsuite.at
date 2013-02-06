@@ -1263,13 +1263,13 @@ Fig.
 
                                      a.jpg
 
-                                    Caption
+                                     Title
 ]])
 
 AT_NMC_CHECK([title],
 [[  <title>T</title>
   <figure>
-    <caption>Caption</caption>
+    <title>Title</title>
     <image>a.jpg</image>
   </figure>]])
 
