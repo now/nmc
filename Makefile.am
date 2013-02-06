@@ -121,6 +121,7 @@ dist_xsl_DATA = \
 
 xslincludedir = $(xsldir)/include
 dist_xslinclude_DATA = \
+	data/xsl/include/figures.xsl \
 	data/xsl/include/string.xsl
 
 dist_pkgdata_DATA = \

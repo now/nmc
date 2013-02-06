@@ -35,4 +35,19 @@
                                              ''),
                                    '')"/>
   </func:function>
+
+  <func:function name="string:push-nmtoken">
+    <xsl:param name="nmtokens"/>
+    <xsl:param name="nmtoken"/>
+
+    <xsl:choose>
+      <xsl:when test="$nmtokens">
+        <func:result select="concat($nmtokens, ' ', $nmtoken)"/>
+      </xsl:when>
+
+      <xsl:otherwise>
+        <func:result select="$nmtoken"/>
+      </xsl:otherwise>
+    </xsl:choose>
+  </func:function>
 </xsl:stylesheet>
