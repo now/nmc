@@ -7,9 +7,11 @@
                 xmlns:str="http://exslt.org/strings"
                 xmlns:string="http://disu.se/software/nml/xsl/include/string"
                 extension-element-prefixes="date exsl func str">
+  <xsl:import href="include/figures.xsl"/>
   <xsl:include href="include/string.xsl"/>
 
   <xsl:output method="text" encoding="utf-8"/>
+
   <xsl:strip-space elements="nml section itemization enumeration definitions
                              item term definition table head body row"/>
 
@@ -26,6 +28,7 @@
   <xsl:param name="man:indent.list" select="$man:indent"/>
   <xsl:param name="man:indent.code" select="$man:indent"/>
   <xsl:param name="man:indent.table" select="$man:indent"/>
+  <xsl:param name="man:indent.figure" select="$man:indent"/>
 
   <xsl:variable name="man:param-escapes-rfc">
     <escape what="\" with="\e"/>
@@ -61,6 +64,13 @@
       </xsl:otherwise>
     </xsl:choose>
   </func:function>
+
+  <xsl:template match="nml">
+    <xsl:variable name="moved">
+      <xsl:apply-templates mode="move.figures"/>
+    </xsl:variable>
+    <xsl:apply-templates select="exsl:node-set($moved)"/>
+  </xsl:template>
 
   <xsl:template match="nml/title">
     <xsl:variable name="title">
@@ -338,6 +348,26 @@
   <xsl:template match="cell">
     <xsl:text>&#9;</xsl:text>
     <xsl:call-template name="cell"/>
+  </xsl:template>
+
+  <xsl:template match="figure">
+    <xsl:text>.PP&#10;.RS </xsl:text>
+    <xsl:value-of select="$man:indent.list"/>
+    <xsl:text>&#10;</xsl:text>
+    <xsl:apply-templates/>
+    <xsl:text>.RE&#10;</xsl:text>
+  </xsl:template>
+
+  <xsl:template match="caption">
+    <xsl:text>.sp&#10;\fB</xsl:text>
+    <xsl:apply-templates/>
+    <xsl:text>\fR&#10;</xsl:text>
+  </xsl:template>
+
+  <xsl:template match="image">
+    <xsl:text>[IMAGE </xsl:text>
+    <xsl:apply-templates/>
+    <xsl:text>]&#10;</xsl:text>
   </xsl:template>
 
   <xsl:template match="emphasis">
