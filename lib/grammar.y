@@ -136,7 +136,7 @@ static void nmc_node_unlink_and_free(struct nmc_node *node, struct parser *parse
 %token AGAIN
 %token <substring> WORD
 %token PARAGRAPH
-%token SPACE
+%token <substring> SPACE
 %token ITEMIZATION
 %token ENUMERATION
 %token <node> TERM
@@ -734,30 +734,6 @@ text_node_new_dup(enum nmc_node_name name, const char *string, size_t length)
         return text_node_new(name, mstrdup(string, length));
 }
 
-static struct nmc_node *
-text_node_new_normalize(enum nmc_node_name name, const char *string, size_t length)
-{
-        struct nmc_node *n = text_node_new_dup(name, string, length);
-        char *p = ((struct nmc_text_node *)n)->text;
-        while (*p != '\0' && *p != ' ')
-                p++;
-        char *q = p;
-        while (*q != '\0') {
-                if (*q == ' ')
-                        while (q[1] == ' ')
-                                q++;
-                *p++ = *q++;
-        }
-        if (p != q) {
-                *p = '\0';
-                char *t = realloc(((struct nmc_text_node *)n)->text,
-                                  p - ((struct nmc_text_node *)n)->text + 1);
-                if (t != NULL)
-                        ((struct nmc_text_node *)n)->text = t;
-        }
-        return n;
-}
-
 static int
 term(struct parser *parser, YYLTYPE *location, YYSTYPE *value)
 {
@@ -771,7 +747,7 @@ term(struct parser *parser, YYLTYPE *location, YYSTYPE *value)
                         while (*end == ' ')
                                 end++;
                         if (*end == '=' && is_space_or_end(end + 1)) {
-                                value->node = text_node_new_normalize(NMC_NODE_TERM, begin, send - begin);
+                                value->node = text_node_new_dup(NMC_NODE_TERM, begin, send - begin);
                                 return token(parser, location, end + 1, TERM);
                         }
                 } else
@@ -966,14 +942,14 @@ eol(struct parser *parser, YYLTYPE *location, YYSTYPE *value)
                         locate(parser, location, parser->indent);
                         return token(parser, NULL, begin + parser->indent, ITEMINDENT);
                 } else if (spaces > parser->indent) {
-                        locate(parser, location, parser->indent + 1);
+                        locate(parser, location, spaces + 1);
                         parser->location.last_column--;
-                        return token(parser, NULL, begin + parser->indent, SPACE);
+                        return substring(parser, NULL, value, end, SPACE);
                 } else if (spaces < parser->indent) {
                         locate(parser, location, spaces + 1);
                         parser->location.last_column--;
                         if (spaces % 2 != 0)
-                                return token(parser, NULL, end, SPACE);
+                                return substring(parser, NULL, value, end, SPACE);
                         parser->bol = true;
                         return dedents(parser, begin, spaces);
                 } else {
@@ -1131,7 +1107,7 @@ emphasis(struct parser *parser, YYLTYPE *location, YYSTYPE *value)
                 }
         } else
                 end++;
-        value->node = text_node_new_normalize(NMC_NODE_EMPHASIS, begin, send - begin);
+        value->node = text_node_new_dup(NMC_NODE_EMPHASIS, begin, send - begin);
 oom:
         return token(parser, location, end, EMPHASIS);
 }
@@ -1190,7 +1166,7 @@ parser_lex(struct parser *parser, YYLTYPE *location, YYSTYPE *value)
                 do {
                         end++;
                 } while (*end == ' ');
-                return token(parser, location, end, SPACE);
+                return substring(parser, location, value, end, SPACE);
         }
         case '\n':
                 return eol(parser, location, value);
@@ -1450,17 +1426,10 @@ append_text(struct parser *parser, struct nodes inlines, struct substring substr
                 return inlines;
         if (inlines.last->name != NMC_NODE_BUFFER)
                 return sibling(inlines, buffer(parser, substring));
-
         if (!buffer_append(((struct buffer_node *)inlines.last)->u.buffer,
                            substring.string, substring.length))
                 return nodes(NULL);
         return inlines;
-}
-
-static inline struct nodes
-append_space(struct parser *parser, struct nodes inlines)
-{
-        return append_text(parser, inlines, (struct substring){ " ", 1 });
 }
 
 static inline struct nodes
@@ -1492,7 +1461,7 @@ documenttitle: words { M($$ = parent1(NMC_NODE_TITLE, textify($1).first)); };
 
 words: WORD { N($$ = nodes(buffer(parser, $1))); }
 | words WORD { N($$ = append_text(parser, $1, $2)); }
-| words spaces WORD { N($$ = append_text(parser, append_space(parser, $1), $3)); };
+| words SPACE WORD { N($$ = append_text(parser, append_text(parser, $1, $2), $3)); };
 
 oblockssections0: /* empty */ { $$ = nodes(NULL); }
 | blockssections { $$ = $1; };
@@ -1580,8 +1549,8 @@ sinlines: WORD { N($$ = nodes(buffer(parser, $1))); }
 | oanchoredinline { $$ = nodes($1); }
 | sinlines WORD { N($$ = append_text(parser, $1, $2)); }
 | sinlines oanchoredinline { N($$ = sibling(textify($1), $2)); }
-| sinlines spaces WORD { N($$ = append_text(parser, append_space(parser, $1), $3)); }
-| sinlines spaces oanchoredinline { N($$ = sibling(textify(append_space(parser, $1)), $3)); };
+| sinlines SPACE WORD { N($$ = append_text(parser, append_text(parser, $1, $2), $3)); }
+| sinlines SPACE oanchoredinline { N($$ = sibling(textify(append_text(parser, $1, $2)), $3)); };
 
 oanchoredinline: inline
 | anchoredinline;
@@ -1596,9 +1565,6 @@ inline: CODE { M($$ = $1); }
 
 ospace: /* empty */
 | SPACE;
-
-spaces: SPACE
-| spaces SPACE;
 
 item: { parser->want = ITEMINDENT; } firstparagraph oblocks { M($$ = parent_children(NMC_NODE_ITEM, $2, $3)); };
 

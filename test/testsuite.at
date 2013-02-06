@@ -48,7 +48,7 @@ AT_DATA([title],
 ]])
 
 AT_NMC_CHECK([title],
-[[  <title>Word1 Word2</title>]])
+[[  <title>Word1   Word2</title>]])
 
 AT_CLEANUP
 
@@ -60,7 +60,8 @@ AT_DATA([title],
 ]])
 
 AT_NMC_CHECK([title],
-[[  <title>Word1 Word2</title>]])
+[[  <title>Word1
+  Word2</title>]])
 
 AT_CLEANUP
 
@@ -89,7 +90,8 @@ AT_DATA([title],
 
 AT_NMC_CHECK([title],
 [[  <title>Title</title>
-  <p>Line1 Line2</p>]])
+  <p>Line1
+  Line2</p>]])
 
 AT_CLEANUP
 
@@ -166,7 +168,8 @@ AT_NMC_CHECK([title],
 [[  <title>Title</title>
   <section>
     <title>Section</title>
-    <p>Line1 Line2</p>
+    <p>Line1
+    Line2</p>
   </section>]])
 
 AT_CLEANUP
@@ -308,7 +311,8 @@ AT_NMC_CHECK([title],
 [[  <title>Title</title>
   <itemization>
     <item>
-      <p>Line1 Line2</p>
+      <p>Line1
+    Line2</p>
       <p>Paragraph2</p>
     </item>
     <item>
@@ -1059,20 +1063,6 @@ AT_NMC_CHECK([title],
 
 AT_CLEANUP
 
-AT_SETUP([Emphasis space normalization])
-
-AT_DATA([title],
-[[T
-
-  /a  b/
-]])
-
-AT_NMC_CHECK([title],
-[[  <title>T</title>
-  <p><emphasis>a b</emphasis></p>]])
-
-AT_CLEANUP
-
 AT_SETUP([Document consisting of a title followed by a paragraph containing a group])
 
 AT_DATA([title],
@@ -1152,7 +1142,8 @@ AT_DATA([title],
 AT_NMC_CHECK([title],
 [[  <title>Title</title>
   <quote>
-    <line>Perfection (in design) is achieved not when there is nothing more to add, but rather when there is nothing more to take away.</line>
+    <line>Perfection (in design) is achieved not when there is nothing more to
+  add, but rather when there is nothing more to take away.</line>
     <attribution>Antoine de Saint-Exupéry</attribution>
   </quote>]])
 
@@ -1492,7 +1483,8 @@ AT_NMC_CHECK([title],
 [[  <title>T</title>
   <itemization>
     <item>
-      <p>1 2</p>
+      <p>1
+    2</p>
     </item>
   </itemization>]])
 
@@ -1513,7 +1505,8 @@ AT_NMC_CHECK([title],
 [[  <title>T</title>
   <itemization>
     <item>
-      <p>1 2</p>
+      <p>1
+    2</p>
       <p>3</p>
     </item>
   </itemization>]])
@@ -1537,7 +1530,8 @@ AT_NMC_CHECK([title],
 [[  <title>T</title>
   <itemization>
     <item>
-      <p>1 2</p>
+      <p>1
+    2</p>
       <p>3</p>
     </item>
   </itemization>
