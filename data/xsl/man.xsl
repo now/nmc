@@ -65,11 +65,11 @@
     </xsl:choose>
   </func:function>
 
-  <xsl:template match="nml">
+  <xsl:template match="/">
     <xsl:variable name="moved">
       <xsl:apply-templates mode="move.figures"/>
     </xsl:variable>
-    <xsl:apply-templates select="exsl:node-set($moved)"/>
+    <xsl:apply-templates select="exsl:node-set($moved)/*"/>
   </xsl:template>
 
   <xsl:template match="nml/title">
@@ -120,10 +120,10 @@
   </xsl:template>
 
   <xsl:template match="section">
-    <xml:message terminate="yes">
+    <xsl:message terminate="yes">
       <xsl:text>man.xsl: can’t nest sections more than two levels </xsl:text>
       <xsl:text>deep in man pages</xsl:text>
-    </xml:message>
+    </xsl:message>
   </xsl:template>
 
   <xsl:template match="p">

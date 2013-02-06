@@ -74,7 +74,7 @@
                              translate(normalize-space($title), ' ', '-')))"/>
   </func:function>
 
-  <xsl:template match="nml">
+  <xsl:template match="/">
     <xsl:text disable-output-escaping="yes"><![CDATA[<!DOCTYPE html>]]>&#10;</xsl:text>
     <html>
       <xsl:if test="@xml:lang or $lang">
@@ -116,11 +116,10 @@
 
   <xsl:template name="html.body.article">
     <article>
-      <xsl:call-template name="id-by-title"/>
       <xsl:variable name="moved">
         <xsl:apply-templates mode="move.figures"/>
       </xsl:variable>
-      <xsl:apply-templates select="exsl:node-set($moved)"/>
+      <xsl:apply-templates select="exsl:node-set($moved)/*"/>
     </article>
   </xsl:template>
 
