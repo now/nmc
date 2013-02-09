@@ -1,6 +1,6 @@
 AT_INIT
 
-# AT_TESTED([nmc])
+AT_TESTED([nmc])
 
 AT_SETUP([Document only consisting of a title])
 
