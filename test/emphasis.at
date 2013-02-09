@@ -1,0 +1,81 @@
+AT_SETUP([Document consisting of a title followed by a paragraph containing an emphasis inline])
+
+AT_DATA([title],
+[[Title
+
+  Word1 /Emphasis/ Word2
+]])
+
+AT_NMC_CHECK([title],
+[[  <title>Title</title>
+  <p>Word1 <emphasis>Emphasis</emphasis> Word2</p>]])
+
+AT_CLEANUP
+
+AT_SETUP([Document consisting of a title followed by a paragraph containing an emphasis inline containing a solidus])
+
+AT_DATA([title],
+[[Title
+
+  Word1 /True/False/ Word2
+]])
+
+AT_NMC_CHECK([title],
+[[  <title>Title</title>
+  <p>Word1 <emphasis>True/False</emphasis> Word2</p>]])
+
+AT_CLEANUP
+
+AT_SETUP([Document consisting of a title followed by a paragraph containing an unterminated emphasis inline])
+
+AT_DATA([title],
+[[Title
+
+  /Emphasis
+]])
+
+AT_NMC_CHECK_FAIL([title], [3:3: missing ending ‘/’ for emphasis inline])
+
+AT_CLEANUP
+
+AT_SETUP([Emphasis start/termination rules: //…/])
+
+AT_DATA([title],
+[[T
+
+  //…/
+]])
+
+AT_NMC_CHECK([title],
+[[  <title>T</title>
+  <p><emphasis>/…</emphasis></p>]])
+
+AT_CLEANUP
+
+AT_SETUP([Emphasis start/termination rules: /…//])
+
+AT_DATA([title],
+[[T
+
+  /…//
+]])
+
+AT_NMC_CHECK([title],
+[[  <title>T</title>
+  <p><emphasis>…/</emphasis></p>]])
+
+AT_CLEANUP
+
+AT_SETUP([Emphasis start/termination rules: /…//a/])
+
+AT_DATA([title],
+[[T
+
+  /…//a/
+]])
+
+AT_NMC_CHECK([title],
+[[  <title>T</title>
+  <p><emphasis>…//a</emphasis></p>]])
+
+AT_CLEANUP

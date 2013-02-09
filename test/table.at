@@ -1,0 +1,95 @@
+AT_SETUP([Document consisting of a title followed by a table consisting of one row with one entry])
+
+AT_DATA([title],
+[[Title
+
+| Entry |
+]])
+
+AT_NMC_CHECK([title],
+[[  <title>Title</title>
+  <table>
+    <body>
+      <row>
+        <cell>Entry</cell>
+      </row>
+    </body>
+  </table>]])
+
+AT_CLEANUP
+
+AT_SETUP([Document consisting of a title followed by a table consisting of one row with two entries])
+
+AT_DATA([title],
+[[Title
+
+| One | Two |
+]])
+
+AT_NMC_CHECK([title],
+[[  <title>Title</title>
+  <table>
+    <body>
+      <row>
+        <cell>One</cell>
+        <cell>Two</cell>
+      </row>
+    </body>
+  </table>]])
+
+AT_CLEANUP
+
+AT_SETUP([Document consisting of a title followed by a table consisting of two rows with two entries])
+
+AT_DATA([title],
+[[Title
+
+| One   | Two  |
+| Three | Four |
+]])
+
+AT_NMC_CHECK([title],
+[[  <title>Title</title>
+  <table>
+    <body>
+      <row>
+        <cell>One</cell>
+        <cell>Two</cell>
+      </row>
+      <row>
+        <cell>Three</cell>
+        <cell>Four</cell>
+      </row>
+    </body>
+  </table>]])
+
+AT_CLEANUP
+
+AT_SETUP([Document consisting of a title followed by a table consisting of a head row followed by a row with two entries])
+
+AT_DATA([title],
+[[Title
+
+| One   | Two  |
+|-------+------|
+| Three | Four |
+]])
+
+AT_NMC_CHECK([title],
+[[  <title>Title</title>
+  <table>
+    <head>
+      <row>
+        <cell>One</cell>
+        <cell>Two</cell>
+      </row>
+    </head>
+    <body>
+      <row>
+        <cell>Three</cell>
+        <cell>Four</cell>
+      </row>
+    </body>
+  </table>]])
+
+AT_CLEANUP

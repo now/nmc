@@ -1,0 +1,110 @@
+AT_SETUP([Document consisting of a title followed by a code block])
+
+AT_DATA([title],
+[[Title
+
+    Code
+]])
+
+AT_NMC_CHECK([title],
+[[  <title>Title</title>
+  <code>Code</code>]])
+
+AT_CLEANUP
+
+AT_SETUP([Document consisting of a title followed by a multi-line code block])
+
+AT_DATA([title],
+[[Title
+
+    Code1
+    Code2
+]])
+
+AT_NMC_CHECK([title],
+[[  <title>Title</title>
+  <code>Code1
+Code2</code>]])
+
+AT_CLEANUP
+
+AT_SETUP([Document consisting of a title followed by an indented multi-line code block])
+
+AT_DATA([title],
+[[Title
+
+    Code1
+      Code2
+]])
+
+AT_NMC_CHECK([title],
+[[  <title>Title</title>
+  <code>Code1
+  Code2</code>]])
+
+AT_CLEANUP
+
+AT_SETUP([Document consisting of a title followed by a multi-line code block with empty lines])
+
+AT_DATA([title],
+[[Title
+
+    Code1
+    Code2
+
+    Code3
+]])
+
+AT_NMC_CHECK([title],
+[[  <title>Title</title>
+  <code>Code1
+Code2
+
+Code3</code>]])
+
+AT_CLEANUP
+
+AT_SETUP([Document consisting of a title followed by a multi-line code block with multiple empty lines])
+
+AT_DATA([title],
+[[Title
+
+    Code1
+    Code2
+
+
+    Code3
+]])
+
+AT_NMC_CHECK([title],
+[[  <title>Title</title>
+  <code>Code1
+Code2
+
+
+Code3</code>]])
+
+AT_CLEANUP
+
+AT_SETUP([Document consisting of a title followed by a multi-line code block with empty lines followed by a paragraph])
+
+AT_DATA([title],
+[[Title
+
+    Code1
+    Code2
+
+    Code3
+
+  Paragraph
+]])
+
+AT_NMC_CHECK([title],
+[[  <title>Title</title>
+  <code>Code1
+Code2
+
+Code3</code>
+  <p>Paragraph</p>]])
+
+AT_CLEANUP

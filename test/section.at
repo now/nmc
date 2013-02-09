@@ -1,0 +1,118 @@
+AT_SETUP([Document consisting of a title followed by a section containing a paragraph])
+
+AT_DATA([title],
+[[Title
+
+§ Section
+
+    Paragraph
+]])
+
+AT_NMC_CHECK([title],
+[[  <title>Title</title>
+  <section>
+    <title>Section</title>
+    <p>Paragraph</p>
+  </section>]])
+
+AT_CLEANUP
+
+AT_SETUP([Document consisting of a title followed by a section containing two paragraphs])
+
+AT_DATA([title],
+[[Title
+
+§ Section
+
+    Paragraph1
+
+    Paragraph2
+]])
+
+AT_NMC_CHECK([title],
+[[  <title>Title</title>
+  <section>
+    <title>Section</title>
+    <p>Paragraph1</p>
+    <p>Paragraph2</p>
+  </section>]])
+
+AT_CLEANUP
+
+AT_SETUP([Document consisting of a title followed by a section containing a multi-line paragraph])
+
+AT_DATA([title],
+[[Title
+
+§ Section
+
+    Line1
+    Line2
+]])
+
+AT_NMC_CHECK([title],
+[[  <title>Title</title>
+  <section>
+    <title>Section</title>
+    <p>Line1
+    Line2</p>
+  </section>]])
+
+AT_CLEANUP
+
+AT_SETUP([Document consisting of a title followed by two sections])
+
+AT_DATA([title],
+[[Title
+
+§ Section1
+
+    Paragraph1
+
+§ Section2
+
+    Paragraph2
+]])
+
+AT_NMC_CHECK([title],
+[[  <title>Title</title>
+  <section>
+    <title>Section1</title>
+    <p>Paragraph1</p>
+  </section>
+  <section>
+    <title>Section2</title>
+    <p>Paragraph2</p>
+  </section>]])
+
+AT_CLEANUP
+
+AT_SETUP([Document consisting of a title followed by a paragraph and a section])
+
+AT_DATA([title],
+[[Title
+
+  Paragraph1
+
+§ Section1
+
+    Paragraph1
+
+§ Section2
+
+    Paragraph2
+]])
+
+AT_NMC_CHECK([title],
+[[  <title>Title</title>
+  <p>Paragraph1</p>
+  <section>
+    <title>Section1</title>
+    <p>Paragraph1</p>
+  </section>
+  <section>
+    <title>Section2</title>
+    <p>Paragraph2</p>
+  </section>]])
+
+AT_CLEANUP

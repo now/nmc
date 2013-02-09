@@ -1,0 +1,90 @@
+AT_SETUP([Document consisting of a title followed by a paragraph, an itemization, and a paragraph])
+
+AT_DATA([title],
+[[Title
+
+  Paragraph1
+
+• Item1
+
+  Paragraph2
+]])
+
+AT_NMC_CHECK([title],
+[[  <title>Title</title>
+  <p>Paragraph1</p>
+  <itemization>
+    <item>
+      <p>Item1</p>
+    </item>
+  </itemization>
+  <p>Paragraph2</p>]])
+
+AT_CLEANUP
+
+AT_SETUP([Document consisting of a title followed by a two-item itemization])
+
+AT_DATA([title],
+[[Title
+
+• Item1
+• Item2
+]])
+
+AT_NMC_CHECK([title],
+[[  <title>Title</title>
+  <itemization>
+    <item>
+      <p>Item1</p>
+    </item>
+    <item>
+      <p>Item2</p>
+    </item>
+  </itemization>]])
+
+AT_CLEANUP
+
+AT_SETUP([Document consisting of a title followed by an itemization with an inline])
+
+AT_DATA([title],
+[[Title
+
+• A ‹Item1›
+]])
+
+AT_NMC_CHECK([title],
+[[  <title>Title</title>
+  <itemization>
+    <item>
+      <p>A <code>Item1</code></p>
+    </item>
+  </itemization>]])
+
+AT_CLEANUP
+
+AT_SETUP([Document consisting of a title followed by a two-item itemization, the first containing two paragraphs])
+
+AT_DATA([title],
+[[Title
+
+•   Line1
+    Line2
+
+    Paragraph2
+•   Item2
+]])
+
+AT_NMC_CHECK([title],
+[[  <title>Title</title>
+  <itemization>
+    <item>
+      <p>Line1
+    Line2</p>
+      <p>Paragraph2</p>
+    </item>
+    <item>
+      <p>Item2</p>
+    </item>
+  </itemization>]])
+
+AT_CLEANUP

@@ -1,0 +1,85 @@
+AT_SETUP([Document consisting of a title followed by a broken beginning of line])
+
+AT_DATA([title],
+[[Title
+
+A a
+]])
+
+AT_NMC_CHECK_FAIL([title], [3:1: unrecognized character ‘A’ (U+0041) at beginning of line])
+
+AT_CLEANUP
+
+AT_SETUP([Document consisting of a title followed by a broken quote])
+
+AT_DATA([title],
+[[Title
+
+>A b
+]])
+
+AT_NMC_CHECK_FAIL([title], [3:1: missing ‘ ’ after ‘>’ at beginning of line])
+
+AT_CLEANUP
+
+AT_SETUP([Document consisting of a title followed by a broken itemization])
+
+AT_DATA([title],
+[[Title
+
+•A b
+]])
+
+AT_NMC_CHECK_FAIL([title], [3:1: missing ‘ ’ after ‘•’ at beginning of line])
+
+AT_CLEANUP
+
+AT_SETUP([Document consisting of a title followed by a broken table])
+
+AT_DATA([title],
+[[Title
+
+|A |
+]])
+
+AT_NMC_CHECK_FAIL([title], [3:1: missing ‘ ’ after ‘|’ at beginning of line])
+
+AT_CLEANUP
+
+AT_SETUP([Document consisting of a title followed by a broken definition])
+
+AT_DATA([title],
+[[Title
+
+=A. =   1
+]])
+
+AT_NMC_CHECK_FAIL([title], [3:1: missing ‘ ’ after ‘=’ at beginning of line])
+
+AT_CLEANUP
+
+AT_SETUP([Document consisting of a title followed by a broken paragraph])
+
+AT_DATA([title],
+[[Title
+
+ A b
+]])
+
+AT_NMC_CHECK_FAIL([title], [3:1: missing ‘ ’ after ‘ ’ at beginning of line])
+
+AT_CLEANUP
+
+AT_SETUP([Document consisting of a title followed by a paragraph with a broken footnote])
+
+AT_DATA([title],
+[[Title
+
+  Abbr¹
+
+¹Abbreviation for Abbreviation
+]])
+
+AT_NMC_CHECK_FAIL([title], [5:1: missing ‘ ’ after ‘¹’ at beginning of line])
+
+AT_CLEANUP
