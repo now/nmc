@@ -1,28 +1,28 @@
 AT_NMC_CHECK_TRANSFORM([Document consisting of a title followed by a paragraph],
-[[Title
+[Title
 
   Paragraph
-]],
-[[  <title>Title</title>
-  <p>Paragraph</p>]])
+],
+[  <title>Title</title>
+  <p>Paragraph</p>])
 
 AT_NMC_CHECK_TRANSFORM([Document consisting of a title followed by a multi-line paragraph],
-[[Title
+[Title
 
   Line1
   Line2
-]],
-[[  <title>Title</title>
+],
+[  <title>Title</title>
   <p>Line1
-  Line2</p>]])
+  Line2</p>])
 
 AT_NMC_CHECK_TRANSFORM([Document consisting of a title followed by two paragraphs],
-[[Title
+[Title
 
   Paragraph1
 
   Paragraph2
-]],
-[[  <title>Title</title>
+],
+[  <title>Title</title>
   <p>Paragraph1</p>
-  <p>Paragraph2</p>]])
+  <p>Paragraph2</p>])

@@ -1,47 +1,47 @@
 AT_NMC_CHECK_TRANSFORM([Document consisting of a title followed by a paragraph with footnotes],
-[[Title
+[Title
 
   Abbr¹⁺² for US³³
 
 ¹ Abbreviation for Abbreviation
 ² See the Wikipedia entry for “Abbreviation” at http://en.wikipedia.org/wiki/Abbreviation
 ³³ Abbreviation for United States
-]],
-[[  <title>Title</title>
-  <p><ref title="See the Wikipedia entry for “Abbreviation”" uri="http://en.wikipedia.org/wiki/Abbreviation"><abbreviation for="Abbreviation">Abbr</abbreviation></ref> for <abbreviation for="United States">US</abbreviation></p>]])
+],
+[  <title>Title</title>
+  <p><ref title="See the Wikipedia entry for “Abbreviation”" uri="http://en.wikipedia.org/wiki/Abbreviation"><abbreviation for="Abbreviation">Abbr</abbreviation></ref> for <abbreviation for="United States">US</abbreviation></p>])
 
 AT_NMC_CHECK_TRANSFORM([Document consisting of a title followed by a section containing a paragraph with footnotes],
-[[Title
+[Title
 
 § Section
 
     Word1 Abbr¹ Word3
 
   ¹ Abbreviation for Abbreviation
-]],
-[[  <title>Title</title>
+],
+[  <title>Title</title>
   <section>
     <title>Section</title>
     <p>Word1 <abbreviation for="Abbreviation">Abbr</abbreviation> Word3</p>
-  </section>]])
+  </section>])
 
 AT_NMC_CHECK_TRANSFORM([Document consisting of a title followed by a section with footnotes],
-[[Title
+[Title
 
 § Section
 
     Word1 Abbr¹ Word3
 
 ¹ Abbreviation for Abbreviation
-]],
-[[  <title>Title</title>
+],
+[  <title>Title</title>
   <section>
     <title>Section</title>
     <p>Word1 <abbreviation for="Abbreviation">Abbr</abbreviation> Word3</p>
-  </section>]])
+  </section>])
 
 AT_NMC_CHECK_TRANSFORM([Document consisting of a title followed by two sections with footnotes],
-[[Title
+[Title
 
 § Section
 
@@ -54,8 +54,8 @@ AT_NMC_CHECK_TRANSFORM([Document consisting of a title followed by two sections 
     Word1 Abbr¹ Word3
 
 ¹ Abbreviation for Abbreviation
-]],
-[[  <title>Title</title>
+],
+[  <title>Title</title>
   <section>
     <title>Section</title>
     <p>Word1 <abbreviation for="Abbreviation">Abbr</abbreviation> Word3</p>
@@ -63,10 +63,10 @@ AT_NMC_CHECK_TRANSFORM([Document consisting of a title followed by two sections 
   <section>
     <title>Section</title>
     <p>Word1 <abbreviation for="Abbreviation">Abbr</abbreviation> Word3</p>
-  </section>]])
+  </section>])
 
 AT_NMC_CHECK_TRANSFORM([Reused footnotes],
-[[Title
+[Title
 
 § Section
 
@@ -77,8 +77,8 @@ AT_NMC_CHECK_TRANSFORM([Reused footnotes],
       Abbr¹
 
   ¹ Abbreviation for Abbreviation
-]],
-[[  <title>Title</title>
+],
+[  <title>Title</title>
   <section>
     <title>Section</title>
     <p><abbreviation for="Abbreviation">Abbr</abbreviation></p>
@@ -86,52 +86,52 @@ AT_NMC_CHECK_TRANSFORM([Reused footnotes],
       <title>Sub-section</title>
       <p><abbreviation for="Abbreviation">Abbr</abbreviation></p>
     </section>
-  </section>]])
+  </section>])
 
 AT_NMC_CHECK_TRANSFORM([Document consisting of a title followed by a paragraph with a long footnote],
-[[Title
+[Title
 
   Word1 Abbr¹ Word3
 
 ¹ Abbreviation for
   Abbreviation
-]],
-[[  <title>Title</title>
-  <p>Word1 <abbreviation for="Abbreviation">Abbr</abbreviation> Word3</p>]])
+],
+[  <title>Title</title>
+  <p>Word1 <abbreviation for="Abbreviation">Abbr</abbreviation> Word3</p>])
 
 AT_NMC_CHECK_FAIL_TRANSFORM([Document consisting of a title followed by a paragraph with an unrecognized footnote],
-[[Title
+[Title
 
   Word1 Abbr¹ Word3
 
 ¹ Junk text in this here footnote
-]],
+],
 [5.1-34: unrecognized footnote content: Junk text in this here footnote])
 
 AT_NMC_CHECK_FAIL_TRANSFORM([Document consisting of a title followed by a paragraph followed by two footnotes with same sigil],
-[[Title
+[Title
 
   Word1¹
 
 ¹ Abbreviation for Abbreviaton
 ¹ Abbreviation for Abbreviaton
-]],
+],
 [6.1-31: footnote ¹ already defined at 5.1-31])
 
 AT_NMC_CHECK_FAIL_TRANSFORM([Document consisting of a title followed by a paragraph followed by two unreferenced footnotes],
-[[Title
+[Title
 
   Word1
 
 ¹ Abbreviation for Abbreviaton
 ² Abbreviation for Abbreviaton
-]],
+],
 [5.1-31: unreferenced footnote: ¹
 6.1-31: unreferenced footnote: ²])
 
 AT_NMC_CHECK_FAIL_TRANSFORM([Reference to undefined footnote],
-[[Title
+[Title
 
   Word1¹
-]],
+],
 [3.8-9: reference to undefined footnote: ¹])

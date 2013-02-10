@@ -1,23 +1,23 @@
 AT_NMC_CHECK_TRANSFORM([Document consisting of a title followed by a table consisting of one row with one entry],
-[[Title
+[Title
 
 | Entry |
-]],
-[[  <title>Title</title>
+],
+[  <title>Title</title>
   <table>
     <body>
       <row>
         <cell>Entry</cell>
       </row>
     </body>
-  </table>]])
+  </table>])
 
 AT_NMC_CHECK_TRANSFORM([Document consisting of a title followed by a table consisting of one row with two entries],
-[[Title
+[Title
 
 | One | Two |
-]],
-[[  <title>Title</title>
+],
+[  <title>Title</title>
   <table>
     <body>
       <row>
@@ -25,15 +25,15 @@ AT_NMC_CHECK_TRANSFORM([Document consisting of a title followed by a table consi
         <cell>Two</cell>
       </row>
     </body>
-  </table>]])
+  </table>])
 
 AT_NMC_CHECK_TRANSFORM([Document consisting of a title followed by a table consisting of two rows with two entries],
-[[Title
+[Title
 
 | One   | Two  |
 | Three | Four |
-]],
-[[  <title>Title</title>
+],
+[  <title>Title</title>
   <table>
     <body>
       <row>
@@ -45,16 +45,16 @@ AT_NMC_CHECK_TRANSFORM([Document consisting of a title followed by a table consi
         <cell>Four</cell>
       </row>
     </body>
-  </table>]])
+  </table>])
 
 AT_NMC_CHECK_TRANSFORM([Document consisting of a title followed by a table consisting of a head row followed by a row with two entries],
-[[Title
+[Title
 
 | One   | Two  |
 |-------+------|
 | Three | Four |
-]],
-[[  <title>Title</title>
+],
+[  <title>Title</title>
   <table>
     <head>
       <row>
@@ -68,4 +68,4 @@ AT_NMC_CHECK_TRANSFORM([Document consisting of a title followed by a table consi
         <cell>Four</cell>
       </row>
     </body>
-  </table>]])
+  </table>])

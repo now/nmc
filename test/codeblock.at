@@ -1,63 +1,63 @@
 AT_NMC_CHECK_TRANSFORM([Document consisting of a title followed by a code block],
-[[Title
+[Title
 
     Code
-]],
-[[  <title>Title</title>
-  <code>Code</code>]])
+],
+[  <title>Title</title>
+  <code>Code</code>])
 
 AT_NMC_CHECK_TRANSFORM([Document consisting of a title followed by a multi-line code block],
-[[Title
+[Title
 
     Code1
     Code2
-]],
-[[  <title>Title</title>
+],
+[  <title>Title</title>
   <code>Code1
-Code2</code>]])
+Code2</code>])
 
 AT_NMC_CHECK_TRANSFORM([Document consisting of a title followed by an indented multi-line code block],
-[[Title
+[Title
 
     Code1
       Code2
-]],
-[[  <title>Title</title>
+],
+[  <title>Title</title>
   <code>Code1
-  Code2</code>]])
+  Code2</code>])
 
 AT_NMC_CHECK_TRANSFORM([Document consisting of a title followed by a multi-line code block with empty lines],
-[[Title
+[Title
 
     Code1
     Code2
 
     Code3
-]],
-[[  <title>Title</title>
+],
+[  <title>Title</title>
   <code>Code1
 Code2
 
-Code3</code>]])
+Code3</code>])
 
 AT_NMC_CHECK_TRANSFORM([Document consisting of a title followed by a multi-line code block with multiple empty lines],
-[[Title
+[Title
 
     Code1
     Code2
 
 
     Code3
-]],
-[[  <title>Title</title>
+],
+[  <title>Title</title>
   <code>Code1
 Code2
 
 
-Code3</code>]])
+Code3</code>])
 
 AT_NMC_CHECK_TRANSFORM([Document consisting of a title followed by a multi-line code block with empty lines followed by a paragraph],
-[[Title
+[Title
 
     Code1
     Code2
@@ -65,10 +65,10 @@ AT_NMC_CHECK_TRANSFORM([Document consisting of a title followed by a multi-line 
     Code3
 
   Paragraph
-]],
-[[  <title>Title</title>
+],
+[  <title>Title</title>
   <code>Code1
 Code2
 
 Code3</code>
-  <p>Paragraph</p>]])
+  <p>Paragraph</p>])

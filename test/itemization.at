@@ -1,28 +1,28 @@
 AT_NMC_CHECK_TRANSFORM([Document consisting of a title followed by a paragraph, an itemization, and a paragraph],
-[[Title
+[Title
 
   Paragraph1
 
 • Item1
 
   Paragraph2
-]],
-[[  <title>Title</title>
+],
+[  <title>Title</title>
   <p>Paragraph1</p>
   <itemization>
     <item>
       <p>Item1</p>
     </item>
   </itemization>
-  <p>Paragraph2</p>]])
+  <p>Paragraph2</p>])
 
 AT_NMC_CHECK_TRANSFORM([Document consisting of a title followed by a two-item itemization],
-[[Title
+[Title
 
 • Item1
 • Item2
-]],
-[[  <title>Title</title>
+],
+[  <title>Title</title>
   <itemization>
     <item>
       <p>Item1</p>
@@ -30,30 +30,30 @@ AT_NMC_CHECK_TRANSFORM([Document consisting of a title followed by a two-item it
     <item>
       <p>Item2</p>
     </item>
-  </itemization>]])
+  </itemization>])
 
 AT_NMC_CHECK_TRANSFORM([Document consisting of a title followed by an itemization with an inline],
-[[Title
+[Title
 
 • A ‹Item1›
-]],
-[[  <title>Title</title>
+],
+[  <title>Title</title>
   <itemization>
     <item>
       <p>A <code>Item1</code></p>
     </item>
-  </itemization>]])
+  </itemization>])
 
 AT_NMC_CHECK_TRANSFORM([Document consisting of a title followed by a two-item itemization, the first containing two paragraphs],
-[[Title
+[Title
 
 •   Line1
     Line2
 
     Paragraph2
 •   Item2
-]],
-[[  <title>Title</title>
+],
+[  <title>Title</title>
   <itemization>
     <item>
       <p>Line1
@@ -63,4 +63,4 @@ AT_NMC_CHECK_TRANSFORM([Document consisting of a title followed by a two-item it
     <item>
       <p>Item2</p>
     </item>
-  </itemization>]])
+  </itemization>])

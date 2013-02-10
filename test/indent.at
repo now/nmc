@@ -1,11 +1,11 @@
 AT_NMC_CHECK_TRANSFORM([Test indent rules: first block in section is non-paragraph],
-[[Title
+[Title
 
 § Section
 
   • List
-]],
-[[  <title>Title</title>
+],
+[  <title>Title</title>
   <section>
     <title>Section</title>
     <itemization>
@@ -13,16 +13,16 @@ AT_NMC_CHECK_TRANSFORM([Test indent rules: first block in section is non-paragra
         <p>List</p>
       </item>
     </itemization>
-  </section>]])
+  </section>])
 
 AT_NMC_CHECK_TRANSFORM([Test indent rules: first block in an item is a nested item],
-[[T
+[T
 
 •   1
 
   •   2
-]],
-[[  <title>T</title>
+],
+[  <title>T</title>
   <itemization>
     <item>
       <p>1</p>
@@ -32,16 +32,16 @@ AT_NMC_CHECK_TRANSFORM([Test indent rules: first block in an item is a nested it
         </item>
       </itemization>
     </item>
-  </itemization>]])
+  </itemization>])
 
 
 AT_NMC_CHECK_TRANSFORM([Test indent rules: first block in an item is a tightly nested item],
-[[T
+[T
 
 •   1
   •   2
-]],
-[[  <title>T</title>
+],
+[  <title>T</title>
   <itemization>
     <item>
       <p>1</p>
@@ -51,74 +51,74 @@ AT_NMC_CHECK_TRANSFORM([Test indent rules: first block in an item is a tightly n
         </item>
       </itemization>
     </item>
-  </itemization>]])
+  </itemization>])
 
 AT_NMC_CHECK_TRANSFORM([Test indent rules: an item followed by a paragraph],
-[[T
+[T
 
 •   1
 
   2
-]],
-[[  <title>T</title>
+],
+[  <title>T</title>
   <itemization>
     <item>
       <p>1</p>
     </item>
   </itemization>
-  <p>2</p>]])
+  <p>2</p>])
 
 AT_NMC_CHECK_TRANSFORM([Test indent rules: an item containing two paragraphs followed by a paragraph],
-[[T
+[T
 
 •   1
 
     2
 
   3
-]],
-[[  <title>T</title>
+],
+[  <title>T</title>
   <itemization>
     <item>
       <p>1</p>
       <p>2</p>
     </item>
   </itemization>
-  <p>3</p>]])
+  <p>3</p>])
 
 AT_NMC_CHECK_TRANSFORM([Test indent rules: an item containing one paragraph spread on two lines],
-[[T
+[T
 
 •   1
     2
-]],
-[[  <title>T</title>
+],
+[  <title>T</title>
   <itemization>
     <item>
       <p>1
     2</p>
     </item>
-  </itemization>]])
+  </itemization>])
 
 AT_NMC_CHECK_TRANSFORM([Test indent rules: an item containing one paragraph spread on two lines followed by a second paragraph],
-[[T
+[T
 
 •   1
     2
 
     3
-]],
-[[  <title>T</title>
+],
+[  <title>T</title>
   <itemization>
     <item>
       <p>1
     2</p>
       <p>3</p>
     </item>
-  </itemization>]])
+  </itemization>])
 
 AT_NMC_CHECK_TRANSFORM([Test indent rules: an item containing one paragraph spread on two lines followed by a second paragraph and a paragraph],
-[[T
+[T
 
 •   1
     2
@@ -126,8 +126,8 @@ AT_NMC_CHECK_TRANSFORM([Test indent rules: an item containing one paragraph spre
     3
 
   4
-]],
-[[  <title>T</title>
+],
+[  <title>T</title>
   <itemization>
     <item>
       <p>1
@@ -135,22 +135,22 @@ AT_NMC_CHECK_TRANSFORM([Test indent rules: an item containing one paragraph spre
       <p>3</p>
     </item>
   </itemization>
-  <p>4</p>]])
+  <p>4</p>])
 
 AT_NMC_CHECK_TRANSFORM([Test indent rules: an item containing two paragraphs followed by a paragraph beginning with a bol symbol],
-[[T
+[T
 
 •   1
 
     2
 
 ¶  —
-]],
-[[  <title>T</title>
+],
+[  <title>T</title>
   <itemization>
     <item>
       <p>1</p>
       <p>2</p>
     </item>
   </itemization>
-  <p>—</p>]])
+  <p>—</p>])

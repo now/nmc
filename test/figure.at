@@ -1,24 +1,24 @@
 AT_NMC_CHECK_TRANSFORM([Block: Figure],
-[[T
+[T
 
 Fig.
 
                                      a.jpg
 
                                      Title
-]],
-[[  <title>T</title>
+],
+[  <title>T</title>
   <figure>
     <title>Title</title>
     <image>a.jpg</image>
-  </figure>]])
+  </figure>])
 
 AT_NMC_CHECK_TRANSFORM([Inline figure],
-[[T
+[T
 
   A¹
 
 ¹ For reference, see a.jpg
-]],
-[[  <title>T</title>
-  <p><ref title="For reference" uri="a.jpg" relation="figure">A</ref></p>]])
+],
+[  <title>T</title>
+  <p><ref title="For reference" uri="a.jpg" relation="figure">A</ref></p>])

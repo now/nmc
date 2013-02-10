@@ -1,49 +1,49 @@
 AT_NMC_CHECK_TRANSFORM([Document consisting of a title followed by a section containing a paragraph],
-[[Title
+[Title
 
 § Section
 
     Paragraph
-]],
-[[  <title>Title</title>
+],
+[  <title>Title</title>
   <section>
     <title>Section</title>
     <p>Paragraph</p>
-  </section>]])
+  </section>])
 
 AT_NMC_CHECK_TRANSFORM([Document consisting of a title followed by a section containing two paragraphs],
-[[Title
+[Title
 
 § Section
 
     Paragraph1
 
     Paragraph2
-]],
-[[  <title>Title</title>
+],
+[  <title>Title</title>
   <section>
     <title>Section</title>
     <p>Paragraph1</p>
     <p>Paragraph2</p>
-  </section>]])
+  </section>])
 
 AT_NMC_CHECK_TRANSFORM([Document consisting of a title followed by a section containing a multi-line paragraph],
-[[Title
+[Title
 
 § Section
 
     Line1
     Line2
-]],
-[[  <title>Title</title>
+],
+[  <title>Title</title>
   <section>
     <title>Section</title>
     <p>Line1
     Line2</p>
-  </section>]])
+  </section>])
 
 AT_NMC_CHECK_TRANSFORM([Document consisting of a title followed by two sections],
-[[Title
+[Title
 
 § Section1
 
@@ -52,8 +52,8 @@ AT_NMC_CHECK_TRANSFORM([Document consisting of a title followed by two sections]
 § Section2
 
     Paragraph2
-]],
-[[  <title>Title</title>
+],
+[  <title>Title</title>
   <section>
     <title>Section1</title>
     <p>Paragraph1</p>
@@ -61,10 +61,10 @@ AT_NMC_CHECK_TRANSFORM([Document consisting of a title followed by two sections]
   <section>
     <title>Section2</title>
     <p>Paragraph2</p>
-  </section>]])
+  </section>])
 
 AT_NMC_CHECK_TRANSFORM([Document consisting of a title followed by a paragraph and a section],
-[[Title
+[Title
 
   Paragraph1
 
@@ -75,8 +75,8 @@ AT_NMC_CHECK_TRANSFORM([Document consisting of a title followed by a paragraph a
 § Section2
 
     Paragraph2
-]],
-[[  <title>Title</title>
+],
+[  <title>Title</title>
   <p>Paragraph1</p>
   <section>
     <title>Section1</title>
@@ -85,4 +85,4 @@ AT_NMC_CHECK_TRANSFORM([Document consisting of a title followed by a paragraph a
   <section>
     <title>Section2</title>
     <p>Paragraph2</p>
-  </section>]])
+  </section>])

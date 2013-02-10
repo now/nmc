@@ -1,46 +1,46 @@
 AT_NMC_CHECK_TRANSFORM([Document consisting of a title followed by a paragraph containing an emphasis inline],
-[[Title
+[Title
 
   Word1 /Emphasis/ Word2
-]],
-[[  <title>Title</title>
-  <p>Word1 <emphasis>Emphasis</emphasis> Word2</p>]])
+],
+[  <title>Title</title>
+  <p>Word1 <emphasis>Emphasis</emphasis> Word2</p>])
 
 AT_NMC_CHECK_TRANSFORM([Document consisting of a title followed by a paragraph containing an emphasis inline containing a solidus],
-[[Title
+[Title
 
   Word1 /True/False/ Word2
-]],
-[[  <title>Title</title>
-  <p>Word1 <emphasis>True/False</emphasis> Word2</p>]])
+],
+[  <title>Title</title>
+  <p>Word1 <emphasis>True/False</emphasis> Word2</p>])
 
 AT_NMC_CHECK_FAIL_TRANSFORM([Document consisting of a title followed by a paragraph containing an unterminated emphasis inline],
-[[Title
+[Title
 
   /Emphasis
-]],
+],
 [3:3: missing ending ‘/’ for emphasis inline])
 
 AT_NMC_CHECK_TRANSFORM([Emphasis start/termination rules: //…/],
-[[T
+[T
 
   //…/
-]],
-[[  <title>T</title>
-  <p><emphasis>/…</emphasis></p>]])
+],
+[  <title>T</title>
+  <p><emphasis>/…</emphasis></p>])
 
 AT_NMC_CHECK_TRANSFORM([Emphasis start/termination rules: /…//],
-[[T
+[T
 
   /…//
-]],
-[[  <title>T</title>
-  <p><emphasis>…/</emphasis></p>]])
+],
+[  <title>T</title>
+  <p><emphasis>…/</emphasis></p>])
 
 AT_NMC_CHECK_TRANSFORM([Emphasis start/termination rules: /…//a/],
-[[T
+[T
 
   /…//a/
-]],
-[[  <title>T</title>
-  <p><emphasis>…//a</emphasis></p>]])
+],
+[  <title>T</title>
+  <p><emphasis>…//a</emphasis></p>])

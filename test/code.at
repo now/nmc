@@ -1,96 +1,96 @@
 AT_NMC_CHECK_TRANSFORM([Document consisting of a title followed by a paragraph containing a code inline],
-[[Title
+[Title
 
   Word1 ‹Code› Word2
-]],
-[[  <title>Title</title>
-  <p>Word1 <code>Code</code> Word2</p>]])
+],
+[  <title>Title</title>
+  <p>Word1 <code>Code</code> Word2</p>])
 
 AT_NMC_CHECK_TRANSFORM([Code inline termination: ‹››],
-[[T
+[T
 
   ‹››
-]],
-[[  <title>T</title>
-  <p><code>›</code></p>]])
+],
+[  <title>T</title>
+  <p><code>›</code></p>])
 
 AT_NMC_CHECK_TRANSFORM([Document consisting of a title followed by a paragraph containing a code inline containing code inline end characters],
-[[Title
+[Title
 
   Word1 ‹‹Code›› Word2
-]],
-[[  <title>Title</title>
-  <p>Word1 <code>‹Code›</code> Word2</p>]])
+],
+[  <title>Title</title>
+  <p>Word1 <code>‹Code›</code> Word2</p>])
 
 AT_NMC_CHECK_TRANSFORM([Document consisting of a title followed by a paragraph containing a code inline that is immediately followed by text],
-[[Title
+[Title
 
   Word1 ‹Code›s Word2
-]],
-[[  <title>Title</title>
-  <p>Word1 <code>Code</code>s Word2</p>]])
+],
+[  <title>Title</title>
+  <p>Word1 <code>Code</code>s Word2</p>])
 
 AT_NMC_CHECK_TRANSFORM([Code inline: simple continuation],
-[[T
+[T
 
   ‹a›‹bc›
-]],
-[[  <title>T</title>
-  <p><code>abc</code></p>]])
+],
+[  <title>T</title>
+  <p><code>abc</code></p>])
 
 
 AT_NMC_CHECK_TRANSFORM([Code inline: complex continuation],
-[[T
+[T
 
   ‹a››‹bc›
-]],
-[[  <title>T</title>
-  <p><code>a›bc</code></p>]])
+],
+[  <title>T</title>
+  <p><code>a›bc</code></p>])
 
 AT_NMC_CHECK_TRANSFORM([Code inline: complex continuation 2],
-[[T
+[T
 
   ‹a››››‹bc›
-]],
-[[  <title>T</title>
-  <p><code>a›››bc</code></p>]])
+],
+[  <title>T</title>
+  <p><code>a›››bc</code></p>])
 
 AT_NMC_CHECK_TRANSFORM([Code inline: complex continuation 3],
-[[T
+[T
 
   ‹a››‹bc›››‹def›
-]],
-[[  <title>T</title>
-  <p><code>a›bc››def</code></p>]])
+],
+[  <title>T</title>
+  <p><code>a›bc››def</code></p>])
 
 
 AT_NMC_CHECK_TRANSFORM([Code inline: complex continuation 4],
-[[T
+[T
 
   ‹a››‹›
-]],
-[[  <title>T</title>
-  <p><code>a›</code></p>]])
+],
+[  <title>T</title>
+  <p><code>a›</code></p>])
 
 AT_NMC_CHECK_FAIL_TRANSFORM([Code inline: continuation without end],
-[[T
+[T
 
   ‹a››‹bc
-]],
+],
 [3:3: missing ending ‘›’ for code inline])
 
 AT_NMC_CHECK_FAIL_TRANSFORM([Document consisting of a title followed by a paragraph containing an unterminated code inline],
-[[Title
+[Title
 
   ‹Code
-]],
+],
 [3:3: missing ending ‘›’ for code inline])
 
 AT_NMC_CHECK_FAIL_TRANSFORM([Document consisting of a title followed by a paragraph containing two unterminated code inlines],
-[[Title
+[Title
 
   ‹Code
   ‹Code
-]],
-[[3:3: missing ending ‘›’ for code inline
-4:3: missing ending ‘›’ for code inline]])
+],
+[3:3: missing ending ‘›’ for code inline
+4:3: missing ending ‘›’ for code inline])
