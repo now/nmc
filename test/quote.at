@@ -1,6 +1,4 @@
-AT_SETUP([Document consisting of a title followed by a quote])
-
-AT_DATA([title],
+AT_NMC_CHECK_TRANSFORM([Document consisting of a title followed by a quote],
 [[Title
 
 > To clique, or not to clique, that is the question:
@@ -8,9 +6,7 @@ AT_DATA([title],
 > The slings and arrows of outrageous fortune,
 > Or to take arms against a sea of troubles,
 > And by opposing end them?
-]])
-
-AT_NMC_CHECK([title],
+]],
 [[  <title>Title</title>
   <quote>
     <line>To clique, or not to clique, that is the question:</line>
@@ -20,24 +16,16 @@ AT_NMC_CHECK([title],
     <line>And by opposing end them?</line>
   </quote>]])
 
-AT_CLEANUP
-
-AT_SETUP([Document consisting of a title followed by a one-line quote spanning two lines followed by an attribution])
-
-AT_DATA([title],
+AT_NMC_CHECK_TRANSFORM([Document consisting of a title followed by a one-line quote spanning two lines followed by an attribution],
 [[Title
 
 > Perfection (in design) is achieved not when there is nothing more to
   add, but rather when there is nothing more to take away.
 — Antoine de Saint-Exupéry
-]])
-
-AT_NMC_CHECK([title],
+]],
 [[  <title>Title</title>
   <quote>
     <line>Perfection (in design) is achieved not when there is nothing more to
   add, but rather when there is nothing more to take away.</line>
     <attribution>Antoine de Saint-Exupéry</attribution>
   </quote>]])
-
-AT_CLEANUP

@@ -1,26 +1,14 @@
-AT_SETUP([Attribute escaping])
-
-AT_DATA([title],
+AT_NMC_CHECK_TRANSFORM([Attribute escaping],
 [[Title
 
   Abbr¹
 
 ¹ Abbreviation for "A	b&b<rev>iation"
-]])
-
-AT_NMC_CHECK([title],
+]],
 [[  <title>Title</title>
   <p><abbreviation for="&quot;A&#9;b&amp;b&lt;rev&gt;iation&quot;">Abbr</abbreviation></p>]])
 
-AT_CLEANUP
-
-AT_SETUP([Text escaping])
-
-AT_DATA([title],
+AT_NMC_CHECK_TRANSFORM([Text escaping],
 [[<Ti&tle>
-]])
-
-AT_NMC_CHECK([title],
+]],
 [[  <title>&lt;Ti&amp;tle&gt;</title>]])
-
-AT_CLEANUP

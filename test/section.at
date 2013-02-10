@@ -1,25 +1,17 @@
-AT_SETUP([Document consisting of a title followed by a section containing a paragraph])
-
-AT_DATA([title],
+AT_NMC_CHECK_TRANSFORM([Document consisting of a title followed by a section containing a paragraph],
 [[Title
 
 § Section
 
     Paragraph
-]])
-
-AT_NMC_CHECK([title],
+]],
 [[  <title>Title</title>
   <section>
     <title>Section</title>
     <p>Paragraph</p>
   </section>]])
 
-AT_CLEANUP
-
-AT_SETUP([Document consisting of a title followed by a section containing two paragraphs])
-
-AT_DATA([title],
+AT_NMC_CHECK_TRANSFORM([Document consisting of a title followed by a section containing two paragraphs],
 [[Title
 
 § Section
@@ -27,9 +19,7 @@ AT_DATA([title],
     Paragraph1
 
     Paragraph2
-]])
-
-AT_NMC_CHECK([title],
+]],
 [[  <title>Title</title>
   <section>
     <title>Section</title>
@@ -37,20 +27,14 @@ AT_NMC_CHECK([title],
     <p>Paragraph2</p>
   </section>]])
 
-AT_CLEANUP
-
-AT_SETUP([Document consisting of a title followed by a section containing a multi-line paragraph])
-
-AT_DATA([title],
+AT_NMC_CHECK_TRANSFORM([Document consisting of a title followed by a section containing a multi-line paragraph],
 [[Title
 
 § Section
 
     Line1
     Line2
-]])
-
-AT_NMC_CHECK([title],
+]],
 [[  <title>Title</title>
   <section>
     <title>Section</title>
@@ -58,11 +42,7 @@ AT_NMC_CHECK([title],
     Line2</p>
   </section>]])
 
-AT_CLEANUP
-
-AT_SETUP([Document consisting of a title followed by two sections])
-
-AT_DATA([title],
+AT_NMC_CHECK_TRANSFORM([Document consisting of a title followed by two sections],
 [[Title
 
 § Section1
@@ -72,9 +52,7 @@ AT_DATA([title],
 § Section2
 
     Paragraph2
-]])
-
-AT_NMC_CHECK([title],
+]],
 [[  <title>Title</title>
   <section>
     <title>Section1</title>
@@ -85,11 +63,7 @@ AT_NMC_CHECK([title],
     <p>Paragraph2</p>
   </section>]])
 
-AT_CLEANUP
-
-AT_SETUP([Document consisting of a title followed by a paragraph and a section])
-
-AT_DATA([title],
+AT_NMC_CHECK_TRANSFORM([Document consisting of a title followed by a paragraph and a section],
 [[Title
 
   Paragraph1
@@ -101,9 +75,7 @@ AT_DATA([title],
 § Section2
 
     Paragraph2
-]])
-
-AT_NMC_CHECK([title],
+]],
 [[  <title>Title</title>
   <p>Paragraph1</p>
   <section>
@@ -114,5 +86,3 @@ AT_NMC_CHECK([title],
     <title>Section2</title>
     <p>Paragraph2</p>
   </section>]])
-
-AT_CLEANUP

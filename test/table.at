@@ -1,12 +1,8 @@
-AT_SETUP([Document consisting of a title followed by a table consisting of one row with one entry])
-
-AT_DATA([title],
+AT_NMC_CHECK_TRANSFORM([Document consisting of a title followed by a table consisting of one row with one entry],
 [[Title
 
 | Entry |
-]])
-
-AT_NMC_CHECK([title],
+]],
 [[  <title>Title</title>
   <table>
     <body>
@@ -16,17 +12,11 @@ AT_NMC_CHECK([title],
     </body>
   </table>]])
 
-AT_CLEANUP
-
-AT_SETUP([Document consisting of a title followed by a table consisting of one row with two entries])
-
-AT_DATA([title],
+AT_NMC_CHECK_TRANSFORM([Document consisting of a title followed by a table consisting of one row with two entries],
 [[Title
 
 | One | Two |
-]])
-
-AT_NMC_CHECK([title],
+]],
 [[  <title>Title</title>
   <table>
     <body>
@@ -37,18 +27,12 @@ AT_NMC_CHECK([title],
     </body>
   </table>]])
 
-AT_CLEANUP
-
-AT_SETUP([Document consisting of a title followed by a table consisting of two rows with two entries])
-
-AT_DATA([title],
+AT_NMC_CHECK_TRANSFORM([Document consisting of a title followed by a table consisting of two rows with two entries],
 [[Title
 
 | One   | Two  |
 | Three | Four |
-]])
-
-AT_NMC_CHECK([title],
+]],
 [[  <title>Title</title>
   <table>
     <body>
@@ -63,19 +47,13 @@ AT_NMC_CHECK([title],
     </body>
   </table>]])
 
-AT_CLEANUP
-
-AT_SETUP([Document consisting of a title followed by a table consisting of a head row followed by a row with two entries])
-
-AT_DATA([title],
+AT_NMC_CHECK_TRANSFORM([Document consisting of a title followed by a table consisting of a head row followed by a row with two entries],
 [[Title
 
 | One   | Two  |
 |-------+------|
 | Three | Four |
-]])
-
-AT_NMC_CHECK([title],
+]],
 [[  <title>Title</title>
   <table>
     <head>
@@ -91,5 +69,3 @@ AT_NMC_CHECK([title],
       </row>
     </body>
   </table>]])
-
-AT_CLEANUP

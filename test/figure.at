@@ -1,6 +1,4 @@
-AT_SETUP([Block: Figure])
-
-AT_DATA([title],
+AT_NMC_CHECK_TRANSFORM([Block: Figure],
 [[T
 
 Fig.
@@ -8,29 +6,19 @@ Fig.
                                      a.jpg
 
                                      Title
-]])
-
-AT_NMC_CHECK([title],
+]],
 [[  <title>T</title>
   <figure>
     <title>Title</title>
     <image>a.jpg</image>
   </figure>]])
 
-AT_CLEANUP
-
-AT_SETUP([Inline figure])
-
-AT_DATA([title],
+AT_NMC_CHECK_TRANSFORM([Inline figure],
 [[T
 
   A¹
 
 ¹ For reference, see a.jpg
-]])
-
-AT_NMC_CHECK([title],
+]],
 [[  <title>T</title>
   <p><ref title="For reference" uri="a.jpg" relation="figure">A</ref></p>]])
-
-AT_CLEANUP

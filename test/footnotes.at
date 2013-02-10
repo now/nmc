@@ -1,6 +1,4 @@
-AT_SETUP([Document consisting of a title followed by a paragraph with footnotes])
-
-AT_DATA([title],
+AT_NMC_CHECK_TRANSFORM([Document consisting of a title followed by a paragraph with footnotes],
 [[Title
 
   Abbr¹⁺² for US³³
@@ -8,17 +6,11 @@ AT_DATA([title],
 ¹ Abbreviation for Abbreviation
 ² See the Wikipedia entry for “Abbreviation” at http://en.wikipedia.org/wiki/Abbreviation
 ³³ Abbreviation for United States
-]])
-
-AT_NMC_CHECK([title],
+]],
 [[  <title>Title</title>
   <p><ref title="See the Wikipedia entry for “Abbreviation”" uri="http://en.wikipedia.org/wiki/Abbreviation"><abbreviation for="Abbreviation">Abbr</abbreviation></ref> for <abbreviation for="United States">US</abbreviation></p>]])
 
-AT_CLEANUP
-
-AT_SETUP([Document consisting of a title followed by a section containing a paragraph with footnotes])
-
-AT_DATA([title],
+AT_NMC_CHECK_TRANSFORM([Document consisting of a title followed by a section containing a paragraph with footnotes],
 [[Title
 
 § Section
@@ -26,20 +18,14 @@ AT_DATA([title],
     Word1 Abbr¹ Word3
 
   ¹ Abbreviation for Abbreviation
-]])
-
-AT_NMC_CHECK([title],
+]],
 [[  <title>Title</title>
   <section>
     <title>Section</title>
     <p>Word1 <abbreviation for="Abbreviation">Abbr</abbreviation> Word3</p>
   </section>]])
 
-AT_CLEANUP
-
-AT_SETUP([Document consisting of a title followed by a section with footnotes])
-
-AT_DATA([title],
+AT_NMC_CHECK_TRANSFORM([Document consisting of a title followed by a section with footnotes],
 [[Title
 
 § Section
@@ -47,20 +33,14 @@ AT_DATA([title],
     Word1 Abbr¹ Word3
 
 ¹ Abbreviation for Abbreviation
-]])
-
-AT_NMC_CHECK([title],
+]],
 [[  <title>Title</title>
   <section>
     <title>Section</title>
     <p>Word1 <abbreviation for="Abbreviation">Abbr</abbreviation> Word3</p>
   </section>]])
 
-AT_CLEANUP
-
-AT_SETUP([Document consisting of a title followed by two sections with footnotes])
-
-AT_DATA([title],
+AT_NMC_CHECK_TRANSFORM([Document consisting of a title followed by two sections with footnotes],
 [[Title
 
 § Section
@@ -74,9 +54,7 @@ AT_DATA([title],
     Word1 Abbr¹ Word3
 
 ¹ Abbreviation for Abbreviation
-]])
-
-AT_NMC_CHECK([title],
+]],
 [[  <title>Title</title>
   <section>
     <title>Section</title>
@@ -87,11 +65,7 @@ AT_NMC_CHECK([title],
     <p>Word1 <abbreviation for="Abbreviation">Abbr</abbreviation> Word3</p>
   </section>]])
 
-AT_CLEANUP
-
-AT_SETUP([Reused footnotes])
-
-AT_DATA([title],
+AT_NMC_CHECK_TRANSFORM([Reused footnotes],
 [[Title
 
 § Section
@@ -103,9 +77,7 @@ AT_DATA([title],
       Abbr¹
 
   ¹ Abbreviation for Abbreviation
-]])
-
-AT_NMC_CHECK([title],
+]],
 [[  <title>Title</title>
   <section>
     <title>Section</title>
@@ -116,78 +88,50 @@ AT_NMC_CHECK([title],
     </section>
   </section>]])
 
-AT_CLEANUP
-
-AT_SETUP([Document consisting of a title followed by a paragraph with a long footnote])
-
-AT_DATA([title],
+AT_NMC_CHECK_TRANSFORM([Document consisting of a title followed by a paragraph with a long footnote],
 [[Title
 
   Word1 Abbr¹ Word3
 
 ¹ Abbreviation for
   Abbreviation
-]])
-
-AT_NMC_CHECK([title],
+]],
 [[  <title>Title</title>
   <p>Word1 <abbreviation for="Abbreviation">Abbr</abbreviation> Word3</p>]])
 
-AT_CLEANUP
-
-AT_SETUP([Document consisting of a title followed by a paragraph with an unrecognized footnote])
-
-AT_DATA([title],
+AT_NMC_CHECK_FAIL_TRANSFORM([Document consisting of a title followed by a paragraph with an unrecognized footnote],
 [[Title
 
   Word1 Abbr¹ Word3
 
 ¹ Junk text in this here footnote
-]])
+]],
+[5.1-34: unrecognized footnote content: Junk text in this here footnote])
 
-AT_NMC_CHECK_FAIL([title], [5.1-34: unrecognized footnote content: Junk text in this here footnote])
-
-AT_CLEANUP
-
-AT_SETUP([Document consisting of a title followed by a paragraph followed by two footnotes with same sigil])
-
-AT_DATA([title],
+AT_NMC_CHECK_FAIL_TRANSFORM([Document consisting of a title followed by a paragraph followed by two footnotes with same sigil],
 [[Title
 
   Word1¹
 
 ¹ Abbreviation for Abbreviaton
 ¹ Abbreviation for Abbreviaton
-]])
+]],
+[6.1-31: footnote ¹ already defined at 5.1-31])
 
-AT_NMC_CHECK_FAIL([title], [6.1-31: footnote ¹ already defined at 5.1-31])
-
-AT_CLEANUP
-
-AT_SETUP([Document consisting of a title followed by a paragraph followed by two unreferenced footnotes])
-
-AT_DATA([title],
+AT_NMC_CHECK_FAIL_TRANSFORM([Document consisting of a title followed by a paragraph followed by two unreferenced footnotes],
 [[Title
 
   Word1
 
 ¹ Abbreviation for Abbreviaton
 ² Abbreviation for Abbreviaton
-]])
-
-AT_NMC_CHECK_FAIL([title], [5.1-31: unreferenced footnote: ¹
+]],
+[5.1-31: unreferenced footnote: ¹
 6.1-31: unreferenced footnote: ²])
 
-AT_CLEANUP
-
-AT_SETUP([Reference to undefined footnote])
-
-AT_DATA([title],
+AT_NMC_CHECK_FAIL_TRANSFORM([Reference to undefined footnote],
 [[Title
 
   Word1¹
-]])
-
-AT_NMC_CHECK_FAIL([title], [3.8-9: reference to undefined footnote: ¹])
-
-AT_CLEANUP
+]],
+[3.8-9: reference to undefined footnote: ¹])

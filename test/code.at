@@ -1,166 +1,96 @@
-AT_SETUP([Document consisting of a title followed by a paragraph containing a code inline])
-
-AT_DATA([title],
+AT_NMC_CHECK_TRANSFORM([Document consisting of a title followed by a paragraph containing a code inline],
 [[Title
 
   Word1 ‹Code› Word2
-]])
-
-AT_NMC_CHECK([title],
+]],
 [[  <title>Title</title>
   <p>Word1 <code>Code</code> Word2</p>]])
 
-AT_CLEANUP
-
-AT_SETUP([Code inline termination: ‹››])
-
-AT_DATA([title],
+AT_NMC_CHECK_TRANSFORM([Code inline termination: ‹››],
 [[T
 
   ‹››
-]])
-
-AT_NMC_CHECK([title],
+]],
 [[  <title>T</title>
   <p><code>›</code></p>]])
 
-AT_CLEANUP
-
-AT_SETUP([Document consisting of a title followed by a paragraph containing a code inline containing code inline end characters])
-
-AT_DATA([title],
+AT_NMC_CHECK_TRANSFORM([Document consisting of a title followed by a paragraph containing a code inline containing code inline end characters],
 [[Title
 
   Word1 ‹‹Code›› Word2
-]])
-
-AT_NMC_CHECK([title],
+]],
 [[  <title>Title</title>
   <p>Word1 <code>‹Code›</code> Word2</p>]])
 
-AT_CLEANUP
-
-AT_SETUP([Document consisting of a title followed by a paragraph containing a code inline that is immediately followed by text])
-
-AT_DATA([title],
+AT_NMC_CHECK_TRANSFORM([Document consisting of a title followed by a paragraph containing a code inline that is immediately followed by text],
 [[Title
 
   Word1 ‹Code›s Word2
-]])
-
-AT_NMC_CHECK([title],
+]],
 [[  <title>Title</title>
   <p>Word1 <code>Code</code>s Word2</p>]])
 
-AT_CLEANUP
-
-AT_SETUP([Code inline: simple continuation])
-
-AT_DATA([title],
+AT_NMC_CHECK_TRANSFORM([Code inline: simple continuation],
 [[T
 
   ‹a›‹bc›
-]])
-
-AT_NMC_CHECK([title],
+]],
 [[  <title>T</title>
   <p><code>abc</code></p>]])
 
-AT_CLEANUP
 
-
-AT_SETUP([Code inline: complex continuation])
-
-AT_DATA([title],
+AT_NMC_CHECK_TRANSFORM([Code inline: complex continuation],
 [[T
 
   ‹a››‹bc›
-]])
-
-AT_NMC_CHECK([title],
+]],
 [[  <title>T</title>
   <p><code>a›bc</code></p>]])
 
-AT_CLEANUP
-
-AT_SETUP([Code inline: complex continuation 2])
-
-AT_DATA([title],
+AT_NMC_CHECK_TRANSFORM([Code inline: complex continuation 2],
 [[T
 
   ‹a››››‹bc›
-]])
-
-AT_NMC_CHECK([title],
+]],
 [[  <title>T</title>
   <p><code>a›››bc</code></p>]])
 
-AT_CLEANUP
-
-AT_SETUP([Code inline: complex continuation 3])
-
-AT_DATA([title],
+AT_NMC_CHECK_TRANSFORM([Code inline: complex continuation 3],
 [[T
 
   ‹a››‹bc›››‹def›
-]])
-
-AT_NMC_CHECK([title],
+]],
 [[  <title>T</title>
   <p><code>a›bc››def</code></p>]])
 
-AT_CLEANUP
 
-
-AT_SETUP([Code inline: complex continuation 4])
-
-AT_DATA([title],
+AT_NMC_CHECK_TRANSFORM([Code inline: complex continuation 4],
 [[T
 
   ‹a››‹›
-]])
-
-AT_NMC_CHECK([title],
+]],
 [[  <title>T</title>
   <p><code>a›</code></p>]])
 
-AT_CLEANUP
-
-AT_SETUP([Code inline: continuation without end])
-
-AT_DATA([title],
+AT_NMC_CHECK_FAIL_TRANSFORM([Code inline: continuation without end],
 [[T
 
   ‹a››‹bc
-]])
+]],
+[3:3: missing ending ‘›’ for code inline])
 
-AT_NMC_CHECK_FAIL([title], [3:3: missing ending ‘›’ for code inline])
-
-AT_CLEANUP
-
-AT_SETUP([Document consisting of a title followed by a paragraph containing an unterminated code inline])
-
-AT_DATA([title],
+AT_NMC_CHECK_FAIL_TRANSFORM([Document consisting of a title followed by a paragraph containing an unterminated code inline],
 [[Title
 
   ‹Code
-]])
+]],
+[3:3: missing ending ‘›’ for code inline])
 
-AT_NMC_CHECK_FAIL([title], [3:3: missing ending ‘›’ for code inline])
-
-AT_CLEANUP
-
-AT_SETUP([Document consisting of a title followed by a paragraph containing two unterminated code inlines])
-
-AT_DATA([title],
+AT_NMC_CHECK_FAIL_TRANSFORM([Document consisting of a title followed by a paragraph containing two unterminated code inlines],
 [[Title
 
   ‹Code
   ‹Code
-]])
-
-AT_NMC_CHECK_FAIL([title],
+]],
 [[3:3: missing ending ‘›’ for code inline
 4:3: missing ending ‘›’ for code inline]])
-
-AT_CLEANUP

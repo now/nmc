@@ -1,71 +1,41 @@
-AT_SETUP([Inline non-termination rules: a/…])
-
-AT_DATA([title],
+AT_NMC_CHECK_TRANSFORM([Inline non-termination rules: a/…],
 [[T
 
   /Truë/False/
-]])
-
-AT_NMC_CHECK([title],
+]],
 [[  <title>T</title>
   <p><emphasis>Truë/False</emphasis></p>]])
 
-AT_CLEANUP
-
-AT_SETUP([Inline non-termination rules: …²a])
-
-AT_DATA([title],
+AT_NMC_CHECK_TRANSFORM([Inline non-termination rules: …²a],
 [[T
 
   2²a=4a
-]])
-
-AT_NMC_CHECK([title],
+]],
 [[  <title>T</title>
   <p>2²a=4a</p>]])
 
-AT_CLEANUP
-
-AT_SETUP([Inline termination rules: ,])
-
-AT_DATA([title],
+AT_NMC_CHECK_TRANSFORM([Inline termination rules: ,],
 [[T
 
   /Yes/, please.
-]])
-
-AT_NMC_CHECK([title],
+]],
 [[  <title>T</title>
   <p><emphasis>Yes</emphasis>, please.</p>]])
 
-AT_CLEANUP
-
-AT_SETUP([Inline termination rules: ²])
-
-AT_DATA([title],
+AT_NMC_CHECK_TRANSFORM([Inline termination rules: ²],
 [[T
 
   /Yes/²
 
 ² Abbreviation for A
-]])
-
-AT_NMC_CHECK([title],
+]],
 [[  <title>T</title>
   <p><abbreviation for="A"><emphasis>Yes</emphasis></abbreviation></p>]])
 
-AT_CLEANUP
-
-AT_SETUP([Inline start/termination rules: (…)])
-
-AT_DATA([title],
+AT_NMC_CHECK_TRANSFORM([Inline start/termination rules: (…)],
 [[T
 
   (/Parenthetical./)
-]])
-
-AT_NMC_CHECK([title],
+]],
 [[  <title>T</title>
   <p>(<emphasis>Parenthetical.</emphasis>)</p>]])
-
-AT_CLEANUP

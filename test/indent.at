@@ -1,14 +1,10 @@
-AT_SETUP([Test indent rules: first block in section is non-paragraph])
-
-AT_DATA([title],
+AT_NMC_CHECK_TRANSFORM([Test indent rules: first block in section is non-paragraph],
 [[Title
 
 § Section
 
   • List
-]])
-
-AT_NMC_CHECK([title],
+]],
 [[  <title>Title</title>
   <section>
     <title>Section</title>
@@ -19,19 +15,13 @@ AT_NMC_CHECK([title],
     </itemization>
   </section>]])
 
-AT_CLEANUP
-
-AT_SETUP([Test indent rules: first block in an item is a nested item])
-
-AT_DATA([title],
+AT_NMC_CHECK_TRANSFORM([Test indent rules: first block in an item is a nested item],
 [[T
 
 •   1
 
   •   2
-]])
-
-AT_NMC_CHECK([title],
+]],
 [[  <title>T</title>
   <itemization>
     <item>
@@ -44,19 +34,13 @@ AT_NMC_CHECK([title],
     </item>
   </itemization>]])
 
-AT_CLEANUP
 
-
-AT_SETUP([Test indent rules: first block in an item is a tightly nested item])
-
-AT_DATA([title],
+AT_NMC_CHECK_TRANSFORM([Test indent rules: first block in an item is a tightly nested item],
 [[T
 
 •   1
   •   2
-]])
-
-AT_NMC_CHECK([title],
+]],
 [[  <title>T</title>
   <itemization>
     <item>
@@ -69,19 +53,13 @@ AT_NMC_CHECK([title],
     </item>
   </itemization>]])
 
-AT_CLEANUP
-
-AT_SETUP([Test indent rules: an item followed by a paragraph])
-
-AT_DATA([title],
+AT_NMC_CHECK_TRANSFORM([Test indent rules: an item followed by a paragraph],
 [[T
 
 •   1
 
   2
-]])
-
-AT_NMC_CHECK([title],
+]],
 [[  <title>T</title>
   <itemization>
     <item>
@@ -90,11 +68,7 @@ AT_NMC_CHECK([title],
   </itemization>
   <p>2</p>]])
 
-AT_CLEANUP
-
-AT_SETUP([Test indent rules: an item containing two paragraphs followed by a paragraph])
-
-AT_DATA([title],
+AT_NMC_CHECK_TRANSFORM([Test indent rules: an item containing two paragraphs followed by a paragraph],
 [[T
 
 •   1
@@ -102,9 +76,7 @@ AT_DATA([title],
     2
 
   3
-]])
-
-AT_NMC_CHECK([title],
+]],
 [[  <title>T</title>
   <itemization>
     <item>
@@ -114,18 +86,12 @@ AT_NMC_CHECK([title],
   </itemization>
   <p>3</p>]])
 
-AT_CLEANUP
-
-AT_SETUP([Test indent rules: an item containing one paragraph spread on two lines])
-
-AT_DATA([title],
+AT_NMC_CHECK_TRANSFORM([Test indent rules: an item containing one paragraph spread on two lines],
 [[T
 
 •   1
     2
-]])
-
-AT_NMC_CHECK([title],
+]],
 [[  <title>T</title>
   <itemization>
     <item>
@@ -134,20 +100,14 @@ AT_NMC_CHECK([title],
     </item>
   </itemization>]])
 
-AT_CLEANUP
-
-AT_SETUP([Test indent rules: an item containing one paragraph spread on two lines followed by a second paragraph])
-
-AT_DATA([title],
+AT_NMC_CHECK_TRANSFORM([Test indent rules: an item containing one paragraph spread on two lines followed by a second paragraph],
 [[T
 
 •   1
     2
 
     3
-]])
-
-AT_NMC_CHECK([title],
+]],
 [[  <title>T</title>
   <itemization>
     <item>
@@ -157,11 +117,7 @@ AT_NMC_CHECK([title],
     </item>
   </itemization>]])
 
-AT_CLEANUP
-
-AT_SETUP([Test indent rules: an item containing one paragraph spread on two lines followed by a second paragraph and a paragraph])
-
-AT_DATA([title],
+AT_NMC_CHECK_TRANSFORM([Test indent rules: an item containing one paragraph spread on two lines followed by a second paragraph and a paragraph],
 [[T
 
 •   1
@@ -170,9 +126,7 @@ AT_DATA([title],
     3
 
   4
-]])
-
-AT_NMC_CHECK([title],
+]],
 [[  <title>T</title>
   <itemization>
     <item>
@@ -183,11 +137,7 @@ AT_NMC_CHECK([title],
   </itemization>
   <p>4</p>]])
 
-AT_CLEANUP
-
-AT_SETUP([Test indent rules: an item containing two paragraphs followed by a paragraph beginning with a bol symbol])
-
-AT_DATA([title],
+AT_NMC_CHECK_TRANSFORM([Test indent rules: an item containing two paragraphs followed by a paragraph beginning with a bol symbol],
 [[T
 
 •   1
@@ -195,9 +145,7 @@ AT_DATA([title],
     2
 
 ¶  —
-]])
-
-AT_NMC_CHECK([title],
+]],
 [[  <title>T</title>
   <itemization>
     <item>
@@ -206,5 +154,3 @@ AT_NMC_CHECK([title],
     </item>
   </itemization>
   <p>—</p>]])
-
-AT_CLEANUP

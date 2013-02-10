@@ -1,6 +1,4 @@
-AT_SETUP([Document consisting of a title followed by a paragraph, an itemization, and a paragraph])
-
-AT_DATA([title],
+AT_NMC_CHECK_TRANSFORM([Document consisting of a title followed by a paragraph, an itemization, and a paragraph],
 [[Title
 
   Paragraph1
@@ -8,9 +6,7 @@ AT_DATA([title],
 • Item1
 
   Paragraph2
-]])
-
-AT_NMC_CHECK([title],
+]],
 [[  <title>Title</title>
   <p>Paragraph1</p>
   <itemization>
@@ -20,18 +16,12 @@ AT_NMC_CHECK([title],
   </itemization>
   <p>Paragraph2</p>]])
 
-AT_CLEANUP
-
-AT_SETUP([Document consisting of a title followed by a two-item itemization])
-
-AT_DATA([title],
+AT_NMC_CHECK_TRANSFORM([Document consisting of a title followed by a two-item itemization],
 [[Title
 
 • Item1
 • Item2
-]])
-
-AT_NMC_CHECK([title],
+]],
 [[  <title>Title</title>
   <itemization>
     <item>
@@ -42,17 +32,11 @@ AT_NMC_CHECK([title],
     </item>
   </itemization>]])
 
-AT_CLEANUP
-
-AT_SETUP([Document consisting of a title followed by an itemization with an inline])
-
-AT_DATA([title],
+AT_NMC_CHECK_TRANSFORM([Document consisting of a title followed by an itemization with an inline],
 [[Title
 
 • A ‹Item1›
-]])
-
-AT_NMC_CHECK([title],
+]],
 [[  <title>Title</title>
   <itemization>
     <item>
@@ -60,11 +44,7 @@ AT_NMC_CHECK([title],
     </item>
   </itemization>]])
 
-AT_CLEANUP
-
-AT_SETUP([Document consisting of a title followed by a two-item itemization, the first containing two paragraphs])
-
-AT_DATA([title],
+AT_NMC_CHECK_TRANSFORM([Document consisting of a title followed by a two-item itemization, the first containing two paragraphs],
 [[Title
 
 •   Line1
@@ -72,9 +52,7 @@ AT_DATA([title],
 
     Paragraph2
 •   Item2
-]])
-
-AT_NMC_CHECK([title],
+]],
 [[  <title>Title</title>
   <itemization>
     <item>
@@ -86,5 +64,3 @@ AT_NMC_CHECK([title],
       <p>Item2</p>
     </item>
   </itemization>]])
-
-AT_CLEANUP

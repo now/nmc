@@ -1,27 +1,15 @@
-AT_SETUP([Inline: quoted symbol])
-
-AT_DATA([title],
+AT_NMC_CHECK_TRANSFORM([Inline: quoted symbol],
 [[T
 
   The ‘|’ symbol.
-]])
-
-AT_NMC_CHECK([title],
+]],
 [[  <title>T</title>
   <p>The ‘|’ symbol.</p>]])
 
-AT_CLEANUP
-
-AT_SETUP([Inline: unquoted symbol])
-
-AT_DATA([title],
+AT_NMC_CHECK_TRANSFORM([Inline: unquoted symbol],
 [[T
 
   An “‘Eng|ish’” quote.
-]])
-
-AT_NMC_CHECK([title],
+]],
 [[  <title>T</title>
   <p>An “‘Eng|ish’” quote.</p>]])
-
-AT_CLEANUP

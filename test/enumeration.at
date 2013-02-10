@@ -1,13 +1,9 @@
-AT_SETUP([Document consisting of a title followed by a two-item enumeration])
-
-AT_DATA([title],
+AT_NMC_CHECK_TRANSFORM([Document consisting of a title followed by a two-item enumeration],
 [[Title
 
 ₁ Item1
 ₂ Item2
-]])
-
-AT_NMC_CHECK([title],
+]],
 [[  <title>Title</title>
   <enumeration>
     <item>
@@ -17,5 +13,3 @@ AT_NMC_CHECK([title],
       <p>Item2</p>
     </item>
   </enumeration>]])
-
-AT_CLEANUP

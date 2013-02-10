@@ -1,13 +1,7 @@
-AT_SETUP([Document consisting of a title followed by a paragraph containing a group])
-
-AT_DATA([title],
+AT_NMC_CHECK_TRANSFORM([Document consisting of a title followed by a paragraph containing a group],
 [[Title
 
   {Word1 /True/False/ Word2}
-]])
-
-AT_NMC_CHECK([title],
+]],
 [[  <title>Title</title>
   <p>Word1 <emphasis>True/False</emphasis> Word2</p>]])
-
-AT_CLEANUP

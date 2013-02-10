@@ -1,14 +1,10 @@
-AT_SETUP([Document consisting of a title followed by a three-item definition])
-
-AT_DATA([title],
+AT_NMC_CHECK_TRANSFORM([Document consisting of a title followed by a three-item definition],
 [[Title
 
 = A. =   1
 = B. =   2
 = C. =   3
-]])
-
-AT_NMC_CHECK([title],
+]],
 [[  <title>Title</title>
   <definitions>
     <item>
@@ -31,18 +27,11 @@ AT_NMC_CHECK([title],
     </item>
   </definitions>]])
 
-AT_CLEANUP
-
-AT_SETUP([Document consisting of a title followed by a three-item definition with the first being unterminated])
-
-AT_DATA([title],
+AT_NMC_CHECK_FAIL_TRANSFORM([Document consisting of a title followed by a three-item definition with the first being unterminated],
 [[Title
 
 = A.    1
 = B. =   2
 = C. =   3
-]])
-
-AT_NMC_CHECK_FAIL([title], [3.1-9: missing ending “. =” for term in definition])
-
-AT_CLEANUP
+]],
+[3.1-9: missing ending “. =” for term in definition])
