@@ -1,11 +1,9 @@
 AT_NMC_CHECK_TRANSFORM([Document only consisting of a title],
-[Title
-],
+[Title],
 [  <title>Title</title>])
 
 AT_NMC_CHECK_TRANSFORM([Trailing space after title],
 [T
-
 
 ],
 [  <title>T</title>])
@@ -14,19 +12,16 @@ AT_NMC_CHECK_TRANSFORM([Trailing space after paragraph],
 [T
 
   P
-
 ],
 [  <title>T</title>
   <p>P</p>])
 
 AT_NMC_CHECK_TRANSFORM([Document only consisting of a title with multiple words],
-[  Word1   Word2
-],
+[  Word1   Word2],
 [  <title>Word1   Word2</title>])
 
 AT_NMC_CHECK_TRANSFORM([Document only consisting of a multi-line title],
 [  Word1
-  Word2
-],
+  Word2],
 [  <title>Word1
   Word2</title>])

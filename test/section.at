@@ -3,8 +3,7 @@ AT_NMC_CHECK_TRANSFORM([Document consisting of a title followed by a section con
 
 § Section
 
-    Paragraph
-],
+    Paragraph],
 [  <title>Title</title>
   <section>
     <title>Section</title>
@@ -18,8 +17,7 @@ AT_NMC_CHECK_TRANSFORM([Document consisting of a title followed by a section con
 
     Paragraph1
 
-    Paragraph2
-],
+    Paragraph2],
 [  <title>Title</title>
   <section>
     <title>Section</title>
@@ -33,8 +31,7 @@ AT_NMC_CHECK_TRANSFORM([Document consisting of a title followed by a section con
 § Section
 
     Line1
-    Line2
-],
+    Line2],
 [  <title>Title</title>
   <section>
     <title>Section</title>
@@ -51,8 +48,7 @@ AT_NMC_CHECK_TRANSFORM([Document consisting of a title followed by two sections]
 
 § Section2
 
-    Paragraph2
-],
+    Paragraph2],
 [  <title>Title</title>
   <section>
     <title>Section1</title>
@@ -74,8 +70,7 @@ AT_NMC_CHECK_TRANSFORM([Document consisting of a title followed by a paragraph a
 
 § Section2
 
-    Paragraph2
-],
+    Paragraph2],
 [  <title>Title</title>
   <p>Paragraph1</p>
   <section>

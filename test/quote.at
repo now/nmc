@@ -5,8 +5,7 @@ AT_NMC_CHECK_TRANSFORM([Document consisting of a title followed by a quote],
 > Whether ’tis nobler in the mind to suffer
 > The slings and arrows of outrageous fortune,
 > Or to take arms against a sea of troubles,
-> And by opposing end them?
-],
+> And by opposing end them?],
 [  <title>Title</title>
   <quote>
     <line>To clique, or not to clique, that is the question:</line>
@@ -21,8 +20,7 @@ AT_NMC_CHECK_TRANSFORM([Document consisting of a title followed by a one-line qu
 
 > Perfection (in design) is achieved not when there is nothing more to
   add, but rather when there is nothing more to take away.
-— Antoine de Saint-Exupéry
-],
+— Antoine de Saint-Exupéry],
 [  <title>Title</title>
   <quote>
     <line>Perfection (in design) is achieved not when there is nothing more to

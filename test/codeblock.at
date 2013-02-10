@@ -1,8 +1,7 @@
 AT_NMC_CHECK_TRANSFORM([Document consisting of a title followed by a code block],
 [Title
 
-    Code
-],
+    Code],
 [  <title>Title</title>
   <code>Code</code>])
 
@@ -10,8 +9,7 @@ AT_NMC_CHECK_TRANSFORM([Document consisting of a title followed by a multi-line 
 [Title
 
     Code1
-    Code2
-],
+    Code2],
 [  <title>Title</title>
   <code>Code1
 Code2</code>])
@@ -20,8 +18,7 @@ AT_NMC_CHECK_TRANSFORM([Document consisting of a title followed by an indented m
 [Title
 
     Code1
-      Code2
-],
+      Code2],
 [  <title>Title</title>
   <code>Code1
   Code2</code>])
@@ -32,8 +29,7 @@ AT_NMC_CHECK_TRANSFORM([Document consisting of a title followed by a multi-line 
     Code1
     Code2
 
-    Code3
-],
+    Code3],
 [  <title>Title</title>
   <code>Code1
 Code2
@@ -47,8 +43,7 @@ AT_NMC_CHECK_TRANSFORM([Document consisting of a title followed by a multi-line 
     Code2
 
 
-    Code3
-],
+    Code3],
 [  <title>Title</title>
   <code>Code1
 Code2
@@ -64,8 +59,7 @@ AT_NMC_CHECK_TRANSFORM([Document consisting of a title followed by a multi-line 
 
     Code3
 
-  Paragraph
-],
+  Paragraph],
 [  <title>Title</title>
   <code>Code1
 Code2

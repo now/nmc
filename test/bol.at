@@ -1,43 +1,37 @@
 AT_NMC_CHECK_FAIL_TRANSFORM([Document consisting of a title followed by a broken beginning of line],
 [Title
 
-A a
-],
+A a],
 [3:1: unrecognized character ‘A’ (U+0041) at beginning of line])
 
 AT_NMC_CHECK_FAIL_TRANSFORM([Document consisting of a title followed by a broken quote],
 [Title
 
->A b
-],
+>A b],
 [3:1: missing ‘ ’ after ‘>’ at beginning of line])
 
 AT_NMC_CHECK_FAIL_TRANSFORM([Document consisting of a title followed by a broken itemization],
 [Title
 
-•A b
-],
+•A b],
 [3:1: missing ‘ ’ after ‘•’ at beginning of line])
 
 AT_NMC_CHECK_FAIL_TRANSFORM([Document consisting of a title followed by a broken table],
 [Title
 
-|A |
-],
+|A |],
 [3:1: missing ‘ ’ after ‘|’ at beginning of line])
 
 AT_NMC_CHECK_FAIL_TRANSFORM([Document consisting of a title followed by a broken definition],
 [Title
 
-=A. =   1
-],
+=A. =   1],
 [3:1: missing ‘ ’ after ‘=’ at beginning of line])
 
 AT_NMC_CHECK_FAIL_TRANSFORM([Document consisting of a title followed by a broken paragraph],
 [Title
 
- A b
-],
+ A b],
 [3:1: missing ‘ ’ after ‘ ’ at beginning of line])
 
 AT_NMC_CHECK_FAIL_TRANSFORM([Document consisting of a title followed by a paragraph with a broken footnote],
@@ -45,6 +39,5 @@ AT_NMC_CHECK_FAIL_TRANSFORM([Document consisting of a title followed by a paragr
 
   Abbr¹
 
-¹Abbreviation for Abbreviation
-],
+¹Abbreviation for Abbreviation],
 [5:1: missing ‘ ’ after ‘¹’ at beginning of line])

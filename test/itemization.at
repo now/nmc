@@ -5,8 +5,7 @@ AT_NMC_CHECK_TRANSFORM([Document consisting of a title followed by a paragraph, 
 
 • Item1
 
-  Paragraph2
-],
+  Paragraph2],
 [  <title>Title</title>
   <p>Paragraph1</p>
   <itemization>
@@ -20,8 +19,7 @@ AT_NMC_CHECK_TRANSFORM([Document consisting of a title followed by a two-item it
 [Title
 
 • Item1
-• Item2
-],
+• Item2],
 [  <title>Title</title>
   <itemization>
     <item>
@@ -35,8 +33,7 @@ AT_NMC_CHECK_TRANSFORM([Document consisting of a title followed by a two-item it
 AT_NMC_CHECK_TRANSFORM([Document consisting of a title followed by an itemization with an inline],
 [Title
 
-• A ‹Item1›
-],
+• A ‹Item1›],
 [  <title>Title</title>
   <itemization>
     <item>
@@ -51,8 +48,7 @@ AT_NMC_CHECK_TRANSFORM([Document consisting of a title followed by a two-item it
     Line2
 
     Paragraph2
-•   Item2
-],
+•   Item2],
 [  <title>Title</title>
   <itemization>
     <item>

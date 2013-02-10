@@ -2,8 +2,7 @@ AT_NMC_CHECK_TRANSFORM([Document consisting of a title followed by a two-item en
 [Title
 
 ₁ Item1
-₂ Item2
-],
+₂ Item2],
 [  <title>Title</title>
   <enumeration>
     <item>

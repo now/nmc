@@ -3,8 +3,7 @@ AT_NMC_CHECK_TRANSFORM([Document consisting of a title followed by a three-item 
 
 = A. =   1
 = B. =   2
-= C. =   3
-],
+= C. =   3],
 [  <title>Title</title>
   <definitions>
     <item>
@@ -32,6 +31,5 @@ AT_NMC_CHECK_FAIL_TRANSFORM([Document consisting of a title followed by a three-
 
 = A.    1
 = B. =   2
-= C. =   3
-],
+= C. =   3],
 [3.1-9: missing ending “. =” for term in definition])

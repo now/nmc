@@ -1,24 +1,21 @@
 AT_NMC_CHECK_TRANSFORM([Inline non-termination rules: a/…],
 [T
 
-  /Truë/False/
-],
+  /Truë/False/],
 [  <title>T</title>
   <p><emphasis>Truë/False</emphasis></p>])
 
 AT_NMC_CHECK_TRANSFORM([Inline non-termination rules: …²a],
 [T
 
-  2²a=4a
-],
+  2²a=4a],
 [  <title>T</title>
   <p>2²a=4a</p>])
 
 AT_NMC_CHECK_TRANSFORM([Inline termination rules: ,],
 [T
 
-  /Yes/, please.
-],
+  /Yes/, please.],
 [  <title>T</title>
   <p><emphasis>Yes</emphasis>, please.</p>])
 
@@ -27,15 +24,13 @@ AT_NMC_CHECK_TRANSFORM([Inline termination rules: ²],
 
   /Yes/²
 
-² Abbreviation for A
-],
+² Abbreviation for A],
 [  <title>T</title>
   <p><abbreviation for="A"><emphasis>Yes</emphasis></abbreviation></p>])
 
 AT_NMC_CHECK_TRANSFORM([Inline start/termination rules: (…)],
 [T
 
-  (/Parenthetical./)
-],
+  (/Parenthetical./)],
 [  <title>T</title>
   <p>(<emphasis>Parenthetical.</emphasis>)</p>])

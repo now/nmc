@@ -1,15 +1,13 @@
 AT_NMC_CHECK_TRANSFORM([Inline: quoted symbol],
 [T
 
-  The ‘|’ symbol.
-],
+  The ‘|’ symbol.],
 [  <title>T</title>
   <p>The ‘|’ symbol.</p>])
 
 AT_NMC_CHECK_TRANSFORM([Inline: unquoted symbol],
 [T
 
-  An “‘Eng|ish’” quote.
-],
+  An “‘Eng|ish’” quote.],
 [  <title>T</title>
   <p>An “‘Eng|ish’” quote.</p>])

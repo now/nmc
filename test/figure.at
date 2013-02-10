@@ -5,8 +5,7 @@ Fig.
 
                                      a.jpg
 
-                                     Title
-],
+                                     Title],
 [  <title>T</title>
   <figure>
     <title>Title</title>
@@ -18,7 +17,6 @@ AT_NMC_CHECK_TRANSFORM([Inline figure],
 
   A¹
 
-¹ For reference, see a.jpg
-],
+¹ For reference, see a.jpg],
 [  <title>T</title>
   <p><ref title="For reference" uri="a.jpg" relation="figure">A</ref></p>])
