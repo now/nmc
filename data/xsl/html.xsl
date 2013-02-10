@@ -125,16 +125,6 @@
 
   <xsl:template name="html.body.footer"/>
 
-  <xsl:template match="figure/title">
-    <figcaption>
-      <xsl:apply-templates select="@*|node()"/>
-    </figcaption>
-  </xsl:template>
-
-  <xsl:template match="image">
-    <img src="{.}"/>
-  </xsl:template>
-
   <xsl:template match="section">
     <section>
       <xsl:call-template name="id-by-title"/>
@@ -256,6 +246,24 @@
     </td>
   </xsl:template>
 
+  <xsl:template match="figure">
+    <xsl:copy>
+      <xsl:apply-templates select="@*"/>
+      <xsl:apply-templates select="image"/>
+      <xsl:apply-templates select="title"/>
+    </xsl:copy>
+  </xsl:template>
+
+  <xsl:template match="figure/title">
+    <figcaption>
+      <xsl:apply-templates select="@*|node()"/>
+    </figcaption>
+  </xsl:template>
+
+  <xsl:template match="image">
+    <img src="{.}"/>
+  </xsl:template>
+
   <xsl:template match="abbreviation">
     <abbr>
       <xsl:call-template name="copy.common-attributes"/>
@@ -293,7 +301,7 @@
     </a>
   </xsl:template>
 
-  <xsl:template match="figure|p|table|span">
+  <xsl:template match="p|table|span">
     <xsl:call-template name="copy"/>
   </xsl:template>
 
