@@ -5,15 +5,6 @@ AT_NMC_CHECK_TRANSFORM([Document consisting of a title followed by a paragraph],
 [  <title>Title</title>
   <p>Paragraph</p>])
 
-AT_NMC_CHECK_TRANSFORM([Document consisting of a title followed by a multi-line paragraph],
-[Title
-
-  Line1
-  Line2],
-[  <title>Title</title>
-  <p>Line1
-  Line2</p>])
-
 AT_NMC_CHECK_TRANSFORM([Document consisting of a title followed by two paragraphs],
 [Title
 

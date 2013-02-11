@@ -25,20 +25,6 @@ AT_NMC_CHECK_TRANSFORM([Document consisting of a title followed by a section con
     <p>Paragraph2</p>
   </section>])
 
-AT_NMC_CHECK_TRANSFORM([Document consisting of a title followed by a section containing a multi-line paragraph],
-[Title
-
-§ Section
-
-    Line1
-    Line2],
-[  <title>Title</title>
-  <section>
-    <title>Section</title>
-    <p>Line1
-    Line2</p>
-  </section>])
-
 AT_NMC_CHECK_TRANSFORM([Document consisting of a title followed by two sections],
 [Title
 

@@ -1,3 +1,63 @@
+AT_NMC_CHECK_TRANSFORM([Document consisting of a title followed by a multi-line paragraph],
+[Title
+
+  Line1
+  Line2],
+[  <title>Title</title>
+  <p>Line1
+  Line2</p>])
+
+AT_NMC_CHECK_TRANSFORM([Document consisting of a title followed by a section containing a multi-line paragraph],
+[Title
+
+§ Section
+
+    Line1
+    Line2],
+[  <title>Title</title>
+  <section>
+    <title>Section</title>
+    <p>Line1
+    Line2</p>
+  </section>])
+
+AT_NMC_CHECK_TRANSFORM([Document consisting of a title followed by a paragraph, an itemization, and a paragraph],
+[Title
+
+  Paragraph1
+
+• Item1
+
+  Paragraph2],
+[  <title>Title</title>
+  <p>Paragraph1</p>
+  <itemization>
+    <item>
+      <p>Item1</p>
+    </item>
+  </itemization>
+  <p>Paragraph2</p>])
+
+AT_NMC_CHECK_TRANSFORM([Document consisting of a title followed by a two-item itemization, the first containing two paragraphs],
+[Title
+
+•   Line1
+    Line2
+
+    Paragraph2
+•   Item2],
+[  <title>Title</title>
+  <itemization>
+    <item>
+      <p>Line1
+    Line2</p>
+      <p>Paragraph2</p>
+    </item>
+    <item>
+      <p>Item2</p>
+    </item>
+  </itemization>])
+
 AT_NMC_CHECK_TRANSFORM([Test indent rules: first block in section is non-paragraph],
 [Title
 
