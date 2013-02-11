@@ -18,8 +18,8 @@ AT_NMC_CHECK_TRANSFORM([Document consisting of a title followed by two paragraph
 AT_NMC_CHECK_TRANSFORM([Document consisting of a title followed by a two-item itemization],
 [Title
 
-• Item1
-• Item2],
+•   Item1
+•   Item2],
 [  <title>Title</title>
   <itemization>
     <item>
@@ -33,7 +33,7 @@ AT_NMC_CHECK_TRANSFORM([Document consisting of a title followed by a two-item it
 AT_NMC_CHECK_TRANSFORM([Document consisting of a title followed by an itemization with an inline],
 [Title
 
-• A ‹Item1›],
+•   A ‹Item1›],
 [  <title>Title</title>
   <itemization>
     <item>
@@ -44,8 +44,8 @@ AT_NMC_CHECK_TRANSFORM([Document consisting of a title followed by an itemizatio
 AT_NMC_CHECK_TRANSFORM([Document consisting of a title followed by a two-item enumeration],
 [Title
 
-₁ Item1
-₂ Item2],
+₁   Item1
+₂   Item2],
 [  <title>Title</title>
   <enumeration>
     <item>
@@ -252,10 +252,28 @@ AT_NMC_CHECK_FAIL_TRANSFORM([Document consisting of a title followed by a broken
 [3:1: missing ‘ ’ after ‘>’ at beginning of line])
 
 AT_NMC_CHECK_FAIL_TRANSFORM([Document consisting of a title followed by a broken itemization],
+[T
+
+•A],
+[3:4: missing “   ” after ‘•’ at beginning of line])
+
+AT_NMC_CHECK_FAIL_TRANSFORM([Document consisting of a title followed by a broken itemization 2],
+[T
+
+• A],
+[3:5: missing “  ” after “• ” at beginning of line])
+
+AT_NMC_CHECK_FAIL_TRANSFORM([Document consisting of a title followed by a broken itemization 3],
+[T
+
+•  A],
+[3:6: missing ‘ ’ after “•  ” at beginning of line])
+
+AT_NMC_CHECK_FAIL_TRANSFORM([Document consisting of a title followed by a broken enumeration],
 [Title
 
-•A b],
-[3:1: missing ‘ ’ after ‘•’ at beginning of line])
+₁A b],
+[3:4: missing “   ” after ‘₁’ at beginning of line])
 
 AT_NMC_CHECK_FAIL_TRANSFORM([Document consisting of a title followed by a broken table],
 [Title

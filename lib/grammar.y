@@ -249,22 +249,30 @@ parser_oom(struct parser *parser)
         parser_errors(parser, &nmc_parser_oom_error, &nmc_parser_oom_error);
 }
 
-static bool NMC_PRINTF(3, 4)
-parser_error(struct parser *parser, YYLTYPE *location,
-             const char *message, ...)
+static bool
+parser_errorv(struct parser *parser, YYLTYPE *location,
+              const char *message, va_list args)
 {
         if (parser_is_oom(parser))
                 return false;
-        va_list args;
-        va_start(args, message);
         struct nmc_parser_error *error = nmc_parser_error_newv(location, message, args);
-        va_end(args);
         if (error == NULL) {
                 parser_oom(parser);
                 return false;
         }
         parser_errors(parser, error, error);
         return true;
+}
+
+static bool NMC_PRINTF(3, 4)
+parser_error(struct parser *parser, YYLTYPE *location,
+             const char *message, ...)
+{
+        va_list args;
+        va_start(args, message);
+        bool r = parser_errorv(parser, location, message, args);
+        va_end(args);
+        return r;
 }
 
 static void
@@ -816,6 +824,37 @@ is_bol_symbol(const char *end)
         }
 }
 
+static int NMC_PRINTF(5, 6)
+error_token(struct parser *parser, YYLTYPE *location, const char *end, int type,
+            const char *message, ...)
+{
+        va_list args;
+        va_start(args, message);
+        int r = token(parser, location, end, type);
+        parser_errorv(parser, &parser->location, message, args);
+        va_end(args);
+        return r;
+}
+
+static int
+bol_item(struct parser *parser, YYLTYPE *location, size_t length, int type)
+{
+        const char *end = parser->p + length;
+        if (*end != ' ')
+                return error_token(parser, location, end, type,
+                                   "missing “   ” after ‘%.*s’ at beginning of line",
+                                   (int)length, parser->p);
+        if (*++end != ' ')
+                return error_token(parser, location, end, type,
+                                   "missing “  ” after “%.*s” at beginning of line",
+                                   (int)length + 1, parser->p);
+        if (*++end != ' ')
+                return error_token(parser, location, end, type,
+                                   "missing ‘ ’ after “%.*s” at beginning of line",
+                                   (int)length + 2, parser->p);
+        return token(parser, location, end, type);
+}
+
 static int
 bol(struct parser *parser, YYLTYPE *location, YYSTYPE *value)
 {
@@ -823,7 +862,7 @@ bol(struct parser *parser, YYLTYPE *location, YYSTYPE *value)
 
         size_t length;
         if ((length = subscript(parser->p)) > 0)
-                return bol_token(parser, location, length, ENUMERATION);
+                return bol_item(parser, location, length, ENUMERATION);
         else if ((length = superscript(parser->p)) > 0)
                 return footnote(parser, location, value, length);
 
@@ -841,7 +880,7 @@ bol(struct parser *parser, YYLTYPE *location, YYSTYPE *value)
         case U_SECTION_SIGN:
                 return bol_token(parser, location, length, SECTION);
         case U_BULLET:
-                return bol_token(parser, location, length, ITEMIZATION);
+                return bol_item(parser, location, length, ITEMIZATION);
         case U_EM_DASH:
                 return bol_token(parser, location, length, ATTRIBUTION);
         case '=':

@@ -41,7 +41,7 @@ AT_NMC_CHECK_TRANSFORM([Test indent rules: first block in section is non-paragra
 
 § Section
 
-  • List],
+  •   List],
 [  <title>Title</title>
   <section>
     <title>Section</title>
