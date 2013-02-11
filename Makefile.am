@@ -216,22 +216,14 @@ check_SCRIPTS = test/nmc
 TESTSUITE_AT = \
 	test/bol.at \
 	test/code.at \
-	test/codeblock.at \
-	test/definitions.at \
 	test/emphasis.at \
-	test/enumeration.at \
-	test/figure.at \
 	test/footnotes.at \
 	test/group.at \
 	test/indent.at \
 	test/inlines.at \
-	test/itemization.at \
 	test/local.at \
-	test/paragraph.at \
-	test/quote.at \
 	test/quoted.at \
 	test/section.at \
-	test/table.at \
 	test/title.at \
 	test/xml.at
 

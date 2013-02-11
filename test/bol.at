@@ -1,3 +1,209 @@
+AT_NMC_CHECK_TRANSFORM([Document consisting of a title followed by a paragraph],
+[Title
+
+  Paragraph],
+[  <title>Title</title>
+  <p>Paragraph</p>])
+
+AT_NMC_CHECK_TRANSFORM([Document consisting of a title followed by two paragraphs],
+[Title
+
+  Paragraph1
+
+  Paragraph2],
+[  <title>Title</title>
+  <p>Paragraph1</p>
+  <p>Paragraph2</p>])
+
+AT_NMC_CHECK_TRANSFORM([Document consisting of a title followed by a two-item itemization],
+[Title
+
+• Item1
+• Item2],
+[  <title>Title</title>
+  <itemization>
+    <item>
+      <p>Item1</p>
+    </item>
+    <item>
+      <p>Item2</p>
+    </item>
+  </itemization>])
+
+AT_NMC_CHECK_TRANSFORM([Document consisting of a title followed by an itemization with an inline],
+[Title
+
+• A ‹Item1›],
+[  <title>Title</title>
+  <itemization>
+    <item>
+      <p>A <code>Item1</code></p>
+    </item>
+  </itemization>])
+
+AT_NMC_CHECK_TRANSFORM([Document consisting of a title followed by a two-item enumeration],
+[Title
+
+₁ Item1
+₂ Item2],
+[  <title>Title</title>
+  <enumeration>
+    <item>
+      <p>Item1</p>
+    </item>
+    <item>
+      <p>Item2</p>
+    </item>
+  </enumeration>])
+
+AT_NMC_CHECK_TRANSFORM([Document consisting of a title followed by a three-item definition],
+[Title
+
+= A. =   1
+= B. =   2
+= C. =   3],
+[  <title>Title</title>
+  <definitions>
+    <item>
+      <term>A</term>
+      <definition>
+        <p>1</p>
+      </definition>
+    </item>
+    <item>
+      <term>B</term>
+      <definition>
+        <p>2</p>
+      </definition>
+    </item>
+    <item>
+      <term>C</term>
+      <definition>
+        <p>3</p>
+      </definition>
+    </item>
+  </definitions>])
+
+AT_NMC_CHECK_FAIL_TRANSFORM([Document consisting of a title followed by a three-item definition with the first being unterminated],
+[Title
+
+= A.    1
+= B. =   2
+= C. =   3],
+[3.1-9: missing ending “. =” for term in definition])
+
+AT_NMC_CHECK_TRANSFORM([Document consisting of a title followed by a quote],
+[Title
+
+> To clique, or not to clique, that is the question:
+> Whether ’tis nobler in the mind to suffer
+> The slings and arrows of outrageous fortune,
+> Or to take arms against a sea of troubles,
+> And by opposing end them?],
+[  <title>Title</title>
+  <quote>
+    <line>To clique, or not to clique, that is the question:</line>
+    <line>Whether ’tis nobler in the mind to suffer</line>
+    <line>The slings and arrows of outrageous fortune,</line>
+    <line>Or to take arms against a sea of troubles,</line>
+    <line>And by opposing end them?</line>
+  </quote>])
+
+AT_NMC_CHECK_TRANSFORM([Document consisting of a title followed by a one-line quote spanning two lines followed by an attribution],
+[Title
+
+> Perfection (in design) is achieved not when there is nothing more to
+  add, but rather when there is nothing more to take away.
+— Antoine de Saint-Exupéry],
+[  <title>Title</title>
+  <quote>
+    <line>Perfection (in design) is achieved not when there is nothing more to
+  add, but rather when there is nothing more to take away.</line>
+    <attribution>Antoine de Saint-Exupéry</attribution>
+  </quote>])
+
+AT_NMC_CHECK_TRANSFORM([Document consisting of a title followed by a table consisting of one row with one entry],
+[Title
+
+| Entry |],
+[  <title>Title</title>
+  <table>
+    <body>
+      <row>
+        <cell>Entry</cell>
+      </row>
+    </body>
+  </table>])
+
+AT_NMC_CHECK_TRANSFORM([Document consisting of a title followed by a table consisting of one row with two entries],
+[Title
+
+| One | Two |],
+[  <title>Title</title>
+  <table>
+    <body>
+      <row>
+        <cell>One</cell>
+        <cell>Two</cell>
+      </row>
+    </body>
+  </table>])
+
+AT_NMC_CHECK_TRANSFORM([Document consisting of a title followed by a table consisting of two rows with two entries],
+[Title
+
+| One   | Two  |
+| Three | Four |],
+[  <title>Title</title>
+  <table>
+    <body>
+      <row>
+        <cell>One</cell>
+        <cell>Two</cell>
+      </row>
+      <row>
+        <cell>Three</cell>
+        <cell>Four</cell>
+      </row>
+    </body>
+  </table>])
+
+AT_NMC_CHECK_TRANSFORM([Document consisting of a title followed by a table consisting of a head row followed by a row with two entries],
+[Title
+
+| One   | Two  |
+|-------+------|
+| Three | Four |],
+[  <title>Title</title>
+  <table>
+    <head>
+      <row>
+        <cell>One</cell>
+        <cell>Two</cell>
+      </row>
+    </head>
+    <body>
+      <row>
+        <cell>Three</cell>
+        <cell>Four</cell>
+      </row>
+    </body>
+  </table>])
+
+AT_NMC_CHECK_TRANSFORM([Block: Figure],
+[T
+
+Fig.
+
+                                     a.jpg
+
+                                     Title],
+[  <title>T</title>
+  <figure>
+    <title>Title</title>
+    <image>a.jpg</image>
+  </figure>])
+
 AT_NMC_CHECK_FAIL_TRANSFORM([Document consisting of a title followed by a broken beginning of line],
 [Title
 

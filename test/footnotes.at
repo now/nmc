@@ -125,3 +125,12 @@ AT_NMC_CHECK_FAIL_TRANSFORM([Reference to undefined footnote],
 
   Word1¹],
 [3.8-9: reference to undefined footnote: ¹])
+
+AT_NMC_CHECK_TRANSFORM([Inline figure],
+[T
+
+  A¹
+
+¹ For reference, see a.jpg],
+[  <title>T</title>
+  <p><ref title="For reference" uri="a.jpg" relation="figure">A</ref></p>])
