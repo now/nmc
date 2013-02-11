@@ -223,7 +223,6 @@ TESTSUITE_AT = \
 	test/inlines.at \
 	test/local.at \
 	test/quoted.at \
-	test/section.at \
 	test/title.at \
 	test/xml.at
 

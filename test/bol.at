@@ -204,6 +204,41 @@ Fig.
     <image>a.jpg</image>
   </figure>])
 
+AT_NMC_CHECK_TRANSFORM([Document consisting of a title followed by a section containing a paragraph],
+[Title
+
+§ Section
+
+    Paragraph],
+[  <title>Title</title>
+  <section>
+    <title>Section</title>
+    <p>Paragraph</p>
+  </section>])
+
+AT_NMC_CHECK_TRANSFORM([Document consisting of a title followed by a paragraph and a section],
+[Title
+
+  Paragraph1
+
+§ Section1
+
+    Paragraph1
+
+§ Section2
+
+    Paragraph2],
+[  <title>Title</title>
+  <p>Paragraph1</p>
+  <section>
+    <title>Section1</title>
+    <p>Paragraph1</p>
+  </section>
+  <section>
+    <title>Section2</title>
+    <p>Paragraph2</p>
+  </section>])
+
 AT_NMC_CHECK_FAIL_TRANSFORM([Document consisting of a title followed by a broken beginning of line],
 [Title
 

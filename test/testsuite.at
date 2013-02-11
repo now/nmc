@@ -4,7 +4,6 @@ AT_TESTED([nmc])
 
 m4_include([title.at])
 m4_include([bol.at])
-m4_include([section.at])
 m4_include([indent.at])
 m4_include([codeblock.at])
 m4_include([footnotes.at])

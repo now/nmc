@@ -7,7 +7,7 @@ AT_NMC_CHECK_TRANSFORM([Test indent rules: continuation],
   <p>1
   2</p>])
 
-AT_NMC_CHECK_TRANSFORM([Test indent rules: nested continuation],
+AT_NMC_CHECK_TRANSFORM([Test indent rules: section continuation],
 [T
 
 § S
@@ -19,6 +19,21 @@ AT_NMC_CHECK_TRANSFORM([Test indent rules: nested continuation],
     <title>S</title>
     <p>1
     2</p>
+  </section>])
+
+AT_NMC_CHECK_TRANSFORM([Test indent rules: section concatenation],
+[T
+
+§ S
+
+    1
+
+    2],
+[  <title>T</title>
+  <section>
+    <title>S</title>
+    <p>1</p>
+    <p>2</p>
   </section>])
 
 AT_NMC_CHECK_TRANSFORM([Test indent rules: first block in section is non-paragraph],
