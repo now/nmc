@@ -1,11 +1,11 @@
-AT_NMC_CHECK_TRANSFORM([Inline non-termination rules: a/…],
+AT_NMC_CHECK_TRANSFORM([Inline non-termination rules: A/…],
 [T
 
   /Truë/False/],
 [  <title>T</title>
   <p><emphasis>Truë/False</emphasis></p>])
 
-AT_NMC_CHECK_TRANSFORM([Inline non-termination rules: …²a],
+AT_NMC_CHECK_TRANSFORM([Inline non-termination rules: …²A],
 [T
 
   2²a=4a],
@@ -22,11 +22,11 @@ AT_NMC_CHECK_TRANSFORM([Inline termination rules: ,],
 AT_NMC_CHECK_TRANSFORM([Inline termination rules: ²],
 [T
 
-  /Yes/²
+  /A/²
 
-² Abbreviation for A],
+² 1 at 2],
 [  <title>T</title>
-  <p><abbreviation for="A"><emphasis>Yes</emphasis></abbreviation></p>])
+  <p><ref title="1" uri="2"><emphasis>A</emphasis></ref></p>])
 
 AT_NMC_CHECK_TRANSFORM([Inline start/termination rules: (…)],
 [T
