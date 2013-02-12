@@ -193,7 +193,7 @@ AT_NMC_CHECK_FAIL_TRANSFORM([Code block with empty lines followed by broken para
     3
 
 P],
-[8:1: unrecognized character ‘P’ (U+0050) at beginning of line]),
+[8:1: unrecognized tag character ‘P’ (U+0050)]),
 
 AT_NMC_CHECK_TRANSFORM([Quote],
 [T
@@ -343,4 +343,4 @@ AT_NMC_CHECK_FAIL_TRANSFORM([Broken beginning of line],
 [T
 
 W],
-[3:1: unrecognized character ‘W’ (U+0057) at beginning of line])
+[3:1: unrecognized tag character ‘W’ (U+0057)])

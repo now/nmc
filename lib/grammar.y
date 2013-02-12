@@ -941,15 +941,15 @@ bol(struct parser *parser, YYLTYPE *location, YYSTYPE *value)
 
         if (c == U_BAD_INPUT_CHAR)
                 parser_error(parser, &parser->location,
-                             "broken UTF-8 sequence at beginning of line starting with %#02x",
+                             "broken UTF-8 sequence starting with %#02x",
                              *parser->p);
         else if (!uc_issolid(c))
                 parser_error(parser, &parser->location,
-                             "unrecognized character U+%04X at beginning of line",
+                             "unrecognized tag character U+%04X",
                              c);
         else
                 parser_error(parser, &parser->location,
-                             "unrecognized character ‘%.*s’ (U+%04X) at beginning of line",
+                             "unrecognized tag character ‘%.*s’ (U+%04X)",
                              (int)length, parser->p, c);
 
         return PARAGRAPH;
