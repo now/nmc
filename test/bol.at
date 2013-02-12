@@ -120,7 +120,7 @@ AT_NMC_CHECK_FAIL_TRANSFORM([Broken definition],
 = A.    1
 = B. =   2
 = C. =   3],
-[3.1-9: missing ending “. =” for term in definition])
+[3:10: missing ending “. =” for term in definition])
 
 AT_NMC_CHECK_FAIL_TRANSFORM([Broken definition 2],
 [T
@@ -183,6 +183,17 @@ AT_NMC_CHECK_TRANSFORM([Code block with empty lines followed by paragraph],
 
 3</code>
   <p>P</p>])
+
+AT_NMC_CHECK_FAIL_TRANSFORM([Code block with empty lines followed by broken paragraph],
+[T
+
+    1
+    2
+
+    3
+
+P],
+[8:1: unrecognized character ‘P’ (U+0050) at beginning of line]),
 
 AT_NMC_CHECK_TRANSFORM([Quote],
 [T
@@ -280,6 +291,12 @@ Fig.
     <title>Title</title>
     <image>a.jpg</image>
   </figure>])
+
+AT_NMC_CHECK_FAIL_TRANSFORM([Figure without URL],
+[T
+
+Fig.],
+[4:1: missing URL for figure])
 
 AT_NMC_CHECK_TRANSFORM([Section],
 [T

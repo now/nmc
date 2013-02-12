@@ -721,11 +721,11 @@ codeblock(struct parser *parser, YYLTYPE *location, YYSTYPE *value)
                 }
                 if ((size_t)(send - sbegin) < parser->indent + 4)
                         break;
-                if (!buffer_append_c(&b, '\n', lines))
-                        goto oom;
                 begin = sbegin + parser->indent + 4;
                 end = send;
                 parser->location.last_line += lines;
+                if (!buffer_append_c(&b, '\n', lines))
+                        goto oom;
         }
 
         value->node = text_node_new(NMC_NODE_CODEBLOCK, buffer_str(&b));
@@ -733,13 +733,26 @@ codeblock(struct parser *parser, YYLTYPE *location, YYSTYPE *value)
 oom:
         value->node = NULL;
 done:
-        return token(parser, location, end, CODEBLOCK);
+        locate(parser, location, begin - end);
+        return token(parser, NULL, end, CODEBLOCK);
 }
 
 static struct nmc_node *
 text_node_new_dup(enum nmc_node_name name, const char *string, size_t length)
 {
         return text_node_new(name, mstrdup(string, length));
+}
+
+static int NMC_PRINTF(5, 6)
+error_token(struct parser *parser, YYLTYPE *location, const char *end, int type,
+            const char *message, ...)
+{
+        va_list args;
+        va_start(args, message);
+        int r = token(parser, location, end, type);
+        parser_errorv(parser, &parser->location, message, args);
+        va_end(args);
+        return r;
 }
 
 static int
@@ -762,35 +775,56 @@ term(struct parser *parser, YYLTYPE *location, YYSTYPE *value)
                         end++;
         }
 
-        int r = token(parser, location, end, AGAIN);
-        parser_error(parser, location,
-                     "missing ending “. =” for term in definition");
-        return r;
+        return error_token(parser, location, end, AGAIN,
+                           "missing ending “. =” for term in definition");
+}
+
+static const char *
+skip_spaces_and_empty_lines(struct parser *parser, const char **begin, const char *end)
+{
+        while (true) {
+                while (*end == ' ')
+                        end++;
+                if (*end != '\n')
+                        break;
+                end++;
+                parser->location.last_line++;
+                *begin = end;
+        }
+        return end;
 }
 
 static int
 figure(struct parser *parser, YYLTYPE *location, YYSTYPE *value)
 {
+        const char *begin = parser->p;
         const char *end = parser->p + 4;
-        if (!(*end == ' ' || *end == '\n'))
+        switch (*end) {
+        case '\n':
+                parser->location.last_line++;
+                begin = end + 1;
+                // Fall through
+        case ' ':
+                end++;
+                break;
+        default:
                 parser_error(parser, &parser->location,
                              "missing ‘ ’ or newline after “Fig.” at beginning of line");
-        else
-                end++;
-        while (*end == ' ' || *end == '\n')
-                end++;
-        if (*end == '\0') {
-                int r = token(parser, location, parser->p, END);
-                parser_error(parser, location, "missing URL for figure");
-                return r;
         }
-        const char *begin = end;
+
+        end = skip_spaces_and_empty_lines(parser, &begin, end);
+        if (*end == '\0') {
+                locate(parser, location, end - begin);
+                return error_token(parser, NULL, end, END,
+                                   "missing URL for figure");
+        }
+        const char *middle = end;
         while (!is_end(end) && *end != ' ')
                 end++;
-        value->node = text_node_new_dup(NMC_NODE_IMAGE, begin, end - begin);
-        while (*end == ' ' || *end == '\n')
-                end++;
-        return token(parser, location, end, FIGURE);
+        value->node = text_node_new_dup(NMC_NODE_IMAGE, middle, end - middle);
+        end = skip_spaces_and_empty_lines(parser, &begin, end);
+        locate(parser, location, end - begin);
+        return token(parser, NULL, end, FIGURE);
 }
 
 static int
@@ -822,18 +856,6 @@ is_bol_symbol(const char *end)
         default:
                 return is_subscript(c) || is_superscript(c);
         }
-}
-
-static int NMC_PRINTF(5, 6)
-error_token(struct parser *parser, YYLTYPE *location, const char *end, int type,
-            const char *message, ...)
-{
-        va_list args;
-        va_start(args, message);
-        int r = token(parser, location, end, type);
-        parser_errorv(parser, &parser->location, message, args);
-        va_end(args);
-        return r;
 }
 
 static int
@@ -935,15 +957,7 @@ eol(struct parser *parser, YYLTYPE *location, YYSTYPE *value)
                 end++;
                 parser->location.last_line++;
                 begin = end;
-                while (true) {
-                        while (*end == ' ')
-                                end++;
-                        if (*end != '\n')
-                                break;
-                        end++;
-                        parser->location.last_line++;
-                        begin = end;
-                }
+                end = skip_spaces_and_empty_lines(parser, &begin, end);
                 size_t spaces = end - begin;
                 if ((parser->want == INDENT && spaces >= parser->indent + 2) ||
                     (parser->want == ITEMINDENT && spaces >= parser->indent + 2 &&
