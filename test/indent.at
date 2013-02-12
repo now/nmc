@@ -1,4 +1,4 @@
-AT_NMC_CHECK_TRANSFORM([Test indent rules: continuation],
+AT_NMC_CHECK_TRANSFORM([Continuation],
 [T
 
   1
@@ -7,7 +7,7 @@ AT_NMC_CHECK_TRANSFORM([Test indent rules: continuation],
   <p>1
   2</p>])
 
-AT_NMC_CHECK_TRANSFORM([Test indent rules: section continuation],
+AT_NMC_CHECK_TRANSFORM([Section-level continuation],
 [T
 
 § S
@@ -21,7 +21,7 @@ AT_NMC_CHECK_TRANSFORM([Test indent rules: section continuation],
     2</p>
   </section>])
 
-AT_NMC_CHECK_TRANSFORM([Test indent rules: section concatenation],
+AT_NMC_CHECK_TRANSFORM([Section-level concatenation],
 [T
 
 § S
@@ -36,23 +36,23 @@ AT_NMC_CHECK_TRANSFORM([Test indent rules: section concatenation],
     <p>2</p>
   </section>])
 
-AT_NMC_CHECK_TRANSFORM([Test indent rules: first block in section is non-paragraph],
-[Title
+AT_NMC_CHECK_TRANSFORM([Section-level beginning of line],
+[T
 
-§ Section
+§ S
 
-  •   List],
-[  <title>Title</title>
+  •   I],
+[  <title>T</title>
   <section>
-    <title>Section</title>
+    <title>S</title>
     <itemization>
       <item>
-        <p>List</p>
+        <p>I</p>
       </item>
     </itemization>
   </section>])
 
-AT_NMC_CHECK_TRANSFORM([Test indent rules: first block in an item is a nested item],
+AT_NMC_CHECK_TRANSFORM([Item nesting],
 [T
 
 •   1
@@ -71,7 +71,7 @@ AT_NMC_CHECK_TRANSFORM([Test indent rules: first block in an item is a nested it
   </itemization>])
 
 
-AT_NMC_CHECK_TRANSFORM([Test indent rules: first block in an item is a tightly nested item],
+AT_NMC_CHECK_TRANSFORM([Tight item nesting],
 [T
 
 •   1
@@ -88,7 +88,7 @@ AT_NMC_CHECK_TRANSFORM([Test indent rules: first block in an item is a tightly n
     </item>
   </itemization>])
 
-AT_NMC_CHECK_TRANSFORM([Test indent rules: an item followed by a paragraph],
+AT_NMC_CHECK_TRANSFORM([Item followed by paragraph],
 [T
 
 •   1
@@ -102,7 +102,7 @@ AT_NMC_CHECK_TRANSFORM([Test indent rules: an item followed by a paragraph],
   </itemization>
   <p>2</p>])
 
-AT_NMC_CHECK_TRANSFORM([Test indent rules: an item containing two paragraphs followed by a paragraph],
+AT_NMC_CHECK_TRANSFORM([Two-paragraph item followed by paragraph],
 [T
 
 •   1
@@ -119,7 +119,7 @@ AT_NMC_CHECK_TRANSFORM([Test indent rules: an item containing two paragraphs fol
   </itemization>
   <p>3</p>])
 
-AT_NMC_CHECK_TRANSFORM([Test indent rules: an item containing two paragraphs followed by an item],
+AT_NMC_CHECK_TRANSFORM([Two-paragraph item followed by item],
 [T
 
 •   1
@@ -138,7 +138,7 @@ AT_NMC_CHECK_TRANSFORM([Test indent rules: an item containing two paragraphs fol
     </item>
   </itemization>])
 
-AT_NMC_CHECK_TRANSFORM([Test indent rules: an item containing one paragraph spread on two lines],
+AT_NMC_CHECK_TRANSFORM([Item-level continuation],
 [T
 
 •   1
@@ -151,7 +151,7 @@ AT_NMC_CHECK_TRANSFORM([Test indent rules: an item containing one paragraph spre
     </item>
   </itemization>])
 
-AT_NMC_CHECK_TRANSFORM([Test indent rules: an item containing one paragraph spread on two lines followed by a second paragraph],
+AT_NMC_CHECK_TRANSFORM([Item-level continuation plus concatenation],
 [T
 
 •   1
@@ -167,7 +167,7 @@ AT_NMC_CHECK_TRANSFORM([Test indent rules: an item containing one paragraph spre
     </item>
   </itemization>])
 
-AT_NMC_CHECK_TRANSFORM([Test indent rules: an item containing one paragraph spread on two lines followed by a second paragraph and a paragraph],
+AT_NMC_CHECK_TRANSFORM([Item-level continuation plus concatenation followed by paragraph],
 [T
 
 •   1
@@ -186,14 +186,14 @@ AT_NMC_CHECK_TRANSFORM([Test indent rules: an item containing one paragraph spre
   </itemization>
   <p>4</p>])
 
-AT_NMC_CHECK_TRANSFORM([Test indent rules: an item containing two paragraphs followed by a paragraph beginning with a bol symbol],
+AT_NMC_CHECK_TRANSFORM([Item followed by paragraph beginning with a BOL symbol],
 [T
 
 •   1
 
     2
 
-¶  —],
+¶ —],
 [  <title>T</title>
   <itemization>
     <item>
