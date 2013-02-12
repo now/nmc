@@ -1,11 +1,11 @@
-AT_NMC_CHECK_TRANSFORM([Inline: quoted symbol],
+AT_NMC_CHECK_TRANSFORM([Quoted symbol],
 [T
 
   The ‘|’ symbol.],
 [  <title>T</title>
   <p>The ‘|’ symbol.</p>])
 
-AT_NMC_CHECK_TRANSFORM([Inline: unquoted symbol],
+AT_NMC_CHECK_TRANSFORM([Unquoted symbol],
 [T
 
   An “‘Eng|ish’” quote.],
