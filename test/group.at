@@ -1,6 +1,0 @@
-AT_NMC_CHECK_TRANSFORM([Group],
-[T
-
-  {W₁ /W₂/ W₃}],
-[  <title>T</title>
-  <p>W₁ <emphasis>W₂</emphasis> W₃</p>])

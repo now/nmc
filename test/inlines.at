@@ -1,3 +1,162 @@
+AT_NMC_CHECK_TRANSFORM([Code inline],
+[T
+
+  ‹Code›],
+[  <title>T</title>
+  <p><code>Code</code></p>])
+
+AT_NMC_CHECK_FAIL_TRANSFORM([Unterminated code inline],
+[T
+
+  ‹C],
+[3:3: missing ending ‘›’ for code inline])
+
+AT_NMC_CHECK_FAIL_TRANSFORM([Two unterminated code inlines],
+[T
+
+  ‹C
+  ‹C],
+[3:3: missing ending ‘›’ for code inline
+4:3: missing ending ‘›’ for code inline])
+
+AT_NMC_CHECK_TRANSFORM([Code inline termination: ‹››],
+[T
+
+  ‹››],
+[  <title>T</title>
+  <p><code>›</code></p>])
+
+AT_NMC_CHECK_TRANSFORM([Code inline termination: ‹›››],
+[T
+
+  ‹›››],
+[  <title>T</title>
+  <p><code>››</code></p>])
+
+AT_NMC_CHECK_TRANSFORM([Code inline termination: not only at EOW],
+[T
+
+  ‹C›s],
+[  <title>T</title>
+  <p><code>C</code>s</p>])
+
+AT_NMC_CHECK_TRANSFORM([Code inline continuation: ‹…›‹…›],
+[T
+
+  ‹A›‹B›],
+[  <title>T</title>
+  <p><code>AB</code></p>])
+
+
+AT_NMC_CHECK_TRANSFORM([Code inline continuation: ‹…››‹…›],
+[T
+
+  ‹A››‹B›],
+[  <title>T</title>
+  <p><code>A›B</code></p>])
+
+AT_NMC_CHECK_TRANSFORM([Code inline continuation: ‹…›››‹…›],
+[T
+
+  ‹A››››‹B›],
+[  <title>T</title>
+  <p><code>A›››B</code></p>])
+
+AT_NMC_CHECK_TRANSFORM([Code inline continuation: ‹…››‹…›››‹…›],
+[T
+
+  ‹A››‹B›››‹C›],
+[  <title>T</title>
+  <p><code>A›B››C</code></p>])
+
+
+AT_NMC_CHECK_TRANSFORM([Code inline continuation: ‹…››‹›],
+[T
+
+  ‹A››‹›],
+[  <title>T</title>
+  <p><code>A›</code></p>])
+
+AT_NMC_CHECK_FAIL_TRANSFORM([Unterminated code inline with continuation],
+[T
+
+  ‹A››‹B],
+[3:3: missing ending ‘›’ for code inline])
+AT_NMC_CHECK_TRANSFORM([Emphasis],
+[T
+
+  /Emphasis/],
+[  <title>T</title>
+  <p><emphasis>Emphasis</emphasis></p>])
+
+AT_NMC_CHECK_TRANSFORM([Emphasis containing solidus],
+[T
+
+  /W₁/W₂/],
+[  <title>T</title>
+  <p><emphasis>W₁/W₂</emphasis></p>])
+
+AT_NMC_CHECK_FAIL_TRANSFORM([Unterminated emphasis],
+[T
+
+  /W],
+[3:3: missing ending ‘/’ for emphasis inline])
+
+AT_NMC_CHECK_TRANSFORM([Emphasis start/termination rules: //…/],
+[T
+
+  //…/],
+[  <title>T</title>
+  <p><emphasis>/…</emphasis></p>])
+
+AT_NMC_CHECK_TRANSFORM([Emphasis start/termination rules: /…//],
+[T
+
+  /…//],
+[  <title>T</title>
+  <p><emphasis>…/</emphasis></p>])
+
+AT_NMC_CHECK_TRANSFORM([Emphasis start/termination rules: /…//A/],
+[T
+
+  /…//A/],
+[  <title>T</title>
+  <p><emphasis>…//A</emphasis></p>])
+
+AT_NMC_CHECK_TRANSFORM([Group],
+[T
+
+  {W₁ /W₂/ W₃}],
+[  <title>T</title>
+  <p>W₁ <emphasis>W₂</emphasis> W₃</p>])
+
+AT_NMC_CHECK_FAIL_TRANSFORM([Unterminated group],
+[T
+
+  {W₁ /W₂/ W₃],
+[4:1: syntax error, unexpected end of file])
+
+AT_NMC_CHECK_TRANSFORM([Quoted symbol],
+[T
+
+  The ‘|’ symbol.],
+[  <title>T</title>
+  <p>The ‘|’ symbol.</p>])
+
+AT_NMC_CHECK_TRANSFORM([Unquoted symbol],
+[T
+
+  An “‘Eng|ish’” quote.],
+[  <title>T</title>
+  <p>An “‘Eng|ish’” quote.</p>])
+
+AT_NMC_CHECK_TRANSFORM([Unterminated quoted symbol],
+[T
+
+  ‘],
+[  <title>T</title>
+  <p>‘</p>])
+
 AT_NMC_CHECK_TRANSFORM([Inline non-termination rules: A/…],
 [T
 

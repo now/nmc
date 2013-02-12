@@ -215,14 +215,10 @@ check_SCRIPTS = test/nmc
 
 TESTSUITE_AT = \
 	test/bol.at \
-	test/code.at \
-	test/emphasis.at \
 	test/footnotes.at \
-	test/group.at \
 	test/indent.at \
 	test/inlines.at \
 	test/local.at \
-	test/quoted.at \
 	test/title.at \
 	test/xml.at
 
