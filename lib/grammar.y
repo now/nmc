@@ -443,7 +443,10 @@ bol_space(struct parser *parser, size_t offset)
 {
         if (*(parser->p + offset) == ' ')
                 return offset + 1;
-        parser_error(parser, &parser->location,
+        YYLTYPE location = parser->location;
+        location.first_column += offset;
+        location.last_column = location.first_column;
+        parser_error(parser, &location,
                      "missing ‘ ’ after “%.*s”", (int)offset, parser->p);
         return offset;
 }

@@ -126,7 +126,7 @@ AT_NMC_CHECK_FAIL_TRANSFORM([Broken definition 2],
 [T
 
 =A. =   1],
-[3:1: missing ‘ ’ after “=”])
+[3:2: missing ‘ ’ after “=”])
 
 AT_NMC_CHECK_TRANSFORM([Code block],
 [T
