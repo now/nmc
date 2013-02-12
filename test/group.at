@@ -1,6 +1,6 @@
-AT_NMC_CHECK_TRANSFORM([Document consisting of a title followed by a paragraph containing a group],
-[Title
+AT_NMC_CHECK_TRANSFORM([Group],
+[T
 
-  {Word1 /True/False/ Word2}],
-[  <title>Title</title>
-  <p>Word1 <emphasis>True/False</emphasis> Word2</p>])
+  {W₁ /W₂/ W₃}],
+[  <title>T</title>
+  <p>W₁ <emphasis>W₂</emphasis> W₃</p>])
