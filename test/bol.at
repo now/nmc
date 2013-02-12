@@ -128,6 +128,62 @@ AT_NMC_CHECK_FAIL_TRANSFORM([Broken definition 2],
 =A. =   1],
 [3:1: missing ‘ ’ after ‘=’ at beginning of line])
 
+AT_NMC_CHECK_TRANSFORM([Code block],
+[T
+
+    Code block],
+[  <title>T</title>
+  <code>Code block</code>])
+
+AT_NMC_CHECK_TRANSFORM([Multi-line code block],
+[T
+
+    1
+    2],
+[  <title>T</title>
+  <code>1
+2</code>])
+
+AT_NMC_CHECK_TRANSFORM([Multi-line code block with indent],
+[T
+
+    1
+      2],
+[  <title>T</title>
+  <code>1
+  2</code>])
+
+AT_NMC_CHECK_TRANSFORM([Code block with empty lines],
+[T
+
+    1
+    2
+
+
+    3],
+[  <title>T</title>
+  <code>1
+2
+
+
+3</code>])
+
+AT_NMC_CHECK_TRANSFORM([Code block with empty lines followed by paragraph],
+[T
+
+    1
+    2
+
+    3
+
+  P],
+[  <title>T</title>
+  <code>1
+2
+
+3</code>
+  <p>P</p>])
+
 AT_NMC_CHECK_TRANSFORM([Quote],
 [T
 
