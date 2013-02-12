@@ -134,3 +134,11 @@ AT_NMC_CHECK_TRANSFORM([Inline figure],
 ¹ For reference, see a.jpg],
 [  <title>T</title>
   <p><ref title="For reference" uri="a.jpg" relation="figure">A</ref></p>])
+
+AT_NMC_CHECK_FAIL_TRANSFORM([Document consisting of a title followed by a paragraph with a broken footnote],
+[Title
+
+  Abbr¹
+
+¹Abbreviation for Abbreviation],
+[5:1: missing ‘ ’ after ‘¹’ at beginning of line])
