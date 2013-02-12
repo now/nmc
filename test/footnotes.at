@@ -1,144 +1,138 @@
-AT_NMC_CHECK_TRANSFORM([Document consisting of a title followed by a paragraph with footnotes],
-[Title
-
-  Abbr¹⁺² for US³³
-
-¹ Abbreviation for Abbreviation
-² See the Wikipedia entry for “Abbreviation” at http://en.wikipedia.org/wiki/Abbreviation
-³³ Abbreviation for United States],
-[  <title>Title</title>
-  <p><ref title="See the Wikipedia entry for “Abbreviation”" uri="http://en.wikipedia.org/wiki/Abbreviation"><abbreviation for="Abbreviation">Abbr</abbreviation></ref> for <abbreviation for="United States">US</abbreviation></p>])
-
-AT_NMC_CHECK_TRANSFORM([Document consisting of a title followed by a section containing a paragraph with footnotes],
-[Title
-
-§ Section
-
-    Word1 Abbr¹ Word3
-
-  ¹ Abbreviation for Abbreviation],
-[  <title>Title</title>
-  <section>
-    <title>Section</title>
-    <p>Word1 <abbreviation for="Abbreviation">Abbr</abbreviation> Word3</p>
-  </section>])
-
-AT_NMC_CHECK_TRANSFORM([Document consisting of a title followed by a section with footnotes],
-[Title
-
-§ Section
-
-    Word1 Abbr¹ Word3
-
-¹ Abbreviation for Abbreviation],
-[  <title>Title</title>
-  <section>
-    <title>Section</title>
-    <p>Word1 <abbreviation for="Abbreviation">Abbr</abbreviation> Word3</p>
-  </section>])
-
-AT_NMC_CHECK_TRANSFORM([Document consisting of a title followed by two sections with footnotes],
-[Title
-
-§ Section
-
-    Word1 Abbr¹ Word3
-
-¹ Abbreviation for Abbreviation
-
-§ Section
-
-    Word1 Abbr¹ Word3
-
-¹ Abbreviation for Abbreviation],
-[  <title>Title</title>
-  <section>
-    <title>Section</title>
-    <p>Word1 <abbreviation for="Abbreviation">Abbr</abbreviation> Word3</p>
-  </section>
-  <section>
-    <title>Section</title>
-    <p>Word1 <abbreviation for="Abbreviation">Abbr</abbreviation> Word3</p>
-  </section>])
-
-AT_NMC_CHECK_TRANSFORM([Reused footnotes],
-[Title
-
-§ Section
-
-    Abbr¹
-
-  § Sub-section
-
-      Abbr¹
-
-  ¹ Abbreviation for Abbreviation],
-[  <title>Title</title>
-  <section>
-    <title>Section</title>
-    <p><abbreviation for="Abbreviation">Abbr</abbreviation></p>
-    <section>
-      <title>Sub-section</title>
-      <p><abbreviation for="Abbreviation">Abbr</abbreviation></p>
-    </section>
-  </section>])
-
-AT_NMC_CHECK_TRANSFORM([Document consisting of a title followed by a paragraph with a long footnote],
-[Title
-
-  Word1 Abbr¹ Word3
-
-¹ Abbreviation for
-  Abbreviation],
-[  <title>Title</title>
-  <p>Word1 <abbreviation for="Abbreviation">Abbr</abbreviation> Word3</p>])
-
-AT_NMC_CHECK_FAIL_TRANSFORM([Document consisting of a title followed by a paragraph with an unrecognized footnote],
-[Title
-
-  Word1 Abbr¹ Word3
-
-¹ Junk text in this here footnote],
-[5.1-34: unrecognized footnote content: Junk text in this here footnote])
-
-AT_NMC_CHECK_FAIL_TRANSFORM([Document consisting of a title followed by a paragraph followed by two footnotes with same sigil],
-[Title
-
-  Word1¹
-
-¹ Abbreviation for Abbreviaton
-¹ Abbreviation for Abbreviaton],
-[6.1-31: footnote ¹ already defined at 5.1-31])
-
-AT_NMC_CHECK_FAIL_TRANSFORM([Document consisting of a title followed by a paragraph followed by two unreferenced footnotes],
-[Title
-
-  Word1
-
-¹ Abbreviation for Abbreviaton
-² Abbreviation for Abbreviaton],
-[5.1-31: unreferenced footnote: ¹
-6.1-31: unreferenced footnote: ²])
-
-AT_NMC_CHECK_FAIL_TRANSFORM([Reference to undefined footnote],
-[Title
-
-  Word1¹],
-[3.8-9: reference to undefined footnote: ¹])
-
-AT_NMC_CHECK_TRANSFORM([Inline figure],
+AT_NMC_CHECK_TRANSFORM([Abbreviation],
 [T
 
-  A¹
+  Abbr¹
 
-¹ For reference, see a.jpg],
+¹ Abbreviation for Abbreviation],
 [  <title>T</title>
-  <p><ref title="For reference" uri="a.jpg" relation="figure">A</ref></p>])
+  <p><abbreviation for="Abbreviation">Abbr</abbreviation></p>])
 
-AT_NMC_CHECK_FAIL_TRANSFORM([Document consisting of a title followed by a paragraph with a broken footnote],
-[Title
+AT_NMC_CHECK_FAIL_TRANSFORM([Broken footnote],
+[T
 
   Abbr¹
 
 ¹Abbreviation for Abbreviation],
 [5:1: missing ‘ ’ after ‘¹’ at beginning of line])
+
+AT_NMC_CHECK_TRANSFORM([Inline figure],
+[T
+
+  W¹
+
+¹ For reference, see a.jpg],
+[  <title>T</title>
+  <p><ref title="For reference" uri="a.jpg" relation="figure">W</ref></p>])
+
+AT_NMC_CHECK_TRANSFORM([Reference],
+[T
+
+  Abbr¹
+
+¹ See the Wikipedia entry for “Abbreviation” at http://en.wikipedia.org/wiki/Abbreviation],
+[  <title>T</title>
+  <p><ref title="See the Wikipedia entry for “Abbreviation”" uri="http://en.wikipedia.org/wiki/Abbreviation">Abbr</ref></p>])
+
+AT_NMC_CHECK_TRANSFORM([Multiple footnotes],
+[T
+
+  W₁¹⁺² W₂³³
+
+¹ Abbreviation for 1
+² 3 at 4
+³³ Abbreviation for 2],
+[  <title>T</title>
+  <p><ref title="3" uri="4"><abbreviation for="1">W₁</abbreviation></ref> <abbreviation for="2">W₂</abbreviation></p>])
+
+AT_NMC_CHECK_TRANSFORM([Section-level footnotes],
+[T
+
+§ S
+
+    W¹
+
+  ¹ 1 at 2],
+[  <title>T</title>
+  <section>
+    <title>S</title>
+    <p><ref title="1" uri="2">W</ref></p>
+  </section>])
+
+AT_NMC_CHECK_TRANSFORM([Footnote nesting],
+[T
+
+§ S
+
+    W¹
+
+¹ 1 at 2],
+[  <title>T</title>
+  <section>
+    <title>S</title>
+    <p><ref title="1" uri="2">W</ref></p>
+  </section>])
+
+AT_NMC_CHECK_TRANSFORM([Reused footnote],
+[T
+
+§ S
+
+    W¹
+
+  § Ss
+
+      W¹
+
+  ¹ 1 at 2],
+[  <title>T</title>
+  <section>
+    <title>S</title>
+    <p><ref title="1" uri="2">W</ref></p>
+    <section>
+      <title>Ss</title>
+      <p><ref title="1" uri="2">W</ref></p>
+    </section>
+  </section>])
+
+AT_NMC_CHECK_TRANSFORM([Multi-line footnote],
+[T
+
+  W¹
+
+¹ 1 at
+  2],
+[  <title>T</title>
+  <p><ref title="1" uri="2">W</ref></p>])
+
+AT_NMC_CHECK_FAIL_TRANSFORM([Unrecognized footnote content],
+[T
+
+  W¹
+
+¹ Junk text in this here footnote],
+[5.1-34: unrecognized footnote content: Junk text in this here footnote])
+
+AT_NMC_CHECK_FAIL_TRANSFORM([Repeated footnote sigil],
+[T
+
+  W¹
+
+¹ 1 at 2
+¹ 3 at 4],
+[6.1-9: footnote ¹ already defined at 5.1-9])
+
+AT_NMC_CHECK_FAIL_TRANSFORM([Unreferenced footnotes],
+[T
+
+  W
+
+¹ 1 at 2
+² 3 at 4],
+[5.1-9: unreferenced footnote: ¹
+6.1-9: unreferenced footnote: ²])
+
+AT_NMC_CHECK_FAIL_TRANSFORM([Reference to undefined footnote],
+[T
+
+  W¹],
+[3.4-5: reference to undefined footnote: ¹])
