@@ -1,10 +1,10 @@
 AT_NMC_CHECK_TRANSFORM([Attribute escaping],
-[Title
+[T
 
   Abbr¹
 
 ¹ Abbreviation for "A	b&b<rev>iation"],
-[  <title>Title</title>
+[  <title>T</title>
   <p><abbreviation for="&quot;A&#9;b&amp;b&lt;rev&gt;iation&quot;">Abbr</abbreviation></p>])
 
 AT_NMC_CHECK_TRANSFORM([Text escaping],
