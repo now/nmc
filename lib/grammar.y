@@ -878,19 +878,16 @@ is_bol_symbol(const char *end)
 static int
 bol_item(struct parser *parser, YYLTYPE *location, size_t length, int type)
 {
-        const char *end = parser->p + length;
-        if (*end != ' ')
-                return error_token(parser, location, end, type,
-                                   "missing “   ” after ‘%.*s’ at beginning of line",
-                                   (int)length, parser->p);
-        if (*++end != ' ')
-                return error_token(parser, location, end, type,
-                                   "missing “  ” after “%.*s” at beginning of line",
-                                   (int)length + 1, parser->p);
-        if (*++end != ' ')
-                return error_token(parser, location, end, type,
-                                   "missing ‘ ’ after “%.*s” at beginning of line",
-                                   (int)length + 2, parser->p);
+        const char *begin = parser->p + length;
+        const char *end = begin;
+        if (*end != ' ' || *++end != ' ' || *++end != ' ') {
+                char *name = token_name(type);
+                int r = error_token(parser, location, end, type,
+                                    "missing “%*s” after %s",
+                                    (int)(3 - (end - begin)), "", name);
+                free(name);
+                return r;
+        }
         return token(parser, location, end, type);
 }
 

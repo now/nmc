@@ -51,19 +51,19 @@ AT_NMC_CHECK_FAIL_TRANSFORM([Broken itemization],
 [T
 
 •W],
-[3:4: missing “   ” after ‘•’ at beginning of line])
+[3:4: missing “   ” after itemization tag (‘•’)])
 
 AT_NMC_CHECK_FAIL_TRANSFORM([Broken itemization 2],
 [T
 
 • W],
-[3:5: missing “  ” after “• ” at beginning of line])
+[3:5: missing “  ” after itemization tag (‘•’)])
 
 AT_NMC_CHECK_FAIL_TRANSFORM([Broken itemization 3],
 [T
 
 •  W],
-[3:6: missing ‘ ’ after “•  ” at beginning of line])
+[3:6: missing “ ” after itemization tag (‘•’)])
 
 AT_NMC_CHECK_TRANSFORM([Two-item enumeration],
 [T
@@ -84,7 +84,7 @@ AT_NMC_CHECK_FAIL_TRANSFORM([Broken enumeration],
 [T
 
 ₁W],
-[3:4: missing “   ” after ‘₁’ at beginning of line])
+[3:4: missing “   ” after enumeration tag (‘₁’, ‘₂’, …)])
 
 AT_NMC_CHECK_TRANSFORM([Three-item definition],
 [T
