@@ -135,20 +135,20 @@ static void nmc_node_unlink_and_free(struct nmc_node *node, struct parser *parse
 %token ERROR
 %token AGAIN
 %token <substring> WORD
-%token PARAGRAPH
+%token PARAGRAPH "paragraph tag (‘ ’)"
 %token <substring> SPACE
-%token ITEMIZATION
-%token ENUMERATION
-%token <node> TERM
-%token <node> FIGURE
-%token QUOTE
-%token ATTRIBUTION
-%token TABLESEPARATOR
-%token ROW
-%token CELLSEPARATOR "cell separator"
-%token <node> CODEBLOCK
-%token <footnote> FOOTNOTE
-%token SECTION
+%token ITEMIZATION "itemization tag (‘•’)"
+%token ENUMERATION "enumeration tag (‘₁’, ‘₂’, …)"
+%token <node> TERM "term tag (‘=’)"
+%token <node> FIGURE "figure tag (“Fig.”)"
+%token QUOTE "quote tag (‘>’)"
+%token ATTRIBUTION "attribution tag (‘—’)"
+%token TABLESEPARATOR "table separator tag (“|-”)"
+%token ROW "table tag (‘|’)"
+%token CELLSEPARATOR "cell separator (‘|’)"
+%token <node> CODEBLOCK "code block"
+%token <footnote> FOOTNOTE "footnote"
+%token SECTION "section tag (‘§’)"
 %token INDENT
 %token ITEMINDENT
 %token DEDENT
@@ -444,8 +444,7 @@ bol_space(struct parser *parser, size_t offset)
         if (*(parser->p + offset) == ' ')
                 return offset + 1;
         parser_error(parser, &parser->location,
-                     "missing ‘ ’ after ‘%.*s’ at beginning of line",
-                     (int)(u_next(parser->p) - parser->p), parser->p);
+                     "missing ‘ ’ after “%.*s”", (int)offset, parser->p);
         return offset;
 }
 
@@ -809,7 +808,7 @@ figure(struct parser *parser, YYLTYPE *location, YYSTYPE *value)
                 break;
         default:
                 parser_error(parser, &parser->location,
-                             "missing ‘ ’ or newline after “Fig.” at beginning of line");
+                             "missing ‘ ’ or newline after figure tag (“Fig.”)");
         }
 
         end = skip_spaces_and_empty_lines(parser, &begin, end);
@@ -827,10 +826,25 @@ figure(struct parser *parser, YYLTYPE *location, YYSTYPE *value)
         return token(parser, NULL, end, FIGURE);
 }
 
+static char *token_name(int type);
+static size_t token_name_unescape(char *result, const char *escaped);
+#define yytnamerr token_name_unescape
+
 static int
 bol_token(struct parser *parser, YYLTYPE *location, size_t length, int type)
 {
-        return token(parser, location, parser->p + bol_space(parser, length), type);
+        const char *end = parser->p + length;
+        if (*end != ' ') {
+                char *name = token_name(type);
+                if (name != NULL) {
+                        int r = error_token(parser, location, end, type,
+                                            "missing ‘ ’ after %s", name);
+                        free(name);
+                        return r;
+                } else
+                        parser_oom(parser);
+        }
+        return token(parser, location, end + 1, type);
 }
 
 #define U_PILCROW_SIGN ((uchar)0x00b6)
@@ -1621,12 +1635,59 @@ ospace: /* empty */
 
 item: { parser->want = ITEMINDENT; } firstparagraph oblocks { M($$ = parent_children(NMC_NODE_ITEM, $2, $3)); };
 
-firstparagraph: inlines { M($$ = parent(NMC_NODE_PARAGRAPH, $1)); }
+firstparagraph: inlines { M($$ = parent(NMC_NODE_PARAGRAPH, $1)); };
 
 oblocks: /* empty */ { $$ = nodes(NULL); }
 | ITEMINDENT blocks DEDENT { $$ = $2; };
 
 %%
+
+static YYSIZE_T
+token_name_unescape(char *result, const char *escaped)
+{
+        if (*escaped != '"')
+                return result == NULL ? yystrlen(escaped) :
+                        (size_t)(yystpcpy(result, escaped) - result);
+        YYSIZE_T n = 0;
+        char const *p = escaped + 1;
+        while (true) {
+                char c;
+                switch (*p) {
+                case '\\': {
+                        p++;
+                        char *end;
+                        long o = strtol(p, &end, 8);
+                        if (end != p) {
+                                c = o & 0xff;
+                                p = end;
+                        } else
+                                c = *p++;
+                        break;
+                }
+                case '"':
+                        if (result != NULL)
+                                result[n] = '\0';
+                        return n;
+                default:
+                        c = *p++;
+                        break;
+
+                }
+                if (result != NULL)
+                        result[n++] = c;
+        }
+}
+
+static char *
+token_name(int type)
+{
+        const char *escaped = yytname[yytranslate[type]];
+        char *r = malloc(strlen(escaped) + 1);
+        if (r == NULL)
+                return NULL;
+        token_name_unescape(r, escaped);
+        return r;
+}
 
 struct nmc_node *
 nmc_parse(const char *input, struct nmc_parser_error **errors)

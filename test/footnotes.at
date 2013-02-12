@@ -13,7 +13,7 @@ AT_NMC_CHECK_FAIL_TRANSFORM([Broken footnote],
   Abbr¹
 
 ¹Abbreviation for Abbreviation],
-[5:1: missing ‘ ’ after ‘¹’ at beginning of line])
+[5:1: missing ‘ ’ after “¹”])
 
 AT_NMC_CHECK_TRANSFORM([Inline figure],
 [T

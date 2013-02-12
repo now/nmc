@@ -19,7 +19,7 @@ AT_NMC_CHECK_FAIL_TRANSFORM([Broken paragraph],
 [T
 
  W],
-[3:1: missing ‘ ’ after ‘ ’ at beginning of line])
+[3:2: missing ‘ ’ after paragraph tag (‘ ’)])
 
 AT_NMC_CHECK_TRANSFORM([Two-item itemization],
 [T
@@ -126,7 +126,7 @@ AT_NMC_CHECK_FAIL_TRANSFORM([Broken definition 2],
 [T
 
 =A. =   1],
-[3:1: missing ‘ ’ after ‘=’ at beginning of line])
+[3:1: missing ‘ ’ after “=”])
 
 AT_NMC_CHECK_TRANSFORM([Code block],
 [T
@@ -229,7 +229,7 @@ AT_NMC_CHECK_FAIL_TRANSFORM([Broken quote],
 [T
 
 >W],
-[3:1: missing ‘ ’ after ‘>’ at beginning of line])
+[3:2: missing ‘ ’ after quote tag (‘>’)])
 
 AT_NMC_CHECK_TRANSFORM([Table],
 [T
@@ -276,7 +276,7 @@ AT_NMC_CHECK_FAIL_TRANSFORM([Broken table],
 [T
 
 |W |],
-[3:1: missing ‘ ’ after ‘|’ at beginning of line])
+[3:2: missing ‘ ’ after table tag (‘|’)])
 
 AT_NMC_CHECK_TRANSFORM([Figure],
 [T
@@ -337,7 +337,7 @@ AT_NMC_CHECK_FAIL_TRANSFORM([Broken section],
 [T
 
 §W],
-[3:1: missing ‘ ’ after ‘§’ at beginning of line])
+[3:3: missing ‘ ’ after section tag (‘§’)])
 
 AT_NMC_CHECK_FAIL_TRANSFORM([Broken beginning of line],
 [T
