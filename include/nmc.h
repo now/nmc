@@ -1,9 +1,25 @@
+#ifndef __attribute__
+#  if (! defined __GNUC__ || __GNUC__ < 2 || (__GNUC__ == 2 && __GNUC_MINOR__ < 5))
+#    define __attribute__(x) /* empty */
+#  endif
+#endif
+
+#define NMC_PRINTF(format_index, first_argument_index) \
+        __attribute__((format(printf, format_index, first_argument_index)))
+
 struct nmc_error {
         void (*release)(struct nmc_error *);
         int number;
         char *message;
 };
 
+bool nmc_error_init(struct nmc_error *error, int number, const char *message);
+bool nmc_error_oom(struct nmc_error *error);
+bool nmc_error_dyninit(struct nmc_error *error, int number, char *message);
+bool nmc_error_formatv(struct nmc_error *error, int number,
+                       const char *message, va_list args);
+bool nmc_error_format(struct nmc_error *error, int number, const char *message,
+                      ...) NMC_PRINTF(3, 4);
 void nmc_error_release(struct nmc_error *error);
 
 struct nmc_output;

@@ -145,7 +145,7 @@ NMC_V_NMT2NML_ = $(NMC_V_NMT2NML_@AM_DEFAULT_V@)
 NMC_V_NMT2NML_0 = @echo "  GEN-NML " $@;
 
 define NMT2NML
-	$(NMC_V_NMT2NML)$(srcdir)/src/nmc < $< > $@.tmp
+	$(NMC_V_NMT2NML)$(srcdir)/src/nmc $< > $@.tmp
 	$(AM_V_at)mv $@.tmp $@
 endef
 

@@ -1,5 +1,7 @@
 #include <config.h>
 
+#include <errno.h>
+#include <fcntl.h>
 #include <getopt.h>
 #include <stdarg.h>
 #include <stdbool.h>
@@ -10,6 +12,8 @@
 
 #include <nmc.h>
 #include <nmc/list.h>
+
+#include <private.h>
 
 #include <buffer.h>
 
@@ -28,11 +32,13 @@ struct nmc_option {
         for (struct nmc_option *item = options; item->c != '\0'; item++)
 
 static bool
-report_nmc_parser_error(const struct nmc_parser_error *error)
+report_nmc_parser_error(const struct nmc_parser_error *error, const char *path)
 {
         char *s = nmc_location_str(&error->location);
-        bool r = fputs(s, stderr) != EOF &&
-                fputs(": ", stderr) != EOF &&
+        bool r = (path == NULL ||
+                  (fputs(path, stderr) != EOF && fputs(": ", stderr) != EOF)) &&
+                (s == NULL ||
+                  (fputs(s, stderr) != EOF && fputs(": ", stderr) != EOF)) &&
                 fputs(error->message, stderr) != EOF &&
                 fputc('\n', stderr) != EOF;
         free(s);
@@ -40,23 +46,25 @@ report_nmc_parser_error(const struct nmc_parser_error *error)
 }
 
 static bool
-report_nmc_error(const struct nmc_error *error)
+report_nmc_error(const struct nmc_error *error, const char *path)
 {
-        if (fputs(error->message, stderr) == EOF)
-                return false;
-        if (error->number >= 0)
-                if ((*error->message != '\0' && fputs(": ", stderr) == EOF) ||
-                    fputs(strerror(error->number), stderr) == EOF)
-                        return false;
-        return fputc('\n', stderr) != EOF;
+        return fputs(PACKAGE_NAME, stderr) != EOF &&
+                fputs(": ", stderr) != EOF &&
+                (path == NULL ||
+                 (fputs(path, stderr) != EOF && fputs(": ", stderr) != EOF)) &&
+                fputs(error->message, stderr) != EOF &&
+                (error->number < 0 ||
+                 ((*error->message == '\0' || fputs(": ", stderr) != EOF) &&
+                  fputs(strerror(error->number), stderr) != EOF)) &&
+                fputc('\n', stderr) != EOF;
 }
 
 static void
 usage(void)
 {
         fprintf(stdout,
-                "Usage: %s [OPTION]...\n"
-                "Process standard input as No Markup and turn it into its XML representation.\n"
+                "Usage: %s [OPTION]... [FILE]\n"
+                "Process FILE or standard input as NoMarks text and turn it into its NoMarks XML.\n"
                 "\n"
                 "Options:\n",
                 PACKAGE_NAME);
@@ -88,8 +96,89 @@ usage(void)
         }
 }
 
-int
-main(int argc, char *const *argv)
+static bool
+convert(char *content, const char *path)
+{
+        struct nmc_parser_error *errors = NULL;
+        struct nmc_node *doc = nmc_parse(content, &errors);
+        free(content);
+        if (doc == NULL) {
+                list_for_each(struct nmc_parser_error, p, errors)
+                        if (!report_nmc_parser_error(p, path))
+                                break;
+                nmc_parser_error_free(errors);
+                return false;
+        }
+
+        struct nmc_fd_output fd;
+        nmc_fd_output_init(&fd, STDOUT_FILENO);
+        struct nmc_buffered_output output;
+        nmc_buffered_output_init(&output, &fd.output);
+        struct nmc_error error;
+        bool r = nmc_node_xml(doc, &output.output, &error);
+        struct nmc_error ignored;
+        nmc_output_close(&output.output, r ? &error : &ignored);
+        nmc_node_free(doc);
+        if (!r)
+                report_nmc_error(&error, path);
+        return r;
+}
+
+static bool
+read_fd(int fd, char **content, struct nmc_error *error)
+{
+        struct buffer b = BUFFER_INIT;
+        if (!buffer_read(&b, fd, 0)) {
+                free(b.content);
+                return nmc_error_init(error, errno, "error reading from file");
+        }
+        *content = buffer_str(&b);
+        return true;
+}
+
+static bool
+convert_stdin(void)
+{
+        char *content;
+        struct nmc_error error;
+        if (!read_fd(STDIN_FILENO, &content, &error)) {
+                report_nmc_error(&error, NULL);
+                return false;
+        }
+        return convert(content, NULL);
+}
+
+static bool
+read_path(const char *path, char **content, struct nmc_error *error)
+{
+        int fd = open(path, O_RDONLY);
+        if (fd == -1)
+                return nmc_error_init(error, errno, "error opening file");
+        if (!read_fd(fd, content, error)) {
+                close(fd);
+                return false;
+        }
+        if (close(fd) == -1) {
+                free(content);
+                return nmc_error_init(error, errno, "error closing file");
+        }
+        return true;
+}
+
+static bool
+convert_path(const char *path)
+{
+        char *content;
+        struct nmc_error error;
+        if (!read_path(path, &content, &error)) {
+                report_nmc_error(&error, path);
+                return false;
+        }
+        return convert(content, path);
+}
+
+static size_t
+short_length(void)
 {
         size_t n = 0, length = 0;
         options_for_each(p) {
@@ -99,9 +188,12 @@ main(int argc, char *const *argv)
                 case optional_argument: length += 2; break;
                 }
         }
-        length += n;
-        char shorts[length + 1];
-        struct option longs[n + 1];
+        return length + n;
+}
+
+static void
+args_fill(char *shorts, struct option *longs)
+{
         char *q = shorts;
         struct option *r = longs;
         options_for_each(p) {
@@ -118,9 +210,16 @@ main(int argc, char *const *argv)
                 r->val = p->c;
                 r++;
         }
-        shorts[length] = '\0';
-        memset(q, 0, sizeof(*q));
+        *q = '\0';
+        memset(r, 0, sizeof(*r));
+}
 
+int
+main(int argc, char *const *argv)
+{
+        char shorts[short_length() + 1];
+        struct option longs[lengthof(options) + 1];
+        args_fill(shorts, longs);
         opterr = 0;
         int index;
         switch (getopt_long(argc, argv, shorts, longs, &index)) {
@@ -149,6 +248,9 @@ main(int argc, char *const *argv)
         case -1:
                 break;
         }
+        const char *path = NULL;
+        if (optind < argc)
+                path = argv[optind++];
         if (optind != argc) {
                 fprintf(stderr, "%s: unknown argument: %s\n",
                         PACKAGE_NAME, argv[optind]);
@@ -162,39 +264,9 @@ main(int argc, char *const *argv)
         if (getenv("NMC_DEBUG"))
                 nmc_grammar_debug = 1;
 
-        struct buffer b = BUFFER_INIT;
-        if (!buffer_read(&b, STDIN_FILENO, 0)) {
-                perror(PACKAGE_NAME ": error while reading from stdin");
-                return EXIT_FAILURE;
-        }
-        char *buffer = buffer_str(&b);
+        bool r = path == NULL ? convert_stdin() : convert_path(path);
 
-        struct nmc_parser_error *errors = NULL;
-        struct nmc_node *doc = nmc_parse(buffer, &errors);
-        free(buffer);
-        if (doc == NULL) {
-                nmc_finalize();
-                list_for_each(struct nmc_parser_error, p, errors)
-                        if (!report_nmc_parser_error(p))
-                                break;
-                nmc_parser_error_free(errors);
-                return EXIT_FAILURE;
-        }
-
-        struct nmc_fd_output fd;
-        nmc_fd_output_init(&fd, STDOUT_FILENO);
-        struct nmc_buffered_output output;
-        nmc_buffered_output_init(&output, &fd.output);
-        bool o = nmc_node_xml(doc, &output.output, &error);
-        struct nmc_error ignored;
-        nmc_output_close(&output.output, o ? &error : &ignored);
-        nmc_node_free(doc);
         nmc_finalize();
-        if (!o) {
-                report_nmc_error(&error);
-                return EXIT_FAILURE;
-        }
 
-        return EXIT_SUCCESS;
+        return r ? EXIT_SUCCESS : EXIT_FAILURE;
 }
-
