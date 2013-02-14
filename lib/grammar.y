@@ -1200,6 +1200,7 @@ anchor_node_new(YYLTYPE *location, const char *string, size_t length)
                                          NMC_NODE_ANCHOR);
         if (n == NULL)
                 return NULL;
+        n->node.children = NULL;
         n->u.anchor = malloc(sizeof(struct anchor));
         if (n->u.anchor == NULL) {
                 free(n);

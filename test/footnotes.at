@@ -171,3 +171,9 @@ AT_NMC_CHECK_FAIL_TRANSFORM([Section-level Reference to undefined footnote defin
 
 ¹ 1 at 2],
 [5.6-7: reference to undefined footnote: ¹])
+
+AT_NMC_CHECK_FAIL_TRANSFORM([Anchor without preceding node],
+[T
+
+  ¹],
+[3.3-4: syntax error, unexpected ANCHOR, expecting WORD or CODE or EMPHASIS or BEGINGROUP])
