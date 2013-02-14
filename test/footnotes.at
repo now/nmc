@@ -145,3 +145,29 @@ AT_NMC_CHECK_FAIL_TRANSFORM([Reference to undefined footnote],
 
   W¹],
 [3.4-5: reference to undefined footnote: ¹])
+
+AT_NMC_CHECK_FAIL_TRANSFORM([Block-level Reference to undefined footnote defined later],
+[T
+
+  1¹
+
+§ S
+
+    2¹
+
+¹ 1 at 2],
+[3.4-5: reference to undefined footnote: ¹])
+
+AT_NMC_CHECK_FAIL_TRANSFORM([Section-level Reference to undefined footnote defined later],
+[T
+
+§ S₁
+
+    2¹
+
+§ S₂
+
+    3¹
+
+¹ 1 at 2],
+[5.6-7: reference to undefined footnote: ¹])

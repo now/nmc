@@ -173,7 +173,8 @@ static void nmc_node_unlink_and_free(struct nmc_node *node, struct parser *parse
 
 %type <node> documenttitle
 %type <nodes> words
-%type <nodes> oblockssections0 blockssections blocks sections oblockssections
+%type <nodes> oblockssections0 blockssections0 sections0
+%type <nodes> blockssections blocks sections oblockssections
 %type <node> block footnotedsection section title
 %type <footnote> footnotes
 %type <node> itemizationitem
@@ -1332,7 +1333,7 @@ parent_children(enum nmc_node_name name, struct nmc_node *first, struct nodes re
 }
 
 static void
-report_remaining_anchors(struct parser *parser)
+clear_anchors(struct parser *parser)
 {
         struct nmc_parser_error *first = NULL, *previous = NULL, *last = NULL;
         list_for_each_safe(struct anchor, p, n, parser->anchors) {
@@ -1351,6 +1352,7 @@ report_remaining_anchors(struct parser *parser)
                 previous = first;
         }
         parser_errors(parser, first, last);
+        parser->anchors = NULL;
 }
 
 static bool
@@ -1527,12 +1529,11 @@ textify(struct parser *parser, struct nodes inlines)
 #define M(n) do { if ((n) == NULL) { parser_oom(parser); YYABORT; } } while (0)
 #define N(n) M((n).last)
 }
-
 %%
 
 nmc: ospace documenttitle oblockssections0 {
         M(parser->doc = parent_children(NMC_NODE_DOCUMENT, $2, $3));
-        report_remaining_anchors(parser);
+        clear_anchors(parser);
 };
 
 documenttitle: words { M($$ = parent1(NMC_NODE_TITLE, textify(parser, $1).first)); };
@@ -1542,7 +1543,20 @@ words: WORD { N($$ = nodes(buffer(parser, $1))); }
 | words SPACE WORD { N($$ = append_text(parser, append_text(parser, $1, $2), $3)); };
 
 oblockssections0: /* empty */ { $$ = nodes(NULL); }
-| blockssections { $$ = $1; };
+| blockssections0 { $$ = $1; };
+
+blockssections0: blocks
+| blocks { clear_anchors(parser); } sections0 { $$ = siblings($1, $3); }
+| sections0;
+
+sections0: footnotedsection { clear_anchors(parser); $$ = nodes($1); }
+| sections0 { clear_anchors(parser); } footnotedsection { $$ = sibling($1, $3); };
+
+/*footnotedsection0: section0
+| section0 footnotes { M($$ = reference(parser, &$2) ? $1 : NULL); };
+
+section0: SECTION { parser->want = INDENT; } title oblockssections { M($$ = parent_children(NMC_NODE_SECTION, $3, $4)); };
+*/
 
 blockssections: blocks
 | blocks sections { $$ = siblings($1, $2); }
