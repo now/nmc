@@ -524,6 +524,8 @@ auxiliary_node_new(const char *name, int n)
                 return NULL;
         }
         d->attributes->references = 1;
+        d->attributes->items[n].name = NULL;
+        d->attributes->items[n].value = NULL;
         return d;
 }
 
@@ -549,8 +551,6 @@ auxiliary_node_add_matchesv(struct nmc_auxiliary_node *node,
                 m++;
                 a++;
         }
-        a->name = NULL;
-        a->value = NULL;
         return node;
 }
 
