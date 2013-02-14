@@ -240,7 +240,8 @@ parser_errors(struct parser *parser,
                 parser->errors.first = first;
         if (parser->errors.last != NULL)
                 parser->errors.last->next = first;
-        parser->errors.last = last;
+        if (last != NULL)
+                parser->errors.last = last;
 }
 
 static void
@@ -1352,7 +1353,8 @@ clear_anchors(struct parser *parser)
                         first->next = previous;
                 previous = first;
         }
-        parser_errors(parser, first, last);
+        if (first != NULL)
+                parser_errors(parser, first, last);
         parser->anchors = NULL;
 }
 

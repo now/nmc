@@ -172,6 +172,19 @@ AT_NMC_CHECK_FAIL_TRANSFORM([Section-level Reference to undefined footnote defin
 ¹ 1 at 2],
 [5.6-7: reference to undefined footnote: ¹])
 
+AT_NMC_CHECK_FAIL_TRANSFORM([Many references to undefined footnotes],
+[T
+
+§ S₁
+
+    2¹
+
+§ S₂
+
+    3²],
+[5.6-7: reference to undefined footnote: ¹
+9.6-7: reference to undefined footnote: ²])
+
 AT_NMC_CHECK_FAIL_TRANSFORM([Anchor without preceding node],
 [T
 
