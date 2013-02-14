@@ -41,6 +41,7 @@ struct parser {
         int want;
         struct nmc_node *doc;
         struct buffer buffer;
+        struct buffer_node *buffer_node;
         struct anchor *anchors;
         struct {
                 struct nmc_parser_error *first;
@@ -1469,6 +1470,14 @@ struct buffer_node {
         } u;
 };
 
+static void
+buffer_to_text(struct buffer_node *buffer)
+{
+        buffer->node.type = NMC_NODE_TYPE_TEXT;
+        buffer->node.name = NMC_NODE_TEXT;
+        buffer->u.text = buffer_str(buffer->u.buffer);
+}
+
 static struct nmc_node *
 buffer(struct parser *parser, struct substring substring)
 {
@@ -1477,12 +1486,16 @@ buffer(struct parser *parser, struct substring substring)
                                          NMC_NODE_BUFFER);
         if (n == NULL)
                 return NULL;
+        if (parser->buffer_node != NULL)
+                buffer_to_text(parser->buffer_node);
         n->u.buffer = &parser->buffer;
         *n->u.buffer = (struct buffer)BUFFER_INIT;
         if (!buffer_append(n->u.buffer, substring.string, substring.length)) {
                 free(n);
+                parser->buffer_node = NULL;
                 return NULL;
         }
+        parser->buffer_node = n;
         return (struct nmc_node *)n;
 }
 
@@ -1500,15 +1513,13 @@ append_text(struct parser *parser, struct nodes inlines, struct substring substr
 }
 
 static inline struct nodes
-textify(struct nodes inlines)
+textify(struct parser *parser, struct nodes inlines)
 {
         if (inlines.last == NULL)
                 return inlines;
         if (inlines.last->name == NMC_NODE_BUFFER) {
-                struct buffer_node *buffer = (struct buffer_node *)inlines.last;
-                buffer->node.type = NMC_NODE_TYPE_TEXT;
-                buffer->node.name = NMC_NODE_TEXT;
-                buffer->u.text = buffer_str(buffer->u.buffer);
+                buffer_to_text((struct buffer_node *)inlines.last);
+                parser->buffer_node = NULL;
         }
         return inlines;
 }
@@ -1524,7 +1535,7 @@ nmc: ospace documenttitle oblockssections0 {
         report_remaining_anchors(parser);
 };
 
-documenttitle: words { M($$ = parent1(NMC_NODE_TITLE, textify($1).first)); };
+documenttitle: words { M($$ = parent1(NMC_NODE_TITLE, textify(parser, $1).first)); };
 
 words: WORD { N($$ = nodes(buffer(parser, $1))); }
 | words WORD { N($$ = append_text(parser, $1, $2)); }
@@ -1610,14 +1621,14 @@ cell: inlines { M($$ = parent(NMC_NODE_CELL, $1)); };
 
 figure: FIGURE title { N($$ = sibling(nodes($2), $1)); };
 
-inlines: ospace sinlines ospace { $$ = textify($2); };
+inlines: ospace sinlines ospace { $$ = textify(parser, $2); };
 
 sinlines: WORD { N($$ = nodes(buffer(parser, $1))); }
 | oanchoredinline { $$ = nodes($1); }
 | sinlines WORD { N($$ = append_text(parser, $1, $2)); }
-| sinlines oanchoredinline { N($$ = sibling(textify($1), $2)); }
+| sinlines oanchoredinline { N($$ = sibling(textify(parser, $1), $2)); }
 | sinlines SPACE WORD { N($$ = append_text(parser, append_text(parser, $1, $2), $3)); }
-| sinlines SPACE oanchoredinline { N($$ = sibling(textify(append_text(parser, $1, $2)), $3)); };
+| sinlines SPACE oanchoredinline { N($$ = sibling(textify(parser, append_text(parser, $1, $2)), $3)); };
 
 oanchoredinline: inline
 | anchoredinline;
@@ -1628,7 +1639,7 @@ anchoredinline: inline ANCHOR { M($$ = anchor(parser, $1, $2)); }
 
 inline: CODE { M($$ = $1); }
 | EMPHASIS { M($$ = $1); }
-| BEGINGROUP sinlines ENDGROUP { M($$ = parent(NMC_NODE_GROUP, textify($2))); };
+| BEGINGROUP sinlines ENDGROUP { M($$ = parent(NMC_NODE_GROUP, textify(parser, $2))); };
 
 ospace: /* empty */
 | SPACE;
@@ -1700,6 +1711,7 @@ nmc_parse(const char *input, struct nmc_parser_error **errors)
         parser.bol = false;
         parser.want = ERROR;
         parser.doc = NULL;
+        parser.buffer_node = NULL;
         parser.anchors = NULL;
         parser.errors.first = parser.errors.last = NULL;
 
@@ -1768,6 +1780,9 @@ private_node_free(struct nmc_node *node, struct parser *parser)
 {
         switch (node->name) {
         case NMC_NODE_BUFFER:
+                if (parser != NULL &&
+                    parser->buffer_node == (struct buffer_node *)node)
+                        parser->buffer_node = NULL;
                 free(((struct buffer_node *)node)->u.buffer->content);
                 return NULL;
         case NMC_NODE_ANCHOR: {

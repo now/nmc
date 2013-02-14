@@ -44,6 +44,15 @@ AT_NMC_CHECK_TRANSFORM([Multiple footnotes],
 [  <title>T</title>
   <p><ref title="3" uri="4"><abbreviation for="1">W₁</abbreviation></ref> <abbreviation for="2">W₂</abbreviation></p>])
 
+AT_NMC_CHECK_TRANSFORM([Multi-word footnote],
+[T
+
+  W₁ {W₂ W₃}¹
+
+¹ 1 at 2],
+[  <title>T</title>
+  <p>W₁ <ref title="1" uri="2">W₂ W₃</ref></p>])
+
 AT_NMC_CHECK_TRANSFORM([Section-level footnotes],
 [T
 
