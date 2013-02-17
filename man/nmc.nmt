@@ -6,12 +6,12 @@
 
 § Synopsis
 
-      nmc [OPTION]... < INPUT > OUTPUT
+      nmc [OPTION]... [FILE]
 
 § Description
 
-    The ‹nmc› command processes its input as NoMarks text and outputs it as
-    NoMarks XML.
+    The ‹nmc› command processes its input ‹FILE›, which defaults to stdin, as
+    NoMarks text and outputs it as NoMarks XML.
 
 § Options
 
@@ -31,7 +31,7 @@
 
     Convert NoMarks text ‹document.nmt› to NoMarks XML ‹document.nml›:
 
-      % nmc < document.nmt > document.nml
+      % nmc document.nmt > document.nml
 
 § See Also
 
