@@ -36,7 +36,7 @@ report_nmc_parser_error(const struct nmc_parser_error *error, const char *path)
 {
         char *s = nmc_location_str(&error->location);
         bool r = (path == NULL ||
-                  (fputs(path, stderr) != EOF && fputs(": ", stderr) != EOF)) &&
+                  (fputs(path, stderr) != EOF && fputs(":", stderr) != EOF)) &&
                 (s == NULL ||
                   (fputs(s, stderr) != EOF && fputs(": ", stderr) != EOF)) &&
                 fputs(error->message, stderr) != EOF &&
