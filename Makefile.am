@@ -145,7 +145,8 @@ NMC_V_NMT2NML_ = $(NMC_V_NMT2NML_@AM_DEFAULT_V@)
 NMC_V_NMT2NML_0 = @echo "  GEN-NML " $@;
 
 define NMT2NML
-	$(NMC_V_NMT2NML)$(srcdir)/src/nmc $< > $@.tmp
+	$(NMC_V_NMT2NML)rm -f $@ $@.tmp
+	$(AM_V_at)$(srcdir)/src/nmc $< > $@.tmp
 	$(AM_V_at)mv $@.tmp $@
 endef
 
@@ -162,11 +163,13 @@ NMC_V_NML2MAN_0 = @echo "  GEN-MAN " $@;
 $(MANS): data/xsl/man.xsl
 
 .nml.1:
-	$(NMC_V_NML2MAN)$(XSLTPROC) --stringparam source "$(PACKAGE_STRING)" data/xsl/man.xsl $< > $@.tmp
+	$(NMC_V_NML2MAN)rm -f $@ $@.tmp
+	$(AM_V_at)$(XSLTPROC) --stringparam source "$(PACKAGE_STRING)" data/xsl/man.xsl $< > $@.tmp
 	$(AM_V_at)mv $@.tmp $@
 
 .nml.7:
-	$(NMC_V_NML2MAN)$(XSLTPROC) --stringparam section 7 --stringparam source "$(PACKAGE_STRING)" data/xsl/man.xsl $< > $@.tmp
+	$(NMC_V_NML2MAN)rm -f $@ $@.tmp
+	$(AM_V_at)$(XSLTPROC) --stringparam section 7 --stringparam source "$(PACKAGE_STRING)" data/xsl/man.xsl $< > $@.tmp
 	$(AM_V_at)mv $@.tmp $@
 
 SUFFIXES = .nmt .nml .1 .7
