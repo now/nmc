@@ -36,7 +36,7 @@
   </xsl:variable>
 
   <xsl:variable name="man:param-escapes"
-                select="exsl:node-set($man:param-escapes-rfc)"/>
+                select="exsl:node-set($man:param-escapes-rfc)/escape"/>
 
   <func:function name="man:param">
     <xsl:param name="string"/>
@@ -145,7 +145,7 @@
   </xsl:variable>
 
   <xsl:variable name="man:text-escapes"
-                select="exsl:node-set($man:text-escapes-rfc)"/>
+                select="exsl:node-set($man:text-escapes-rfc)/escape"/>
 
   <xsl:template match="text()">
     <xsl:value-of select="str:replace(.,
@@ -274,11 +274,12 @@
 
   <xsl:variable name="man:code-escapes"
                 select="$man:text-escapes|
-                        exsl:node-set($man:additional-code-escapes-rfc)"/>
+                        exsl:node-set($man:additional-code-escapes-rfc)/escape"/>
 
   <xsl:template match="section[title='Synopsis']/code" name="code" priority="1">
     <xsl:text>.nf&#10;</xsl:text>
-    <xsl:value-of select="str:replace(., $man:code-escapes/@what,
+    <xsl:value-of select="str:replace(.,
+                                      $man:code-escapes/@what,
                                       $man:code-escapes/@with)"/>
     <xsl:text>&#10;.fi&#10;</xsl:text>
   </xsl:template>
