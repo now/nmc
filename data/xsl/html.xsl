@@ -261,7 +261,7 @@
   </xsl:template>
 
   <xsl:template match="image">
-    <img src="{.}"/>
+    <img src="{nml:adjust-uri(.)}"/>
   </xsl:template>
 
   <xsl:template match="abbreviation">
@@ -324,12 +324,6 @@
     <dfn>
       <xsl:apply-templates select="@*|node()"/>
     </dfn>
-  </xsl:template>
-
-  <xsl:template match="image">
-    <img src="{nml:adjust-uri()}">
-      <xsl:call-template name="copy.common-attributes"/>
-    </img>
   </xsl:template>
 
   <xsl:template match="quote">
