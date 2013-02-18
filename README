@@ -403,3 +403,237 @@
       be any string, followed by the word “at”, followed by a non-empty
       sequence of non-space characters that constitute the uniform resource
       identifier (URI) that the link should point to.
+
+§ Installation Instructions
+
+    The normal ‹configure && make && make install› routine applies.  There’s a
+    non-standard option, ‹--enable-xml-catalog-update›, that’ll try to update
+    the system’s XML catalog with information on where to find the {RELAX NG}¹
+    grammar and the {XSL templates}².  All of this is irrelevant if you install
+    via a package manager, as it’ll have all this covered for you.
+
+¹ See the RELAX NG home page at http://relaxng.org/
+² XSL Transformations (XSLT) Version 1.0 at http://www.w3.org/TR/xslt
+
+§ Command-line Interface
+
+    The NoMarks distribution comes with a command-line utility that turns
+    NoMarks text documents into NoMarks XML documents.  It’s called ‹nmc› and
+    may be invoked as follows:
+
+      % nmc README > README.nml
+
+    After execution, ‹README.nml› will contain the XML representation of the
+    NoMarks text document ‹README›.
+
+    This isn’t very useful by itself, so let’s convert it to an HTML5¹
+    document using xsltproc²:
+
+      % xsltproc http://disu.se/software/nml/xsl/1.0/html.xsl \
+        README.nml > README.html
+
+    We could also turn it into a manual page:
+
+      % xsltproc http://disu.se/software/nml/xsl/1.0/man.xsl \
+        README.nml > README.1
+
+    The ‹README› isn’t really written as a manual page, so we might not want to
+    do that particular transformation in reality, though.
+
+    You can read more about the ‹nmc› command in the ‹nmc› manual page:
+
+      % man 1 nmc
+
+    While we’re on the topic of manual pages, a description of the NoMarks text
+    format also exists in manual page format, if you ever need to refer to it
+    quickly:
+
+      % man 7 nmt
+
+¹ Read up on HTML5 at http://www.w3.org/TR/html-markup/
+² Xsltproc belongs to libxslt at http://www.xmlsoft.org/
+
+§   XSL Templates
+
+    The section on the command-line interface introduced the XSL templates that
+    are come with the NoMarks distribution.  This section expands on their use
+    and are meant to be used as a reference.
+
+  § HTML5
+
+      The HTML5¹ template, ‹http://disu.se/software/nml/xsl/1.0/html.xsl›, is
+      rather straight-forward.  Notable is that it generates ‹id› attributes
+      for all sections by normalizing their titles into valid HTML5 IDs by
+      turning all non-empty sequences whitespace into single ‘-’ characters,
+      removing all non-ASCII-alpha-numerics, and downcasing the result and then
+      concatenating this result unto the id of their parent section (separated
+      by another ‘-’ character), if any.  This means that you should take care
+      to use unique section titles among sibling sections (and
+      conflict-generating combinations of different parent and child IDs).
+
+      Two parameters are currently available:
+
+    = Lang. = The source language, which defaults to “none”.
+    = Stylesheet. = The CSS²⁺³ stylesheet to link to, which defaults to
+        ‹style.css›.
+
+      The HTML5 template depends on the following XSL extensions:
+
+    •   http://exslt.org/common⁴
+    •   http://exslt.org/functions⁵
+
+      Xsltproc⁶ implements these and is known to process the stylesheet
+      correctly.
+
+      The stylesheet has been written with extension in mind.  You may
+      specifically be interested in overriding the ‹nml:adjust-uri› function to
+      adjust any URIs that occur in ‹image› and ‹ref› elements to ones that fit
+      with the location of the generated HTML5 documents.  Perusing the source
+      should give you ideas as to what you might want to adjust beyond that.
+      We try to keep the name of functions and templates and the general
+      functionality of the stylesheet the same between versions, but the “API⁷”
+      is still in flux, so things may break.
+
+  ¹ Read up on HTML5 at http://www.w3.org/TR/html-markup/
+  ² Abbreviation for Cascading Style Sheets
+  ³ Cascading Style Sheets home page at
+    http://www.w3.org/Style/CSS/Overview.en.html
+  ⁴ EXSLT – Common at http://www.exslt.org/exsl/
+  ⁵ EXSLT – Functions at http://www.exslt.org/func/
+  ⁶ Xsltproc belongs to libxslt at http://www.xmlsoft.org/
+  ⁷ Abbreviation for Application Programming Interface
+
+  § Manual Pages
+
+      Manual pages may be generated using
+      ‹http://disu.se/software/nml/xsl/1.0/man.xsl›.  It has quite a few
+      parameters, of which you’ll probably only want to adjust a few:
+
+    = Section. = The manual section that the generated manual page belongs to.
+        Defaults to 1.
+    = Date. = The date to use in the manual page footer.  Defaults to todays
+        date in the “DD Month, YYYY” format.
+    = Source. = The source of the manual page, usually being the project’s
+        name.  Defaults to the empty string.
+    = Manual. = The name of the manual that this manual page belongs to.
+        Defaults to “User Commands”.
+    = Man:indent. = The default indent to use for indents.  Defaults to 4.
+    = Man:indent.list. = The indent to use for lists.  Defaults to
+        ‹man:indent›.
+    = Man:indent.code. = The indent to use for code blocks.  Defaults to
+        ‹man:indent›.
+    = Man:indent.table. = The indent to use for tables.  Defaults to
+        ‹man:indent›.
+    = Man:indent.figure. = The indent to use for figures.  Defaults to
+        ‹man:indent›.
+
+      Manual page generation from NoMarks text documents can be automated using
+      Makefile rules.  Looking at the Automake file ‹Makefile.am› that is used
+      to build this project gives us, assuming that we’ve set ‹NMC› and
+      ‹XSLTPROC› to appropriate values, the following rules:
+
+        nmt.nml:
+        	rm -f $@ $@.tmp
+        	$(NMC) $< > $@.tmp
+        	mv $@.tmp $@
+
+        .nml.1:
+        	rm -f $@ $@.tmp
+        	$(XSLTPROC) \
+        	  --stringparam source "$(PACKAGE_STRING)" \
+        	  http://disu.se/software/nml/xsl/1.0/man.xsl $< > $@.tmp
+        	mv $@.tmp $@
+
+        .SUFFIXES: .nmt .nml .1
+
+      The manual page template depends on the following XSL extensions:
+
+    •   http://exslt.org/common¹
+    •   http://exslt.org/dates-and-times²
+    •   http://exslt.org/functions³
+    •   http://exslt.org/strings⁴
+
+      Xsltproc again implements these and is known to process the stylesheet
+      correctly.
+
+  ¹ EXSLT – Common at http://www.exslt.org/exsl/
+  ² EXSLT – Dates And Times at http://www.exslt.org/dates-and-times/
+  ³ EXSLT – Functions at http://www.exslt.org/func/
+  ⁴ EXSLT – Strings at http://www.exslt.org/str/
+
+§ Validation
+
+    If you don’t trust that the ‹nmc› command is outputting valid NoMarks XML
+    documents, you can use the {RELAX NG}¹ schema that comes with the NoMarks
+    distribution.  It’s URI is
+    ‹http://disu.se/software/nml/relaxng/1.0/nml.rnc› and validation is known to
+    work with Jing², version 20091111:
+
+      % java -jar jing-20091111.jar \
+        -c http://disu.se/software/nml/relaxng/1.0/nml.rnc \
+        README.nml
+
+¹ See the RELAX NG home page at http://relaxng.org/
+² Jing – A RELAX NG validator in Java at
+  http://www.thaiopensource.com/relaxng/jing.html
+
+§ Development Dependencies
+
+    The ‹nmc› software is built using the GNU autotools.  Autoconf¹ 2.69 is
+    required for generating ‹configure›.  Makefiles are generated with
+    Automake² 1.13.1 or newer.
+
+    The grammar is compiled using Bison³ 2.7 or newer.  A yacc-compatible
+    grammar compiler isn’t enough, as quite a few Bison-specific extensions are
+    used, with good reason.
+
+    Xsltproc⁴ is used to generate the manual pages.  Version 1.1.27 is known to
+    work.
+
+    The tools that build the Unicode tables used by the library to classify
+    characters for correct lexing depend upon Unicode data that Wget⁵ fetches
+    from the {Unicode repository}⁶.  Any version should work; 1.14 is known to
+    work.  Oh, and Unicode 6.2.0 is currently being used.
+
+    Valgrind⁷ may optionally be used to test the source for memory-related
+    errors.  Run ‹make maintainer-check-valgrind› to do so.
+
+    The ‹configure› script supports a non-standard option:
+    ‹--enable-gcc-warnings›.  When given, this option enables a lot of
+    additional warnings that help ensure that the source stays both correct and
+    conformant.
+
+¹ Read more about Autoconf at http://www.gnu.org/software/autoconf/
+² Check out the Automake homepage at http://www.gnu.org/software/automake/
+³ Find more information on Bison at http://www.gnu.org/software/bison/
+⁴ Xsltproc belongs to libxslt at http://www.xmlsoft.org/
+⁵ Visit Wget’s homepage at http://www.gnu.org/software/wget/
+⁶ Review the Unicode data files at http://www.unicode.org/Public/UNIDATA/
+⁷ More information on Valgrind at http://valgrind.org/
+
+§ Build Dependencies
+
+    The C source code requires a C99-compliant compiler, for example, GCC¹.
+
+  ¹ Read more about GCC at http://www.gnu.org/software/gcc/
+
+§ Runtime Dependencies
+
+    NMC has no runtime dependencies beyond the standard C runtime.  You will,
+    however, want some sort of XML toolchain to turn the generated XML into
+    something interesting.  Xsltproc¹ support all the extensions that the XSL
+    templates require (common, dates-and-times, functions, strings) and is
+    widely available.
+
+  ¹ Xsltproc belongs to libxslt at http://www.xmlsoft.org/
+
+§ Reporting Bugs
+
+    Please report any bugs that you encounter to the {issue tracker}¹.
+
+  ¹ Report NMC bugs to the issue tracker at https://github.com/now/nmc/issues
+
+§ Authors
+
+    Nikolai Weibull wrote the code, the tests, the manual pages, and this
+    README.
