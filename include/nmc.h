@@ -58,7 +58,7 @@ void nmc_buffered_output_init(struct nmc_buffered_output *output,
 enum nmc_node_type
 {
         NMC_NODE_TYPE_PARENT,
-        NMC_NODE_TYPE_AUXILIARY,
+        NMC_NODE_TYPE_DATA,
         NMC_NODE_TYPE_TEXT,
         NMC_NODE_TYPE_PRIVATE,
 };
@@ -89,7 +89,8 @@ enum nmc_node_name
         NMC_NODE_CODE,
         NMC_NODE_EMPHASIS,
         NMC_NODE_GROUP,
-        NMC_NODE_AUXILIARY,
+        NMC_NODE_ABBREVIATION,
+        NMC_NODE_REFERENCE,
         NMC_NODE_TEXT,
         NMC_NODE_BUFFER,
         NMC_NODE_ANCHOR,
@@ -111,20 +112,19 @@ struct nmc_text_node {
         char *text;
 };
 
-struct nmc_auxiliary_node_attribute {
+struct nmc_node_datum {
         const char *name;
         char *value;
 };
 
-struct nmc_auxiliary_node_attributes {
+struct nmc_node_data {
         unsigned int references;
-        struct nmc_auxiliary_node_attribute items[];
+        struct nmc_node_datum data[];
 };
 
-struct nmc_auxiliary_node {
+struct nmc_data_node {
         struct nmc_parent_node node;
-        const char *name;
-        struct nmc_auxiliary_node_attributes *attributes;
+        struct nmc_node_data *data;
 };
 
 #define NMC_NODE_HAS_CHILDREN(node) ((node)->type < NMC_NODE_TYPE_TEXT)

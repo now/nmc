@@ -14,7 +14,7 @@
 
 #include "error.h"
 
-#define NODE_IS_NESTED(n) ((n)->name <= NMC_NODE_AUXILIARY)
+#define NODE_IS_NESTED(n) ((n)->name < NMC_NODE_TEXT)
 
 bool
 nmc_node_traverse_null(UNUSED(struct nmc_node *node), UNUSED(void *closure))
@@ -217,36 +217,7 @@ text_enter(struct nmc_node *node, struct xml_closure *closure)
                       lengthof(text_entities), text_entities);
 }
 
-static inline bool
-outattributes(struct xml_closure *closure,
-              struct nmc_auxiliary_node_attribute *attributes)
-{
-        for (struct nmc_auxiliary_node_attribute *p = attributes; p->name != NULL; p++) {
-                if (!(outc(closure, ' ') &&
-                      outs(closure, p->name, strlen(p->name)) &&
-                      outs(closure, "=\"", 2) &&
-                      escape(closure, p->value,
-                             lengthof(attribute_entities), attribute_entities) &&
-                      outc(closure, '"')))
-                        return false;
-        }
-        return true;
-}
-
-static bool
-auxiliary_enter(struct nmc_auxiliary_node *node, struct xml_closure *closure)
-{
-        return outc(closure, '<') &&
-                outs(closure, node->name, strlen(node->name)) &&
-                outattributes(closure, node->attributes->items) &&
-                outc(closure, '>');
-}
-
-static bool
-auxiliary_leave(struct nmc_auxiliary_node *node, struct xml_closure *closure)
-{
-        return element_end(closure, node->name, strlen(node->name));
-}
+static bool data_enter(struct nmc_data_node *node, struct xml_closure *closure);
 
 static bool block_enter(struct nmc_node *node, struct xml_closure *closure);
 
@@ -289,6 +260,7 @@ static struct {
 #define text_block text_block_enter, leave
 #define block block_enter, leave
 #define inline inline_enter, leave
+#define data (xmltraversefn)data_enter, leave
 #define NAME(n) n, sizeof(n) - 1
         [NMC_NODE_DOCUMENT] = { NAME("nml"), indenting_block },
         [NMC_NODE_TITLE] = { NAME("title"), block },
@@ -314,13 +286,15 @@ static struct {
         [NMC_NODE_CODE] = { NAME("code"), inline },
         [NMC_NODE_EMPHASIS] = { NAME("emphasis"), inline },
         [NMC_NODE_GROUP] = { NULL, 0, (xmltraversefn)nmc_node_traverse_null, (xmltraversefn)nmc_node_traverse_null },
-        [NMC_NODE_AUXILIARY] = { NULL, 0, (xmltraversefn)auxiliary_enter, (xmltraversefn)auxiliary_leave },
+        [NMC_NODE_ABBREVIATION] = { NAME("abbreviation"), data },
+        [NMC_NODE_REFERENCE] = { NAME("ref"), data },
         [NMC_NODE_TEXT] = { NULL, 0, text_enter, NULL },
 #undef NAME
 #undef indenting_block
 #undef text_block
 #undef block
 #undef inline
+#undef data
 };
 
 static bool
@@ -329,6 +303,31 @@ inline_enter(struct nmc_node *node, struct xml_closure *closure)
         return element_start(closure, types[node->name].name,
                              types[node->name].length) &&
                 text_enter(node, closure);
+}
+
+static inline bool
+outattributes(struct xml_closure *closure, struct nmc_node_datum *data)
+{
+        for (struct nmc_node_datum *p = data; p->name != NULL; p++) {
+                if (!(outc(closure, ' ') &&
+                      outs(closure, p->name, strlen(p->name)) &&
+                      outs(closure, "=\"", 2) &&
+                      escape(closure, p->value,
+                             lengthof(attribute_entities), attribute_entities) &&
+                      outc(closure, '"')))
+                        return false;
+        }
+        return true;
+}
+
+static bool
+data_enter(struct nmc_data_node *node, struct xml_closure *closure)
+{
+        return outc(closure, '<') &&
+                outs(closure, types[node->node.node.name].name,
+                     types[node->node.node.name].length) &&
+                outattributes(closure, node->data->data) &&
+                outc(closure, '>');
 }
 
 static bool

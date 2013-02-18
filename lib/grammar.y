@@ -102,7 +102,7 @@ struct footnote {
         struct footnote *next;
         YYLTYPE location;
         struct id id;
-        struct nmc_auxiliary_node *node;
+        struct nmc_data_node *node;
 };
 
 static void
@@ -454,7 +454,7 @@ bol_space(struct parser *parser, size_t offset)
         return offset;
 }
 
-typedef struct nmc_auxiliary_node *(*definefn)(const char *, regmatch_t *);
+typedef struct nmc_data_node *(*definefn)(const char *, regmatch_t *);
 
 struct definition {
         struct definition *next;
@@ -510,98 +510,120 @@ node_init(struct nmc_node *node, enum nmc_node_type type, enum nmc_node_name nam
 }
 #define node_new(stype, type, name) ((stype *)node_init(malloc(sizeof(stype)), type, name))
 
-static struct nmc_auxiliary_node *
-auxiliary_node_new(const char *name, int n)
+static struct nmc_data_node *
+data_node_new(enum nmc_node_name name, size_t n)
 {
-        struct nmc_auxiliary_node *d = node_new(struct nmc_auxiliary_node,
-                                                NMC_NODE_TYPE_AUXILIARY,
-                                                NMC_NODE_AUXILIARY);
+        struct nmc_data_node *d = node_new(struct nmc_data_node,
+                                           NMC_NODE_TYPE_DATA, name);
         if (d == NULL)
                 return NULL;
         d->node.children = NULL;
-        d->name = name;
-        d->attributes = malloc(sizeof(struct nmc_auxiliary_node_attributes) +
-                               sizeof(struct nmc_auxiliary_node_attribute) * (n + 1));
-        if (d->attributes == NULL) {
+        d->data = malloc(sizeof(struct nmc_node_data) +
+                         sizeof(struct nmc_node_datum) * (n + 1));
+        if (d->data == NULL) {
                 free(d);
                 return NULL;
         }
-        d->attributes->references = 1;
-        d->attributes->items[n].name = NULL;
-        d->attributes->items[n].value = NULL;
+        d->data->references = 1;
+        d->data->data[n].name = NULL;
+        d->data->data[n].value = NULL;
         return d;
 }
 
-static struct nmc_auxiliary_node *
-auxiliary_node_add_matchesv(struct nmc_auxiliary_node *node,
-                            const char *buffer, regmatch_t *matches, int n,
-                            va_list args)
+static void
+node_data_free(struct nmc_node_data *data)
+{
+        if (--data->references > 0)
+                return;
+        for (struct nmc_node_datum *d = data->data; d->value != NULL; d++)
+                free(d->value);
+        free(data);
+}
+
+static struct nmc_data_node *
+data_node_add_matchesv(struct nmc_data_node *node,
+                       const char *buffer, regmatch_t *matches, int n,
+                       va_list args)
 {
         if (node == NULL)
                 return NULL;
         regmatch_t *m = &matches[1];
-        struct nmc_auxiliary_node_attribute *a = node->attributes->items;
+        struct nmc_node_datum *d = node->data->data;
         for (int i = 0; i < n; i++) {
                 assert(m->rm_so != -1);
                 assert(m->rm_eo != -1);
-                a->name = va_arg(args, const char *);
-                a->value = mstrdup(buffer + m->rm_so, m->rm_eo - m->rm_so);
-                if (a->value == NULL) {
-                        free(node->attributes);
+                d->name = va_arg(args, const char *);
+                d->value = mstrdup(buffer + m->rm_so, m->rm_eo - m->rm_so);
+                if (d->value == NULL) {
+                        node_data_free(node->data);
                         free(node);
                         return NULL;
                 }
                 m++;
-                a++;
+                d++;
         }
         return node;
 }
 
-static struct nmc_auxiliary_node *
-auxiliary_node_add_matches(struct nmc_auxiliary_node *node,
-                           const char *buffer, regmatch_t *matches, int n, ...)
+static struct nmc_data_node *
+data_node_add_matches(struct nmc_data_node *node,
+                      const char *buffer, regmatch_t *matches, int n, ...)
 {
         va_list args;
         va_start(args, n);
-        struct nmc_auxiliary_node *r =
-                auxiliary_node_add_matchesv(node, buffer, matches, n, args);
+        struct nmc_data_node *r =
+                data_node_add_matchesv(node, buffer, matches, n, args);
         va_end(args);
         return r;
 }
 
-static struct nmc_auxiliary_node *
-auxiliary_node_new_matches(const char *name, const char *buffer,
-                           regmatch_t *matches, int n, ...)
+static struct nmc_data_node *
+data_node_new_matches(enum nmc_node_name name,
+                      const char *buffer, regmatch_t *matches, int n, ...)
 {
         va_list args;
         va_start(args, n);
-        return auxiliary_node_add_matchesv(auxiliary_node_new(name, n),
-                                           buffer, matches, n, args);
+        struct nmc_data_node *r =
+                data_node_add_matchesv(data_node_new(name, n),
+                                       buffer, matches, n, args);
+        va_end(args);
+        return r;
 }
 
-static struct nmc_auxiliary_node *
+static struct nmc_data_node *
+data_node_new_ref(size_t n, const char *buffer, regmatch_t *matches)
+{
+        return data_node_add_matches(data_node_new(NMC_NODE_REFERENCE, n),
+                                     buffer, matches, 2, "title", "uri");
+}
+
+static struct nmc_data_node *
 abbreviation(const char *buffer, regmatch_t *matches)
 {
-        return auxiliary_node_new_matches("abbreviation", buffer, matches, 1, "for");
+        return data_node_new_matches(NMC_NODE_ABBREVIATION, buffer, matches,
+                                     1, "for");
 }
 
-static struct nmc_auxiliary_node *
+static struct nmc_data_node *
 inline_figure(const char *buffer, regmatch_t *matches)
 {
-        struct nmc_auxiliary_node *d =
-                auxiliary_node_add_matches(auxiliary_node_new("ref", 3),
-                                           buffer, matches, 2, "title", "uri");
-        if (d != NULL) {
-                d->attributes->items[2].name = "relation";
-                d->attributes->items[2].value = mstrdup("figure", 6);
+        struct nmc_data_node *d = data_node_new_ref(3, buffer, matches);
+        if (d == NULL)
+                return NULL;
+        d->data->data[2].name = "relation";
+        d->data->data[2].value = mstrdup("figure", 6);
+        if (d->data->data[2].value == NULL) {
+                node_data_free(d->data);
+                free(d);
+                return NULL;
         }
         return d;
 }
 
-static struct nmc_auxiliary_node *
+static struct nmc_data_node *
 ref(const char *buffer, regmatch_t *matches)
 {
-        return auxiliary_node_new_matches("ref", buffer, matches, 2, "title", "uri");
+        return data_node_new_ref(2, buffer, matches);
 }
 
 static bool
@@ -624,7 +646,7 @@ definitions_free(void)
         definitions = NULL;
 }
 
-static struct nmc_auxiliary_node *
+static struct nmc_data_node *
 define(YYLTYPE *location, const char *content, struct nmc_parser_error **error)
 {
         list_for_each(struct definition, p, definitions) {
@@ -648,7 +670,6 @@ define(YYLTYPE *location, const char *content, struct nmc_parser_error **error)
                         return NULL;
                 }
         }
-
         *error = nmc_parser_error_new(location, "unrecognized footnote content: %s", content);
         return NULL;
 }
@@ -1186,10 +1207,7 @@ struct anchor_node {
         struct nmc_parent_node node;
         union {
                 struct anchor *anchor;
-                struct {
-                        const char *name;
-                        struct nmc_auxiliary_node_attributes *attributes;
-                } auxiliary;
+                struct nmc_node_data *data;
         } u;
 };
 
@@ -1368,9 +1386,8 @@ update_anchors(struct parser *parser, struct footnote *footnote)
                         if (footnote->node != NULL) {
                                 c->node->node.node.type = footnote->node->node.node.type;
                                 c->node->node.node.name = footnote->node->node.node.name;
-                                c->node->u.auxiliary.name = footnote->node->name;
-                                c->node->u.auxiliary.attributes = footnote->node->attributes;
-                                footnote->node->attributes->references++;
+                                c->node->u.data = footnote->node->data;
+                                c->node->u.data->references++;
                                 c->node = NULL;
                         } else
                                 c->node->u.anchor = NULL;
@@ -1775,13 +1792,9 @@ parent_node_free(struct nmc_parent_node *node, UNUSED(struct parser *parser))
 }
 
 static struct nmc_node *
-auxiliary_node_free(struct nmc_auxiliary_node *node, struct parser *parser)
+data_node_free(struct nmc_data_node *node, struct parser *parser)
 {
-        if (--node->attributes->references == 0) {
-                for (struct nmc_auxiliary_node_attribute *a = node->attributes->items; a->name != NULL; a++)
-                        free(a->value);
-                free(node->attributes);
-        }
+        node_data_free(node->data);
         return parent_node_free((struct nmc_parent_node *)node, parser);
 }
 
@@ -1830,7 +1843,7 @@ nmc_node_unlink_and_free(struct nmc_node *node, struct parser *parser)
         typedef struct nmc_node *(*nodefreefn)(struct nmc_node *, struct parser *);
         static nodefreefn fns[] = {
                 [NMC_NODE_TYPE_PARENT] = (nodefreefn)parent_node_free,
-                [NMC_NODE_TYPE_AUXILIARY] = (nodefreefn)auxiliary_node_free,
+                [NMC_NODE_TYPE_DATA] = (nodefreefn)data_node_free,
                 [NMC_NODE_TYPE_TEXT] = (nodefreefn)text_node_free,
                 [NMC_NODE_TYPE_PRIVATE] = private_node_free,
         };
