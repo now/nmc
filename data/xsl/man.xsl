@@ -383,7 +383,7 @@
     <xsl:text>\F[]</xsl:text>
   </xsl:template>
 
-  <xsl:template match="ref">
+  <xsl:template match="link">
     <xsl:apply-templates/>
     <xsl:text> (</xsl:text>
     <xsl:if test="@title">

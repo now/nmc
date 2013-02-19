@@ -140,19 +140,19 @@ emphasis.attributes = common.attributes
 emphasis.content = common.inline.content
 common.inline.elements |= emphasis
 
-ref = element ref { ref.attributes, ref.content }
-ref.relation.attribute = attribute relation { text }
-ref.relation-data.attribute = attribute relation-data { text }
-ref.title.attribute = attribute title { text }
-ref.uri.attribute = attribute uri { xsd:anyURI }
-ref.attributes =
+link = element link { link.attributes, link.content }
+link.relation.attribute = attribute relation { text }
+link.relation-data.attribute = attribute relation-data { text }
+link.title.attribute = attribute title { text }
+link.uri.attribute = attribute uri { xsd:anyURI }
+link.attributes =
   common.attributes,
-  ref.relation.attribute?,
-  ref.relation-data.attribute?,
-  ref.title.attribute?,
-  ref.uri.attribute
-ref.content = common.inline.content
-common.inline.elements |= ref
+  link.relation.attribute?,
+  link.relation-data.attribute?,
+  link.title.attribute?,
+  link.uri.attribute
+link.content = common.inline.content
+common.inline.elements |= link
 
 span = element span { span.attributes, span.content }
 span.attributes = common.attributes

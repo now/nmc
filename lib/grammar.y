@@ -591,9 +591,9 @@ data_node_new_matches(enum nmc_node_name name,
 }
 
 static struct nmc_data_node *
-data_node_new_ref(size_t n, const char *buffer, regmatch_t *matches)
+data_node_new_link(size_t n, const char *buffer, regmatch_t *matches)
 {
-        return data_node_add_matches(data_node_new(NMC_NODE_REFERENCE, n),
+        return data_node_add_matches(data_node_new(NMC_NODE_LINK, n),
                                      buffer, matches, 2, "title", "uri");
 }
 
@@ -609,7 +609,7 @@ inline_figure(const char *buffer, regmatch_t *matches)
 {
         bool alternate = matches[3].rm_so != -1;
         struct nmc_data_node *d =
-                data_node_new_ref(3 + (alternate ? 1 : 0), buffer, matches);
+                data_node_new_link(3 + (alternate ? 1 : 0), buffer, matches);
         if (d == NULL)
                 return NULL;
         d->data->data[2].name = "relation";
@@ -635,9 +635,9 @@ inline_figure(const char *buffer, regmatch_t *matches)
 }
 
 static struct nmc_data_node *
-ref(const char *buffer, regmatch_t *matches)
+link(const char *buffer, regmatch_t *matches)
 {
-        return data_node_new_ref(2, buffer, matches);
+        return data_node_new_link(2, buffer, matches);
 }
 
 static bool
@@ -645,7 +645,7 @@ definitions_init(struct nmc_error *error)
 {
         if (definitions != NULL)
                 return true;
-        return  definitions_push("^(.+) +at +([^ ]+)", ref, error) &&
+        return  definitions_push("^(.+) +at +([^ ]+)", link, error) &&
                 definitions_push("^(.+), +see +([^ ]+)( +\\((.+)\\))?", inline_figure, error) &&
                 definitions_push("^Abbreviation +for +(.+)", abbreviation, error);
 }

@@ -288,7 +288,7 @@
     </em>
   </xsl:template>
 
-  <xsl:template match="ref">
+  <xsl:template match="link">
     <a href="{nml:adjust-uri()}">
       <xsl:call-template name="copy.common-attributes"/>
       <xsl:copy-of select="@title"/>

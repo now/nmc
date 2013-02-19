@@ -90,7 +90,7 @@ enum nmc_node_name
         NMC_NODE_EMPHASIS,
         NMC_NODE_GROUP,
         NMC_NODE_ABBREVIATION,
-        NMC_NODE_REFERENCE,
+        NMC_NODE_LINK,
         NMC_NODE_TEXT,
         NMC_NODE_BUFFER,
         NMC_NODE_ANCHOR,

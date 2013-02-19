@@ -22,7 +22,7 @@ AT_NMC_CHECK_TRANSFORM([Inline figure],
 
 ¹ For reference, see a.jpg],
 [  <title>T</title>
-  <p><ref title="For reference" uri="a.jpg" relation="figure">W</ref></p>])
+  <p><link title="For reference" uri="a.jpg" relation="figure">W</link></p>])
 
 AT_NMC_CHECK_TRANSFORM([Inline figure with alternate],
 [T
@@ -31,16 +31,16 @@ AT_NMC_CHECK_TRANSFORM([Inline figure with alternate],
 
 ¹ For reference, see a.jpg (A)],
 [  <title>T</title>
-  <p><ref title="For reference" uri="a.jpg" relation="figure" relation-data="A">W</ref></p>])
+  <p><link title="For reference" uri="a.jpg" relation="figure" relation-data="A">W</link></p>])
 
-AT_NMC_CHECK_TRANSFORM([Reference],
+AT_NMC_CHECK_TRANSFORM([Link],
 [T
 
   Abbr¹
 
 ¹ See the Wikipedia entry for “Abbreviation” at http://en.wikipedia.org/wiki/Abbreviation],
 [  <title>T</title>
-  <p><ref title="See the Wikipedia entry for “Abbreviation”" uri="http://en.wikipedia.org/wiki/Abbreviation">Abbr</ref></p>])
+  <p><link title="See the Wikipedia entry for “Abbreviation”" uri="http://en.wikipedia.org/wiki/Abbreviation">Abbr</link></p>])
 
 AT_NMC_CHECK_TRANSFORM([Multiple footnotes],
 [T
@@ -51,7 +51,7 @@ AT_NMC_CHECK_TRANSFORM([Multiple footnotes],
 ² 3 at 4
 ³³ Abbreviation for 2],
 [  <title>T</title>
-  <p><ref title="3" uri="4"><abbreviation for="1">W₁</abbreviation></ref> <abbreviation for="2">W₂</abbreviation></p>])
+  <p><link title="3" uri="4"><abbreviation for="1">W₁</abbreviation></link> <abbreviation for="2">W₂</abbreviation></p>])
 
 AT_NMC_CHECK_TRANSFORM([Multi-word footnote],
 [T
@@ -60,7 +60,7 @@ AT_NMC_CHECK_TRANSFORM([Multi-word footnote],
 
 ¹ 1 at 2],
 [  <title>T</title>
-  <p>W₁ <ref title="1" uri="2">W₂ W₃</ref></p>])
+  <p>W₁ <link title="1" uri="2">W₂ W₃</link></p>])
 
 AT_NMC_CHECK_TRANSFORM([Section-level footnotes],
 [T
@@ -73,7 +73,7 @@ AT_NMC_CHECK_TRANSFORM([Section-level footnotes],
 [  <title>T</title>
   <section>
     <title>S</title>
-    <p><ref title="1" uri="2">W</ref></p>
+    <p><link title="1" uri="2">W</link></p>
   </section>])
 
 AT_NMC_CHECK_TRANSFORM([Footnote nesting],
@@ -87,7 +87,7 @@ AT_NMC_CHECK_TRANSFORM([Footnote nesting],
 [  <title>T</title>
   <section>
     <title>S</title>
-    <p><ref title="1" uri="2">W</ref></p>
+    <p><link title="1" uri="2">W</link></p>
   </section>])
 
 AT_NMC_CHECK_TRANSFORM([Reused footnote],
@@ -105,10 +105,10 @@ AT_NMC_CHECK_TRANSFORM([Reused footnote],
 [  <title>T</title>
   <section>
     <title>S</title>
-    <p><ref title="1" uri="2">W</ref></p>
+    <p><link title="1" uri="2">W</link></p>
     <section>
       <title>Ss</title>
-      <p><ref title="1" uri="2">W</ref></p>
+      <p><link title="1" uri="2">W</link></p>
     </section>
   </section>])
 
@@ -120,7 +120,7 @@ AT_NMC_CHECK_TRANSFORM([Multi-line footnote],
 ¹ 1 at
   2],
 [  <title>T</title>
-  <p><ref title="1" uri="2">W</ref></p>])
+  <p><link title="1" uri="2">W</link></p>])
 
 AT_NMC_CHECK_FAIL_TRANSFORM([Unrecognized footnote content],
 [T

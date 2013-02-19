@@ -241,8 +241,8 @@
       NML, this will be converted to
 
         <p>Drop me a
-          <ref title="Email me"
-               uri="mailto:example@example.com">line</ref></p>
+          <link title="Email me"
+                uri="mailto:example@example.com">line</link></p>
 
       The identifiers don’t have to come in order, which means that you don’t
       have to re-order them in the event that footnotes are added and deleted
@@ -492,7 +492,7 @@
 
       The stylesheet has been written with extension in mind.  You may
       specifically be interested in overriding the ‹nml:adjust-uri› function to
-      adjust any URIs that occur in ‹image› and ‹ref› elements to ones that fit
+      adjust any URIs that occur in ‹image› and ‹link› elements to ones that fit
       with the location of the generated HTML5 documents.  Perusing the source
       should give you ideas as to what you might want to adjust beyond that.
       We try to keep the name of functions and templates and the general

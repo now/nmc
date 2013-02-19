@@ -10,15 +10,15 @@
 
   <xsl:template mode="move.figures" match="p|nml/quote|section/quote|item/quote|
                                            definition/quote|table">
-    <xsl:for-each select=".//ref[@relation='figure']">
-      <xsl:call-template name="create.figure.from.ref"/>
+    <xsl:for-each select=".//link[@relation='figure']">
+      <xsl:call-template name="create.figure.from.link"/>
     </xsl:for-each>
     <xsl:copy>
       <xsl:apply-templates mode="remove.figures" select="@*|node()"/>
     </xsl:copy>
   </xsl:template>
 
-  <xsl:template name="create.figure.from.ref">
+  <xsl:template name="create.figure.from.link">
     <figure>
       <xsl:attribute name="class">
         <xsl:variable name="lr">
@@ -45,7 +45,7 @@
     </xsl:copy>
   </xsl:template>
 
-  <xsl:template mode="remove.figures" match="ref[@relation='figure']">
+  <xsl:template mode="remove.figures" match="link[@relation='figure']">
     <xsl:apply-templates mode="remove.figures"/>
   </xsl:template>
 </xsl:stylesheet>

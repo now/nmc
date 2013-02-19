@@ -296,7 +296,7 @@ static struct {
         [NMC_NODE_EMPHASIS] = { NAME("emphasis"), inline },
         [NMC_NODE_GROUP] = { NULL, 0, (xmltraversefn)nmc_node_traverse_null, (xmltraversefn)nmc_node_traverse_null },
         [NMC_NODE_ABBREVIATION] = { NAME("abbreviation"), data },
-        [NMC_NODE_REFERENCE] = { NAME("ref"), data },
+        [NMC_NODE_LINK] = { NAME("link"), data },
         [NMC_NODE_TEXT] = { NULL, 0, text_enter, NULL },
 #undef NAME
 #undef indenting_block

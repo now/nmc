@@ -185,7 +185,7 @@ AT_NMC_CHECK_TRANSFORM([Inline termination rules: ²],
 
 ² 1 at 2],
 [  <title>T</title>
-  <p><ref title="1" uri="2"><emphasis>A</emphasis></ref></p>])
+  <p><link title="1" uri="2"><emphasis>A</emphasis></link></p>])
 
 AT_NMC_CHECK_TRANSFORM([Inline start/termination rules: (…)],
 [T
