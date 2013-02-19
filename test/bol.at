@@ -19,7 +19,7 @@ AT_NMC_CHECK_FAIL_TRANSFORM([Broken paragraph],
 [T
 
  W],
-[3:2: missing ‘ ’ after paragraph tag (‘ ’)])
+[3:2: expected ‘ ’ after paragraph tag (‘ ’)])
 
 AT_NMC_CHECK_TRANSFORM([Two-item itemization],
 [T
@@ -51,19 +51,19 @@ AT_NMC_CHECK_FAIL_TRANSFORM([Broken itemization],
 [T
 
 •W],
-[3:4: missing “   ” after itemization tag (‘•’)])
+[3:4: expected “   ” after itemization tag (‘•’)])
 
 AT_NMC_CHECK_FAIL_TRANSFORM([Broken itemization 2],
 [T
 
 • W],
-[3:5: missing “  ” after itemization tag (‘•’)])
+[3:5: expected “  ” after itemization tag (‘•’)])
 
 AT_NMC_CHECK_FAIL_TRANSFORM([Broken itemization 3],
 [T
 
 •  W],
-[3:6: missing “ ” after itemization tag (‘•’)])
+[3:6: expected “ ” after itemization tag (‘•’)])
 
 AT_NMC_CHECK_TRANSFORM([Two-item enumeration],
 [T
@@ -84,7 +84,7 @@ AT_NMC_CHECK_FAIL_TRANSFORM([Broken enumeration],
 [T
 
 ₁W],
-[3:4: missing “   ” after enumeration tag (‘₁’, ‘₂’, …)])
+[3:4: expected “   ” after enumeration tag (‘₁’, ‘₂’, …)])
 
 AT_NMC_CHECK_TRANSFORM([Three-item definition],
 [T
@@ -120,13 +120,13 @@ AT_NMC_CHECK_FAIL_TRANSFORM([Broken definition],
 = A.    1
 = B. =   2
 = C. =   3],
-[3:10: missing ending “. =” for term in definition])
+[3:10: expected “. =” after term in definition])
 
 AT_NMC_CHECK_FAIL_TRANSFORM([Broken definition 2],
 [T
 
 =A. =   1],
-[3:2: missing ‘ ’ after “=”])
+[3:2: expected ‘ ’ after “=”])
 
 AT_NMC_CHECK_TRANSFORM([Code block],
 [T
@@ -229,7 +229,7 @@ AT_NMC_CHECK_FAIL_TRANSFORM([Broken quote],
 [T
 
 >W],
-[3:2: missing ‘ ’ after quote tag (‘>’)])
+[3:2: expected ‘ ’ after quote tag (‘>’)])
 
 AT_NMC_CHECK_TRANSFORM([Table],
 [T
@@ -276,7 +276,7 @@ AT_NMC_CHECK_FAIL_TRANSFORM([Broken table],
 [T
 
 |W |],
-[3:2: missing ‘ ’ after table tag (‘|’)])
+[3:2: expected ‘ ’ after table tag (‘|’)])
 
 AT_NMC_CHECK_TRANSFORM([Figure],
 [T
@@ -296,7 +296,7 @@ AT_NMC_CHECK_FAIL_TRANSFORM([Figure without URL],
 [T
 
 Fig.],
-[4:1: missing URL for figure image])
+[4:1: expected URI for figure image])
 
 AT_NMC_CHECK_TRANSFORM([Figure with alternate text],
 [T
@@ -320,7 +320,7 @@ Fig.
                                (The letter ‘A’
 
                                      Title],
-[5:51: missing ending ‘)’ for figure image alternate text])
+[5:51: expected ‘)’ after figure image alternate text])
 
 AT_NMC_CHECK_TRANSFORM([Section],
 [T
@@ -361,7 +361,7 @@ AT_NMC_CHECK_FAIL_TRANSFORM([Broken section],
 [T
 
 §W],
-[3:3: missing ‘ ’ after section tag (‘§’)])
+[3:3: expected ‘ ’ after section tag (‘§’)])
 
 AT_NMC_CHECK_FAIL_TRANSFORM([Broken beginning of line],
 [T

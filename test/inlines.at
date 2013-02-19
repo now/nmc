@@ -9,15 +9,15 @@ AT_NMC_CHECK_FAIL_TRANSFORM([Unterminated code inline],
 [T
 
   ‹C],
-[3:3: missing ending ‘›’ for code inline])
+[3:3: expected ‘›’ after code inline (‹…›) content])
 
 AT_NMC_CHECK_FAIL_TRANSFORM([Two unterminated code inlines],
 [T
 
   ‹C
   ‹C],
-[3:3: missing ending ‘›’ for code inline
-4:3: missing ending ‘›’ for code inline])
+[3:3: expected ‘›’ after code inline (‹…›) content
+4:3: expected ‘›’ after code inline (‹…›) content])
 
 AT_NMC_CHECK_TRANSFORM([Code inline termination: ‹››],
 [T
@@ -81,7 +81,7 @@ AT_NMC_CHECK_FAIL_TRANSFORM([Unterminated code inline with continuation],
 [T
 
   ‹A››‹B],
-[3:3: missing ending ‘›’ for code inline])
+[3:3: expected ‘›’ after code inline (‹…›) content])
 AT_NMC_CHECK_TRANSFORM([Emphasis],
 [T
 
@@ -100,7 +100,7 @@ AT_NMC_CHECK_FAIL_TRANSFORM([Unterminated emphasis],
 [T
 
   /W],
-[3:3: missing ending ‘/’ for emphasis inline])
+[3:3: expected ‘/’ after emphasized text (/…/)])
 
 AT_NMC_CHECK_TRANSFORM([Emphasis start/termination rules: //…/],
 [T

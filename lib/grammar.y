@@ -454,7 +454,7 @@ bol_space(struct parser *parser, size_t offset)
         location.first_column += offset;
         location.last_column = location.first_column;
         parser_error(parser, &location,
-                     "missing ‘ ’ after “%.*s”", (int)offset, parser->p);
+                     "expected ‘ ’ after “%.*s”", (int)offset, parser->p);
         return offset;
 }
 
@@ -821,7 +821,7 @@ term(struct parser *parser, YYLTYPE *location, YYSTYPE *value)
         }
 
         return error_token(parser, location, end, AGAIN,
-                           "missing ending “. =” for term in definition");
+                           "expected “. =” after term in definition");
 }
 
 static const char *
@@ -894,7 +894,7 @@ figure(struct parser *parser, YYLTYPE *location, YYSTYPE *value)
                 break;
         default:
                 if (!parser_error(parser, &parser->location,
-                                  "missing ‘ ’ or newline after figure tag (“Fig.”)"))
+                                  "expected ‘ ’ or newline after figure tag (“Fig.”)"))
                         goto oom;
         }
 
@@ -902,7 +902,7 @@ figure(struct parser *parser, YYLTYPE *location, YYSTYPE *value)
         if (*end == '\0') {
                 locate(parser, location, end - begin);
                 return error_token(parser, NULL, end, END,
-                                   "missing URL for figure image");
+                                   "expected URI for figure image");
         }
         const char *middle = end;
         while (!is_end(end) && *end != ' ')
@@ -922,7 +922,7 @@ figure(struct parser *parser, YYLTYPE *location, YYSTYPE *value)
                         l.first_line = l.last_line;
                         l.first_column = l.last_column;
                         if (!parser_error(parser, &l,
-                                          "missing ending ‘)’ for figure image alternate text")) {
+                                          "expected ‘)’ after figure image alternate text")) {
                                 free(uri);
                                 goto oom;
                         }
@@ -963,7 +963,7 @@ bol_token(struct parser *parser, YYLTYPE *location, size_t length, int type)
                 char *name = token_name(type);
                 if (name != NULL) {
                         int r = error_token(parser, location, end, type,
-                                            "missing ‘ ’ after %s", name);
+                                            "expected ‘ ’ after %s", name);
                         free(name);
                         return r;
                 } else
@@ -1005,7 +1005,7 @@ bol_item(struct parser *parser, YYLTYPE *location, size_t length, int type)
         if (*end != ' ' || *++end != ' ' || *++end != ' ') {
                 char *name = token_name(type);
                 int r = error_token(parser, location, end, type,
-                                    "missing “%*s” after %s",
+                                    "expected “%*s” after %s",
                                     (int)(3 - (end - begin)), "", name);
                 free(name);
                 return r;
@@ -1222,7 +1222,7 @@ again:
         const char *send = end;
         if (is_end(end)) {
                 if (!parser_error(parser, &parser->location,
-                                  "missing ending ‘›’ for code inline")) {
+                                  "expected ‘›’ after code inline (‹…›) content")) {
                         value->node = NULL;
                         goto oom;
                 }
@@ -1290,7 +1290,7 @@ emphasis(struct parser *parser, YYLTYPE *location, YYSTYPE *value)
         const char *send = end;
         if (is_end(end)) {
                 if (!parser_error(parser, &parser->location,
-                                  "missing ending ‘/’ for emphasis inline")) {
+                                  "expected ‘/’ after emphasized text (/…/)")) {
                         value->node = NULL;
                         goto oom;
                 }
