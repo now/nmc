@@ -35,7 +35,7 @@
                                                   concat('figure-', $lr))"/>
       </xsl:attribute>
       <title><xsl:value-of select="@title"/></title>
-      <image><xsl:value-of select="@uri"/></image>
+      <image uri="{@uri}"><xsl:value-of select="@relation-data"/></image>
     </figure>
   </xsl:template>
 

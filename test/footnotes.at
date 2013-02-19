@@ -24,6 +24,15 @@ AT_NMC_CHECK_TRANSFORM([Inline figure],
 [  <title>T</title>
   <p><ref title="For reference" uri="a.jpg" relation="figure">W</ref></p>])
 
+AT_NMC_CHECK_TRANSFORM([Inline figure with alternate],
+[T
+
+  W¹
+
+¹ For reference, see a.jpg (A)],
+[  <title>T</title>
+  <p><ref title="For reference" uri="a.jpg" relation="figure" relation-data="A">W</ref></p>])
+
 AT_NMC_CHECK_TRANSFORM([Reference],
 [T
 

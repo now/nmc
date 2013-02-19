@@ -289,14 +289,38 @@ Fig.
 [  <title>T</title>
   <figure>
     <title>Title</title>
-    <image>a.jpg</image>
+    <image uri="a.jpg"></image>
   </figure>])
 
 AT_NMC_CHECK_FAIL_TRANSFORM([Figure without URL],
 [T
 
 Fig.],
-[4:1: missing URL for figure])
+[4:1: missing URL for figure image])
+
+AT_NMC_CHECK_TRANSFORM([Figure with alternate text],
+[T
+
+Fig.
+                                     a.jpg
+                               (The letter ‘A’)
+
+                                     Title],
+[  <title>T</title>
+  <figure>
+    <title>Title</title>
+    <image uri="a.jpg">The letter ‘A’</image>
+  </figure>])
+
+AT_NMC_CHECK_FAIL_TRANSFORM([Figure with broken alternate text],
+[T
+
+Fig.
+                                     a.jpg
+                               (The letter ‘A’
+
+                                     Title],
+[5:51: missing ending ‘)’ for figure image alternate text])
 
 AT_NMC_CHECK_TRANSFORM([Section],
 [T

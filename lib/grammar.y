@@ -607,12 +607,26 @@ abbreviation(const char *buffer, regmatch_t *matches)
 static struct nmc_data_node *
 inline_figure(const char *buffer, regmatch_t *matches)
 {
-        struct nmc_data_node *d = data_node_new_ref(3, buffer, matches);
+        bool alternate = matches[3].rm_so != -1;
+        struct nmc_data_node *d =
+                data_node_new_ref(3 + (alternate ? 1 : 0), buffer, matches);
         if (d == NULL)
                 return NULL;
         d->data->data[2].name = "relation";
         d->data->data[2].value = mstrdup("figure", 6);
         if (d->data->data[2].value == NULL) {
+                node_data_free(d->data);
+                free(d);
+                return NULL;
+        }
+        if (!alternate)
+                return d;
+        assert(matches[4].rm_so != -1);
+        assert(matches[4].rm_eo != -1);
+        d->data->data[3].name = "relation-data";
+        d->data->data[3].value = mstrdup(buffer + matches[4].rm_so,
+                                         matches[4].rm_eo - matches[4].rm_so);
+        if (d->data->data[3].value == NULL) {
                 node_data_free(d->data);
                 free(d);
                 return NULL;
@@ -631,8 +645,8 @@ definitions_init(struct nmc_error *error)
 {
         if (definitions != NULL)
                 return true;
-        return  definitions_push("^(.+) +at +(.+)", ref, error) &&
-                definitions_push("^(.+), +see +(.+)", inline_figure, error) &&
+        return  definitions_push("^(.+) +at +([^ ]+)", ref, error) &&
+                definitions_push("^(.+), +see +([^ ]+)( +\\((.+)\\))?", inline_figure, error) &&
                 definitions_push("^Abbreviation +for +(.+)", abbreviation, error);
 }
 
@@ -820,9 +834,49 @@ skip_spaces_and_empty_lines(struct parser *parser, const char **begin, const cha
         return end;
 }
 
+static const char *
+figure_alternate(struct parser *parser, const char **begin, const char **end)
+{
+        const char *p = *end;
+        if (*p != '\n')
+                return NULL;
+        p++;
+        parser->location.last_line++;
+        *begin = p;
+        while (*p == ' ')
+                p++;
+        if (*p != '(') {
+                *end = p;
+                return NULL;
+        }
+        p++;
+        size_t nesting = 1;
+        const char *middle = p;
+        while (true) {
+                switch (*p) {
+                case '(':
+                        nesting++;
+                        break;
+                case ')':
+                        if (--nesting == 0)
+                                goto done;
+                        break;
+                case '\n':
+                case '\0':
+                        goto done;
+                }
+                p++;
+        }
+done:
+        *end = p;
+        return middle;
+}
+
 static int
 figure(struct parser *parser, YYLTYPE *location, YYSTYPE *value)
 {
+        value->node = NULL;
+
         const char *begin = parser->p;
         const char *end = parser->p + 4;
         switch (*end) {
@@ -834,20 +888,59 @@ figure(struct parser *parser, YYLTYPE *location, YYSTYPE *value)
                 end++;
                 break;
         default:
-                parser_error(parser, &parser->location,
-                             "missing ‘ ’ or newline after figure tag (“Fig.”)");
+                if (!parser_error(parser, &parser->location,
+                                  "missing ‘ ’ or newline after figure tag (“Fig.”)"))
+                        goto oom;
         }
 
         end = skip_spaces_and_empty_lines(parser, &begin, end);
         if (*end == '\0') {
                 locate(parser, location, end - begin);
                 return error_token(parser, NULL, end, END,
-                                   "missing URL for figure");
+                                   "missing URL for figure image");
         }
         const char *middle = end;
         while (!is_end(end) && *end != ' ')
                 end++;
-        value->node = text_node_new_dup(NMC_NODE_IMAGE, middle, end - middle);
+        char *uri = mstrdup(middle, end - middle);
+        if (uri == NULL)
+                goto oom;
+        while (*end == ' ')
+                end++;
+        struct nmc_node *alternate = NULL;
+        middle = figure_alternate(parser, &begin, &end);
+        if (middle != NULL) {
+                bool terminated = *end == ')';
+                if (!terminated) {
+                        YYLTYPE l;
+                        locate(parser, &l, end + 1 - begin);
+                        l.first_line = l.last_line;
+                        l.first_column = l.last_column;
+                        if (!parser_error(parser, &l,
+                                          "missing ending ‘)’ for figure image alternate text")) {
+                                free(uri);
+                                goto oom;
+                        }
+                }
+                alternate = text_node_new_dup(NMC_NODE_TEXT, middle, end - middle);
+                if (alternate == NULL) {
+                        free(uri);
+                        goto oom;
+                }
+                if (terminated)
+                        end++;
+        }
+        struct nmc_data_node *n = data_node_new(NMC_NODE_IMAGE, 1);
+        if (n == NULL) {
+                free(uri);
+                nmc_node_free(alternate);
+                goto oom;
+        }
+        n->data->data[0].name = "uri";
+        n->data->data[0].value = uri;
+        value->node = (struct nmc_node *)n;
+        n->node.children = alternate;
+oom:
         end = skip_spaces_and_empty_lines(parser, &begin, end);
         locate(parser, location, end - begin);
         return token(parser, NULL, end, FIGURE);

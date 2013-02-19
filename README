@@ -261,23 +261,26 @@
   § Figures
 
       Figures may be used to place content to the right or left of the current
-      content.  We can, for example, place the NoMarks logo to the left of this
+      content.  We can, for example, place the NoMarks logo to the right of this
       paragraph¹.  This was introduced via a footnote:
 
-          We can, for example, place the NoMarks logo to the left of this
+          We can, for example, place the NoMarks logo to the right of this
           paragraph¹.
 
-        ¹ The NoMarks logo, see data/nomarks.svg
+        ¹ The NoMarks logo, see data/nomarks.svg (a crossed-over ‘M’)
 
-    ¹ The NoMarks logo, see data/nomarks.svg
+    ¹ The NoMarks logo, see data/nomarks.svg (a crossed-over ‘M’)
 
-      Such a footnote consists of a title, followed by “, see ” and a URL.
+      Such a footnote consists of a title, followed by “, see ”, a URI to an
+      image, and an optional alternate text inside parentheses to use in place
+      of the image in case it can’t be displayed or viewed.
 
       Figures can also be displayed in line with other content.  Here’s a
       bigger version of the NoMarks logo displayed in this manner:
 
     Fig.
                              data/nomarks-256.svg
+                             (A crossed-over ‘M’)
 
                       A big version of the NoMarks logo.
 
@@ -285,15 +288,17 @@
 
             Fig.
                                      data/nomarks-256.svg
+                                     (A crossed-over ‘M’)
 
                               A big version of the NoMarks logo.
 
-      We thus have “Fig.” as a tag, followed by a URL to the image that we want
-      to display, followed by a title for the figure.  Whitespace and newlines
-      between the tag and the URL and between the URL and the figure are
-      ignored, so you’re free to lay it out in a manner that makes it clear to
-      someone reading the text that a figure would take up quite a bit of
-      space at this point.
+      We thus have “Fig.” as a tag, followed by a URI to the image that we want
+      to display, followed by an optional alternate text in parentheses,
+      followed by a title for the figure.  Whitespace and newlines between the
+      tag and the URI and between the URI and the figure are ignored, so you’re
+      free to lay it out in a manner that makes it clear to someone reading the
+      text that a figure would take up quite a bit of space at this point.  The
+      alternate text must come on the line right after the URI, if present.
 
 § Sections
 

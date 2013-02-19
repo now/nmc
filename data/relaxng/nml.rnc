@@ -119,8 +119,9 @@ caption = element caption { caption.attributes, caption.content }
 caption.attributes = common.attributes
 caption.content = common.inline.content
 
-image = element image { image.attributes, xsd:anyURI }
-image.attributes = common.attributes
+image = element image { image.attributes, text }
+image.uri.attribute = attribute uri { xsd:anyURI }
+image.attributes = common.attributes, image.uri.attribute
 
 abbreviation = element abbreviation { abbreviation.attributes, abbreviation.content }
 abbreviation.for.attribute = attribute for { text }
@@ -141,11 +142,13 @@ common.inline.elements |= emphasis
 
 ref = element ref { ref.attributes, ref.content }
 ref.relation.attribute = attribute relation { text }
+ref.relation-data.attribute = attribute relation-data { text }
 ref.title.attribute = attribute title { text }
 ref.uri.attribute = attribute uri { xsd:anyURI }
 ref.attributes =
   common.attributes,
   ref.relation.attribute?,
+  ref.relation-data.attribute?,
   ref.title.attribute?,
   ref.uri.attribute
 ref.content = common.inline.content

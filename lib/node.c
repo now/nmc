@@ -82,6 +82,7 @@ nmc_node_traverse(struct nmc_node *node, nmc_node_traverse_fn enter,
                                 if (!push(&actions, &used, false, n))
                                         goto oom;
                                 if (NMC_NODE_HAS_CHILDREN(n) &&
+                                    nmc_node_children(n) != NULL &&
                                     !push(&actions, &used, true,
                                           nmc_node_children(n)))
                                         goto oom;
@@ -217,8 +218,6 @@ text_enter(struct nmc_node *node, struct xml_closure *closure)
                       lengthof(text_entities), text_entities);
 }
 
-static bool data_enter(struct nmc_data_node *node, struct xml_closure *closure);
-
 static bool block_enter(struct nmc_node *node, struct xml_closure *closure);
 
 static bool
@@ -234,6 +233,15 @@ indenting_block_enter(struct nmc_node *node, struct xml_closure *closure)
                 return false;
         closure->indent++;
         return true;
+}
+
+static bool data_enter(struct nmc_data_node *node, struct xml_closure *closure);
+
+static bool
+data_block_enter(struct nmc_data_node *node, struct xml_closure *closure)
+{
+        return indent(closure, closure->indent) &&
+                data_enter(node, closure);
 }
 
 static bool leave(struct nmc_node *node, struct xml_closure *closure);
@@ -261,6 +269,7 @@ static struct {
 #define block block_enter, leave
 #define inline inline_enter, leave
 #define data (xmltraversefn)data_enter, leave
+#define data_block (xmltraversefn)data_block_enter, leave
 #define NAME(n) n, sizeof(n) - 1
         [NMC_NODE_DOCUMENT] = { NAME("nml"), indenting_block },
         [NMC_NODE_TITLE] = { NAME("title"), block },
@@ -282,7 +291,7 @@ static struct {
         [NMC_NODE_ROW] = { NAME("row"), indenting_block },
         [NMC_NODE_CELL] = { NAME("cell"), block },
         [NMC_NODE_FIGURE] = { NAME("figure"), indenting_block },
-        [NMC_NODE_IMAGE] = { NAME("image"), text_block },
+        [NMC_NODE_IMAGE] = { NAME("image"), data_block },
         [NMC_NODE_CODE] = { NAME("code"), inline },
         [NMC_NODE_EMPHASIS] = { NAME("emphasis"), inline },
         [NMC_NODE_GROUP] = { NULL, 0, (xmltraversefn)nmc_node_traverse_null, (xmltraversefn)nmc_node_traverse_null },

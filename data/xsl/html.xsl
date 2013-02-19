@@ -261,7 +261,7 @@
   </xsl:template>
 
   <xsl:template match="image">
-    <img src="{nml:adjust-uri(.)}"/>
+    <img src="{nml:adjust-uri()}" alt="{normalize-space(.)}"/>
   </xsl:template>
 
   <xsl:template match="abbreviation">
