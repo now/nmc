@@ -249,6 +249,7 @@ parser_oom(struct parser *parser)
 {
         if (parser_is_oom(parser))
                 return;
+        nmc_parser_oom_error.location = parser->location;
         parser_errors(parser, &nmc_parser_oom_error, &nmc_parser_oom_error);
 }
 
