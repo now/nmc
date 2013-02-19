@@ -395,6 +395,7 @@ text(struct parser *parser, YYLTYPE *location, const char *begin)
 {
         while (*begin == ' ')
                 begin++;
+        const char *sbegin = parser->p;
         const char *end = begin;
         struct buffer b = BUFFER_INIT;
 
@@ -410,7 +411,8 @@ again:
                     (size_t)(send - (end + 1)) >= parser->indent + 2) {
                         if (!buffer_append(&b, begin, end - begin))
                                 goto oom;
-                        begin = end + parser->indent + 2;
+                        sbegin = end + 1;
+                        begin = send - 1;
                         end = send;
                         parser->location.last_line++;
                         goto again;
@@ -432,11 +434,13 @@ again:
         if (!buffer_append(&b, begin, end - begin))
                 goto oom;
 
+        locate(parser, location, end - sbegin);
         // NOTE We use a throwaway type here; caller must return actual type.
-        token(parser, location, end, ERROR);
+        token(parser, NULL, end, ERROR);
         return buffer_str(&b);
 oom:
-        token(parser, location, end, ERROR);
+        locate(parser, location, end - sbegin);
+        token(parser, NULL, end, ERROR);
         free(b.content);
         return NULL;
 }
@@ -738,6 +742,7 @@ text_node_new(enum nmc_node_name name, char *text)
 static int
 codeblock(struct parser *parser, YYLTYPE *location, YYSTYPE *value)
 {
+        const char *sbegin = parser->p;
         const char *begin = parser->p + 4;
         const char *end = begin;
         struct buffer b = BUFFER_INIT;
@@ -750,7 +755,7 @@ codeblock(struct parser *parser, YYLTYPE *location, YYSTYPE *value)
                 if (*end != '\n')
                         break;
                 size_t lines = 1;
-                const char *sbegin = end + 1;
+                sbegin = end + 1;
                 const char *send = sbegin;
                 while (*send == ' ' || *send == '\n') {
                         if (*send == '\n') {
@@ -773,7 +778,7 @@ codeblock(struct parser *parser, YYLTYPE *location, YYSTYPE *value)
 oom:
         value->node = NULL;
 done:
-        locate(parser, location, begin - end);
+        locate(parser, location, end - sbegin);
         return token(parser, NULL, end, CODEBLOCK);
 }
 

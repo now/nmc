@@ -130,6 +130,15 @@ AT_NMC_CHECK_FAIL_TRANSFORM([Unrecognized footnote content],
 ¹ Junk text in this here footnote],
 [5.1-34: unrecognized footnote content: Junk text in this here footnote])
 
+AT_NMC_CHECK_FAIL_TRANSFORM([Unrecognized multi-line footnote content],
+[T
+
+  W¹
+
+¹ Junk text in this here
+   footnote],
+[5.1-6.11: unrecognized footnote content: Junk text in this here footnote])
+
 AT_NMC_CHECK_FAIL_TRANSFORM([Repeated footnote sigil],
 [T
 
