@@ -1817,7 +1817,8 @@ token_name_unescape(char *result, const char *escaped)
 
                 }
                 if (result != NULL)
-                        result[n++] = c;
+                        result[n] = c;
+                n++;
         }
 }
 
