@@ -153,12 +153,12 @@ static void nmc_node_unlink_and_free(struct nmc_node *node, struct parser *parse
 %token INDENT
 %token ITEMINDENT
 %token DEDENT
-%token <node> CODE
-%token <node> EMPHASIS
-%token <node> ANCHOR
-%token ANCHORSEPARATOR
-%token BEGINGROUP
-%token ENDGROUP
+%token <node> CODE "code inline (‹…›)"
+%token <node> EMPHASIS "emphasized text (/…/)"
+%token <node> ANCHOR "footnote anchor (¹, ², …)"
+%token ANCHORSEPARATOR "footnote anchor separator (⁺)"
+%token BEGINGROUP "beginning of grouped text ({…)"
+%token ENDGROUP "end of grouped text (…})"
 
 %left NotFootnote
 %left FOOTNOTE

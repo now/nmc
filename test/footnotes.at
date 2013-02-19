@@ -207,4 +207,4 @@ AT_NMC_CHECK_FAIL_TRANSFORM([Anchor without preceding node],
 [T
 
   ¹],
-[3.3-4: syntax error, unexpected ANCHOR, expecting WORD or CODE or EMPHASIS or BEGINGROUP])
+[3.3-4: syntax error, unexpected footnote anchor (¹, ², …), expecting WORD or code inline (‹…›) or emphasized text (/…/) or beginning of grouped text ({…)])
