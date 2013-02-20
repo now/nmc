@@ -295,11 +295,8 @@ locate(struct parser *parser, YYLTYPE *location, const char *begin, size_t lengt
 static int
 token(struct parser *parser, YYLTYPE *location, const char *end, int type)
 {
-        if (location != NULL) {
-                // TODO Rewrite callers to not force us to set last = first.
-                parser->location.last_column = parser->location.first_column;
+        if (location != NULL)
                 locate(parser, location, parser->p, end - parser->p);
-        }
         parser->location.first_line = parser->location.last_line;
         parser->location.last_column++;
         parser->location.first_column = parser->location.last_column;
