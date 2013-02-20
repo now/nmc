@@ -6,6 +6,8 @@ bool uc_isaletterornumeric(uchar c);
 bool u_isafteraletterornumeric(const char *string, const char *p);
 void u_word_breaks(const char *string, size_t n, bool *breaks);
 
+size_t u_width(const char *string, size_t length);
+
 #define U_BAD_INPUT_CHAR ((uchar)-1)
 
 extern const char * const u_skip_lengths;

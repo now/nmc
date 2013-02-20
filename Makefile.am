@@ -12,11 +12,15 @@ AM_YFLAGS = --warnings=all,error --report=all
 
 noinst_PROGRAMS = \
 	build/ucategory \
+	build/uwide \
 	build/uwordbreak
 
 build_ucategory_SOURCES = \
 	build/ucategory.c \
 	build/udata.h
+
+build_uwide_SOURCES = \
+	build/uwide.c
 
 build_uwordbreak_SOURCES = \
 	build/uwordbreak.c \
@@ -184,7 +188,14 @@ test_wordbreak_LDADD = lib/libnmc.a
 
 UNICODE_VERSION = 6.2.0
 UNICODE_BASE_URL = http://www.unicode.org/Public/$(UNICODE_VERSION)/ucd
-UNICODE_AUXILIARY_URL = http://www.unicode.org/Public/$(UNICODE_VERSION)/ucd/auxiliary
+UNICODE_AUXILIARY_URL = $(UNICODE_BASE_URL)/auxiliary
+UNICODE_EXTRACTED_URL = $(UNICODE_BASE_URL)/extracted
+
+data/DerivedEastAsianWidth.txt:
+	$(AM_V_GEN)rm -f $@ $@.tmp
+	$(AM_V_at)$(MKDIR_P) $(srcdir)/data
+	$(AM_V_at)$(WGET) -O$@.tmp $(UNICODE_EXTRACTED_URL)/DerivedEastAsianWidth.txt
+	$(AM_V_at)mv $@.tmp $@
 
 data/UnicodeData.txt:
 	$(AM_V_GEN)rm -f $@ $@.tmp
@@ -207,6 +218,11 @@ test/data/WordBreakTest.txt:
 lib/ucategory.h: $(srcdir)/build/ucategory data/UnicodeData.txt
 	$(AM_V_GEN)rm -f $@ $@.tmp
 	$(AM_V_at)$(srcdir)/build/ucategory < data/UnicodeData.txt > $@.tmp
+	$(AM_V_at)mv $@.tmp $@
+
+lib/uwide.h: $(srcdir)/build/uwide data/DerivedEastAsianWidth.txt
+	$(AM_V_GEN)rm -f $@ $@.tmp
+	$(AM_V_at)$(srcdir)/build/uwide < data/DerivedEastAsianWidth.txt > $@.tmp
 	$(AM_V_at)mv $@.tmp $@
 
 lib/uwordbreak.h: $(srcdir)/build/uwordbreak data/WordBreakProperty.txt

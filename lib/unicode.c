@@ -4,6 +4,7 @@
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
+#include <stdlib.h>
 
 #include <private.h>
 
@@ -15,6 +16,13 @@
 #include "uwordbreak.h"
 
 #define UNICODE_FIRST_CHAR_PART_2 0xe0000
+
+struct uchar_interval {
+  uchar first;
+  uchar last;
+};
+
+#include "uwide.h"
 
 #define IS(type, class) (((unsigned int)1 << (type)) & (class))
 #define OR(type, rest)  (((unsigned int)1 << (type)) | (rest))
@@ -192,6 +200,59 @@ u_word_breaks(const char *string, size_t n, bool *breaks)
                 p += l;
                 q += l;
         }
+}
+
+static int
+uchar_interval_compare(const void *key, const void *element)
+{
+        uchar c = *(uchar *)key;
+        struct uchar_interval *interval = (struct uchar_interval *)element;
+        if (c < interval->first)
+                return -1;
+        else if (c > interval->last)
+                return +1;
+        else
+                return 0;
+}
+
+static inline bool
+uc_iswide(uchar c)
+{
+        return bsearch(&c, wide, lengthof(wide), sizeof(wide[0]),
+                       uchar_interval_compare) != NULL;
+}
+
+#define SOFT_HYPHEN ((uchar)0x00ad)
+#define ZERO_WIDTH_SPACE ((uchar)0x200b)
+
+static inline bool
+uc_iszerowidth(uchar c)
+{
+        if (UNLIKELY(c == SOFT_HYPHEN))
+                return false;
+        if (UNLIKELY(IS(s_type(c),
+                        OR(UNICODE_MARK_NONSPACING,
+                           OR(UNICODE_MARK_ENCLOSING,
+                              OR(UNICODE_OTHER_FORMAT, 0))))))
+                return true;
+        if (UNLIKELY((0x1160 <= c && c < 0x1200) || c == ZERO_WIDTH_SPACE))
+                return true;
+        return false;
+}
+
+static inline int
+uc_width(uchar c)
+{
+        return uc_iswide(c) ? 2 : uc_iszerowidth(c) ? 0 : 1;
+}
+
+size_t
+u_width(const char *string, size_t length)
+{
+	size_t w = 0, n;
+        for (const char *p = string, *end = p + length; p < end; p += n)
+                w += uc_width(u_lref(p, &n));
+	return w;
 }
 
 // The dfa table and decode function is © 2008–2010 Björn Höhrmann

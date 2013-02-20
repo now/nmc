@@ -13,9 +13,11 @@ build/depcomp
 build/install-sh
 build/missing
 build/ucategory
+build/uwide
 build/uwordbreak
 build/ylwrap
 data/catalog.xml
+data/DerivedEastAsianWidth.txt
 data/UnicodeData.txt
 data/WordBreakProperty.txt
 .dirstamp
