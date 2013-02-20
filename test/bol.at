@@ -51,19 +51,19 @@ AT_NMC_CHECK_FAIL_TRANSFORM([Broken itemization],
 [T
 
 •W],
-[3:4: expected “   ” after itemization tag (‘•’)])
+[3:2: expected “   ” after itemization tag (‘•’)])
 
 AT_NMC_CHECK_FAIL_TRANSFORM([Broken itemization 2],
 [T
 
 • W],
-[3:5: expected “  ” after itemization tag (‘•’)])
+[3:3: expected “  ” after itemization tag (‘•’)])
 
 AT_NMC_CHECK_FAIL_TRANSFORM([Broken itemization 3],
 [T
 
 •  W],
-[3:6: expected “ ” after itemization tag (‘•’)])
+[3:4: expected “ ” after itemization tag (‘•’)])
 
 AT_NMC_CHECK_TRANSFORM([Two-item enumeration],
 [T
@@ -84,7 +84,7 @@ AT_NMC_CHECK_FAIL_TRANSFORM([Broken enumeration],
 [T
 
 ₁W],
-[3:4: expected “   ” after enumeration tag (‘₁’, ‘₂’, …)])
+[3:2: expected “   ” after enumeration tag (‘₁’, ‘₂’, …)])
 
 AT_NMC_CHECK_TRANSFORM([Three-item definition],
 [T
@@ -320,7 +320,7 @@ Fig.
                                (The letter ‘A’
 
                                      Title],
-[5:51: expected ‘)’ after figure image alternate text])
+[5:47: expected ‘)’ after figure image alternate text])
 
 AT_NMC_CHECK_TRANSFORM([Section],
 [T
@@ -361,7 +361,7 @@ AT_NMC_CHECK_FAIL_TRANSFORM([Broken section],
 [T
 
 §W],
-[3:3: expected ‘ ’ after section tag (‘§’)])
+[3:2: expected ‘ ’ after section tag (‘§’)])
 
 AT_NMC_CHECK_FAIL_TRANSFORM([Broken beginning of line],
 [T

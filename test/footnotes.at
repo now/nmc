@@ -128,7 +128,7 @@ AT_NMC_CHECK_FAIL_TRANSFORM([Unrecognized footnote content],
   W¹
 
 ¹ Junk text in this here footnote],
-[5.1-34: unrecognized footnote content: Junk text in this here footnote])
+[5.1-33: unrecognized footnote content: Junk text in this here footnote])
 
 AT_NMC_CHECK_FAIL_TRANSFORM([Unrecognized multi-line footnote content],
 [T
@@ -146,7 +146,7 @@ AT_NMC_CHECK_FAIL_TRANSFORM([Repeated footnote sigil],
 
 ¹ 1 at 2
 ¹ 3 at 4],
-[6.1-9: footnote ¹ already defined at 5.1-9])
+[6.1-8: footnote ¹ already defined at 5.1-8])
 
 AT_NMC_CHECK_FAIL_TRANSFORM([Unreferenced footnotes],
 [T
@@ -155,14 +155,14 @@ AT_NMC_CHECK_FAIL_TRANSFORM([Unreferenced footnotes],
 
 ¹ 1 at 2
 ² 3 at 4],
-[5.1-9: unreferenced footnote: ¹
-6.1-9: unreferenced footnote: ²])
+[5.1-8: unreferenced footnote: ¹
+6.1-8: unreferenced footnote: ²])
 
 AT_NMC_CHECK_FAIL_TRANSFORM([Reference to undefined footnote],
 [T
 
   W¹],
-[3.4-5: reference to undefined footnote: ¹])
+[3:4: reference to undefined footnote: ¹])
 
 AT_NMC_CHECK_FAIL_TRANSFORM([Block-level Reference to undefined footnote defined later],
 [T
@@ -174,7 +174,7 @@ AT_NMC_CHECK_FAIL_TRANSFORM([Block-level Reference to undefined footnote defined
     2¹
 
 ¹ 1 at 2],
-[3.4-5: reference to undefined footnote: ¹])
+[3:4: reference to undefined footnote: ¹])
 
 AT_NMC_CHECK_FAIL_TRANSFORM([Section-level Reference to undefined footnote defined later],
 [T
@@ -188,7 +188,7 @@ AT_NMC_CHECK_FAIL_TRANSFORM([Section-level Reference to undefined footnote defin
     3¹
 
 ¹ 1 at 2],
-[5.6-7: reference to undefined footnote: ¹])
+[5:6: reference to undefined footnote: ¹])
 
 AT_NMC_CHECK_FAIL_TRANSFORM([Many references to undefined footnotes],
 [T
@@ -200,11 +200,11 @@ AT_NMC_CHECK_FAIL_TRANSFORM([Many references to undefined footnotes],
 § S₂
 
     3²],
-[5.6-7: reference to undefined footnote: ¹
-9.6-7: reference to undefined footnote: ²])
+[5:6: reference to undefined footnote: ¹
+9:6: reference to undefined footnote: ²])
 
 AT_NMC_CHECK_FAIL_TRANSFORM([Anchor without preceding node],
 [T
 
   ¹],
-[3.3-4: syntax error, unexpected footnote anchor (¹, ², …), expecting WORD or code inline (‹…›) or emphasized text (/…/) or beginning of grouped text ({…)])
+[3:3: syntax error, unexpected footnote anchor (¹, ², …), expecting WORD or code inline (‹…›) or emphasized text (/…/) or beginning of grouped text ({…)])
