@@ -21,6 +21,17 @@
 #include "unicode.h"
 
 #define YYLTYPE struct nmc_location
+#define YY_LOCATION_PRINT(File, Loc) \
+        location_print(File, Loc)
+
+static unsigned int
+location_print(FILE *out, YYLTYPE location)
+{
+        char *s = nmc_location_str(&location);
+        unsigned int r = fprintf(out, "%s", s);
+        free(s);
+        return r;
+}
 
 struct substring {
         const char *string;
@@ -283,12 +294,6 @@ static void
 locate(struct parser *parser, YYLTYPE *location, const char *begin, size_t length)
 {
         parser->location.last_column += u_width(begin, length) - (length != 0 ? 1 : 0);
-#if 0
-        fprintf(stderr, "%d.%d-%d.%d (%.*s)\n",
-                parser->location.first_line, parser->location.first_column,
-                parser->location.last_line, parser->location.last_column,
-                (int)length, begin);
-#endif
         *location = parser->location;
 }
 
