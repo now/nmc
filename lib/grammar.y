@@ -293,7 +293,8 @@ parser_error(struct parser *parser, YYLTYPE *location,
 static void
 locate(struct parser *parser, YYLTYPE *location, const char *begin, size_t length)
 {
-        parser->location.last_column += u_width(begin, length) - (length != 0 ? 1 : 0);
+        if (length > 0)
+                parser->location.last_column += u_width(begin, length) - 1;
         *location = parser->location;
 }
 
@@ -310,27 +311,20 @@ token(struct parser *parser, YYLTYPE *location, const char *end, int type)
 }
 
 static int
+multitoken(struct parser *parser, YYLTYPE *location, const char *begin,
+           const char *end, int type)
+{
+        locate(parser, location, begin, end - begin);
+        return token(parser, NULL, end, type);
+}
+
+static int
 substring(struct parser *parser, YYLTYPE *location, YYSTYPE *value,
           const char *end, int type)
 {
         value->substring.string = parser->p;
         value->substring.length = end - value->substring.string;
         return token(parser, location, end, type);
-}
-
-static int
-dedent(struct parser *parser, YYLTYPE *location, const char *end)
-{
-        parser->dedents--;
-        return token(parser, location, end, DEDENT);
-}
-
-static int
-dedents(struct parser *parser, const char *begin, size_t spaces)
-{
-        parser->dedents = (parser->indent - spaces) / 2;
-        parser->indent -= 2 * parser->dedents;
-        return dedent(parser, NULL, begin + parser->indent);
 }
 
 typedef bool (*isfn)(uchar);
@@ -403,7 +397,7 @@ text(struct parser *parser, YYLTYPE *location, const char *begin)
 {
         while (*begin == ' ')
                 begin++;
-        const char *sbegin = parser->p;
+        const char *lbegin = parser->p;
         const char *end = begin;
         struct buffer b = BUFFER_INIT;
 
@@ -419,7 +413,7 @@ again:
                     (size_t)(send - (end + 1)) >= parser->indent + 2) {
                         if (!buffer_append(&b, begin, end - begin))
                                 goto oom;
-                        sbegin = end + 1;
+                        lbegin = end + 1;
                         begin = send - 1;
                         end = send;
                         parser->location.last_line++;
@@ -442,13 +436,11 @@ again:
         if (!buffer_append(&b, begin, end - begin))
                 goto oom;
 
-        locate(parser, location, sbegin, end - sbegin);
         // NOTE We use a throwaway type here; caller must return actual type.
-        token(parser, NULL, end, ERROR);
+        multitoken(parser, location, lbegin, end, ERROR);
         return buffer_str(&b);
 oom:
-        locate(parser, location, sbegin, end - sbegin);
-        token(parser, NULL, end, ERROR);
+        multitoken(parser, location, lbegin, end, ERROR);
         free(b.content);
         return NULL;
 }
@@ -788,8 +780,7 @@ codeblock(struct parser *parser, YYLTYPE *location, YYSTYPE *value)
 oom:
         value->node = NULL;
 done:
-        locate(parser, location, lbegin, end - lbegin);
-        return token(parser, NULL, end, CODEBLOCK);
+        return multitoken(parser, location, lbegin, end, CODEBLOCK);
 }
 
 static struct nmc_node *
@@ -962,8 +953,7 @@ figure(struct parser *parser, YYLTYPE *location, YYSTYPE *value)
         n->node.children = alternate;
 oom:
         end = skip_spaces_and_empty_lines(parser, &begin, end);
-        locate(parser, location, begin, end - begin);
-        return token(parser, NULL, end, FIGURE);
+        return multitoken(parser, location, begin, end, FIGURE);
 }
 
 static char *token_name(int type);
@@ -1093,10 +1083,39 @@ bol(struct parser *parser, YYLTYPE *location, YYSTYPE *value)
 }
 
 static int
+indent(struct parser *parser, YYLTYPE *location, const char *begin, int type)
+{
+        parser->bol = true;
+        parser->indent += 2;
+        return multitoken(parser, location, begin, begin + parser->indent, type);
+}
+
+static int
+dedent(struct parser *parser, YYLTYPE *location, const char *begin, const char *end)
+{
+        parser->dedents--;
+        int r = multitoken(parser, location, begin, end, DEDENT);
+        if (parser->dedents > 0)
+                parser->location.last_column--;
+        return r;
+}
+
+static int
+dedents(struct parser *parser, YYLTYPE *location, const char *begin, size_t spaces)
+{
+        parser->location.first_line = parser->location.last_line;
+        parser->dedents = (parser->indent - spaces) / 2;
+        parser->indent -= 2 * parser->dedents;
+        return dedent(parser, location, begin, begin + parser->indent);
+}
+
+static int
 eol(struct parser *parser, YYLTYPE *location, YYSTYPE *value)
 {
         parser->location.last_line++;
+        int first_line = parser->location.first_line;
         parser->location.first_line = parser->location.last_line;
+        int first_column = parser->location.first_column;
         parser->location.first_column = 1;
         parser->location.last_column = 1;
 
@@ -1106,33 +1125,25 @@ eol(struct parser *parser, YYLTYPE *location, YYSTYPE *value)
                 end++;
         if (*end == '\n') {
                 parser->bol = true;
+                int want = parser->want;
+                parser->want = ERROR;
                 end++;
                 parser->location.last_line++;
                 begin = end;
                 end = skip_spaces_and_empty_lines(parser, &begin, end);
                 size_t spaces = end - begin;
-                if ((parser->want == INDENT && spaces >= parser->indent + 2) ||
-                    (parser->want == ITEMINDENT && spaces >= parser->indent + 2 &&
+                if ((want == INDENT && spaces >= parser->indent + 2) ||
+                    (want == ITEMINDENT && spaces >= parser->indent + 2 &&
                      (spaces > parser->indent + 2 || is_bol_symbol(end)))) {
-                        int want = parser->want;
-                        parser->want = ERROR;
-                        parser->indent += 2;
-                        locate(parser, location, begin, parser->indent);
-                        return token(parser, NULL, begin + parser->indent, want);
+                        return indent(parser, location, begin, want);
                 } else if (spaces < parser->indent && spaces % 2 == 0) {
-                        parser->want = ERROR;
-                        locate(parser, location, begin, spaces);
-                        return dedents(parser, begin, spaces);
+                        return dedents(parser, location, begin, spaces);
                 } else if (parser->indent > 0 && spaces == parser->indent &&
                            !is_bol_symbol(end)) {
                         // EXAMPLE An itemization containing multiple
                         // paragraphs followed by a paragraph.
-                        parser->want = ERROR;
-                        parser->location.first_line = parser->location.last_line;
-                        locate(parser, location, begin, spaces + 1);
-                        return dedents(parser, begin, spaces - 2);
+                        return dedents(parser, location, begin, spaces - 2);
                 } else {
-                        parser->want = ERROR;
                         parser->location.first_line = parser->location.last_line;
                         locate(parser, location, begin, parser->indent);
                         parser->p = begin + parser->indent;
@@ -1141,25 +1152,22 @@ eol(struct parser *parser, YYLTYPE *location, YYSTYPE *value)
         } else {
                 size_t spaces = end - begin;
                 if (parser->want == ITEMINDENT && spaces == parser->indent + 2) {
-                        parser->bol = true;
                         parser->want = ERROR;
-                        parser->indent += 2;
-                        locate(parser, location, begin, parser->indent);
-                        return token(parser, NULL, begin + parser->indent, ITEMINDENT);
+                        return indent(parser, location, begin, ITEMINDENT);
                 } else if (spaces > parser->indent) {
-                        locate(parser, location, begin, spaces + 1);
+                space:
+                        parser->location.first_line = first_line;
+                        parser->location.first_column = first_column;
                         parser->location.last_column--;
-                        return substring(parser, NULL, value, end, SPACE);
+                        return substring(parser, location, value, end, SPACE);
                 } else if (spaces < parser->indent) {
-                        locate(parser, location, begin, spaces + 1);
-                        parser->location.last_column--;
                         if (spaces % 2 != 0)
-                                return substring(parser, NULL, value, end, SPACE);
+                                goto space;
                         parser->bol = true;
-                        return dedents(parser, begin, spaces);
+                        return dedents(parser, location, begin, spaces);
                 } else {
-                       parser->p = end;
-                       return bol(parser, location, value);
+                        parser->p = end;
+                        return bol(parser, location, value);
                 }
         }
 }
@@ -1356,7 +1364,7 @@ static int
 parser_lex(struct parser *parser, YYLTYPE *location, YYSTYPE *value)
 {
         if (parser->dedents > 0)
-                return dedent(parser, location, parser->p);
+                return dedent(parser, location, parser->p, parser->p);
 
         if (parser->bol)
                 return bol(parser, location, value);
