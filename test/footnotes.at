@@ -146,23 +146,24 @@ AT_NMC_CHECK_FAIL_TRANSFORM([Repeated footnote sigil],
 
 ¹ 1 at 2
 ¹ 3 at 4],
-[6.1-8: footnote ¹ already defined at 5.1-8])
+[6.1-8: redefinition of footnote ‘¹’
+5.1-8: previous definition of footnote ‘¹’ was here])
 
-AT_NMC_CHECK_FAIL_TRANSFORM([Unreferenced footnotes],
+AT_NMC_CHECK_FAIL_TRANSFORM([Unused footnotes],
 [T
 
   W
 
 ¹ 1 at 2
 ² 3 at 4],
-[5.1-8: unreferenced footnote: ¹
-6.1-8: unreferenced footnote: ²])
+[5.1-8: footnote ‘¹’ defined but not used
+6.1-8: footnote ‘²’ defined but not used])
 
 AT_NMC_CHECK_FAIL_TRANSFORM([Reference to undefined footnote],
 [T
 
   W¹],
-[3:4: reference to undefined footnote: ¹])
+[3:4: undefined footnote ‘¹’])
 
 AT_NMC_CHECK_FAIL_TRANSFORM([Block-level Reference to undefined footnote defined later],
 [T
@@ -174,7 +175,7 @@ AT_NMC_CHECK_FAIL_TRANSFORM([Block-level Reference to undefined footnote defined
     2¹
 
 ¹ 1 at 2],
-[3:4: reference to undefined footnote: ¹])
+[3:4: undefined footnote ‘¹’])
 
 AT_NMC_CHECK_FAIL_TRANSFORM([Section-level Reference to undefined footnote defined later],
 [T
@@ -188,7 +189,7 @@ AT_NMC_CHECK_FAIL_TRANSFORM([Section-level Reference to undefined footnote defin
     3¹
 
 ¹ 1 at 2],
-[5:6: reference to undefined footnote: ¹])
+[5:6: undefined footnote ‘¹’])
 
 AT_NMC_CHECK_FAIL_TRANSFORM([Many references to undefined footnotes],
 [T
@@ -200,8 +201,8 @@ AT_NMC_CHECK_FAIL_TRANSFORM([Many references to undefined footnotes],
 § S₂
 
     3²],
-[5:6: reference to undefined footnote: ¹
-9:6: reference to undefined footnote: ²])
+[5:6: undefined footnote ‘¹’
+9:6: undefined footnote ‘²’])
 
 AT_NMC_CHECK_FAIL_TRANSFORM([Anchor without preceding node],
 [T

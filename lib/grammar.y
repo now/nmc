@@ -283,6 +283,12 @@ static void
 locate(struct parser *parser, YYLTYPE *location, const char *begin, size_t length)
 {
         parser->location.last_column += u_width(begin, length) - (length != 0 ? 1 : 0);
+#if 0
+        fprintf(stderr, "%d.%d-%d.%d (%.*s)\n",
+                parser->location.first_line, parser->location.first_column,
+                parser->location.last_line, parser->location.last_column,
+                (int)length, begin);
+#endif
         *location = parser->location;
 }
 
@@ -1464,7 +1470,7 @@ clear_anchors(struct parser *parser)
         struct nmc_parser_error *first = NULL, *previous = NULL, *last = NULL;
         list_for_each_safe(struct anchor, p, n, parser->anchors) {
                 first = nmc_parser_error_new(&p->location,
-                                             "reference to undefined footnote: %s",
+                                             "undefined footnote ‘%s’",
                                              p->id.string);
                 if (first == NULL) {
                         nmc_parser_error_free(previous);
@@ -1507,7 +1513,7 @@ update_anchors(struct parser *parser, struct footnote *footnote)
                         p = c;
         }
         return found || parser_error(parser, &footnote->location,
-                                     "unreferenced footnote: %s",
+                                     "footnote ‘%s’ defined but not used",
                                      footnote->id.string);
 }
 
@@ -1532,16 +1538,14 @@ fibling(struct parser *parser, struct footnote *footnotes, struct footnote *foot
         struct footnote *last;
         list_for_each(struct footnote, p, footnotes) {
                 if (id_eq(&footnote->id, &p->id)) {
-                        char *s = nmc_location_str(&p->location);
-                        if (s == NULL)
-                                return NULL;
                         if (!parser_error(parser, &footnote->location,
-                                          "footnote %s already defined at %s",
-                                          p->id.string, s)) {
-                                free(s);
+                                          "redefinition of footnote ‘%s’",
+                                          p->id.string))
                                 return NULL;
-                        }
-                        free(s);
+                        if (!parser_error(parser, &p->location,
+                                          "previous definition of footnote ‘%s’ was here",
+                                          p->id.string))
+                                return NULL;
                         footnote_free1(footnote);
                         return footnotes;
                 }
