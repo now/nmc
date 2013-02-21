@@ -545,103 +545,110 @@ node_data_free(struct nmc_node_data *data)
 }
 
 static struct nmc_data_node *
-data_node_add_matchesv(struct nmc_data_node *node,
-                       const char *buffer, regmatch_t *matches, int n,
-                       va_list args)
+data_node_set(struct nmc_data_node *node, size_t index,
+              const char *name, char *value)
+{
+        node->data->data[index].name = name;
+        node->data->data[index].value = value;
+        if (node->data->data[index].value == NULL) {
+                nmc_node_free((struct nmc_node *)node);
+                return NULL;
+        }
+        return node;
+}
+
+static struct nmc_data_node *
+data_node_set_match(struct nmc_data_node *node, size_t index,
+                    const char *name, const char *buffer, regmatch_t *match)
+{
+        assert(match->rm_so != -1);
+        assert(match->rm_eo != -1);
+        if (data_node_set(node, index, name,
+                          mstrdup(buffer + match->rm_so,
+                                  match->rm_eo - match->rm_so)) == NULL)
+                return NULL;
+        return node;
+}
+
+struct data_mapping {
+        const char *name;
+        int index;
+};
+
+static struct nmc_data_node *
+data_node_add_matches(struct nmc_data_node *node,
+                      const char *buffer, regmatch_t *matches,
+                      struct data_mapping *mappings)
 {
         if (node == NULL)
                 return NULL;
-        regmatch_t *m = &matches[1];
-        struct nmc_node_datum *d = node->data->data;
-        for (int i = 0; i < n; i++) {
-                assert(m->rm_so != -1);
-                assert(m->rm_eo != -1);
-                d->name = va_arg(args, const char *);
-                d->value = mstrdup(buffer + m->rm_so, m->rm_eo - m->rm_so);
-                if (d->value == NULL) {
-                        node_data_free(node->data);
-                        free(node);
-                        return NULL;
+        size_t d = 0;
+        for (struct data_mapping *p = mappings; p->name != NULL; p++) {
+                int i = p->index;
+                if (i < 0) {
+                        i = -i;
+                        if (matches[i].rm_so == -1 || matches[i].rm_eo == -1)
+                                continue;
                 }
-                m++;
+                if (data_node_set_match(node, d, p->name, buffer, &matches[i]) == NULL)
+                        return NULL;
                 d++;
         }
         return node;
 }
 
 static struct nmc_data_node *
-data_node_add_matches(struct nmc_data_node *node,
-                      const char *buffer, regmatch_t *matches, int n, ...)
+data_node_new_matches(enum nmc_node_name name, size_t n,
+                      const char *buffer, regmatch_t *matches,
+                      struct data_mapping *mappings)
 {
-        va_list args;
-        va_start(args, n);
-        struct nmc_data_node *r =
-                data_node_add_matchesv(node, buffer, matches, n, args);
-        va_end(args);
-        return r;
-}
-
-static struct nmc_data_node *
-data_node_new_matches(enum nmc_node_name name,
-                      const char *buffer, regmatch_t *matches, int n, ...)
-{
-        va_list args;
-        va_start(args, n);
-        struct nmc_data_node *r =
-                data_node_add_matchesv(data_node_new(name, n),
-                                       buffer, matches, n, args);
-        va_end(args);
-        return r;
-}
-
-static struct nmc_data_node *
-data_node_new_link(size_t n, const char *buffer, regmatch_t *matches)
-{
-        return data_node_add_matches(data_node_new(NMC_NODE_LINK, n),
-                                     buffer, matches, 2, "title", "uri");
+        return data_node_add_matches(data_node_new(name, n), buffer, matches,
+                                     mappings);
 }
 
 static struct nmc_data_node *
 abbreviation(const char *buffer, regmatch_t *matches)
 {
-        return data_node_new_matches(NMC_NODE_ABBREVIATION, buffer, matches,
-                                     1, "for");
+        return data_node_new_matches(NMC_NODE_ABBREVIATION, 1, buffer, matches,
+                                     (struct data_mapping[]){
+                                             { "for", 1 },
+                                             { NULL, 0 }
+                                     });
+}
+
+static struct nmc_data_node *
+data_node_new_link(size_t n, const char *buffer, regmatch_t *matches,
+                   int *indexes)
+{
+        return data_node_new_matches(NMC_NODE_LINK, n, buffer, matches,
+                                     (struct data_mapping []){
+                                             { "title", indexes[0] },
+                                             { "uri", indexes[1] },
+                                             { NULL, 0 }
+                                     });
 }
 
 static struct nmc_data_node *
 inline_figure(const char *buffer, regmatch_t *matches)
 {
-        bool alternate = matches[3].rm_so != -1;
+        bool alternate = matches[4].rm_so != -1;
         struct nmc_data_node *d =
-                data_node_new_link(3 + (alternate ? 1 : 0), buffer, matches);
-        if (d == NULL)
+                data_node_new_link(3 + (alternate ? 1 : 0), buffer, matches,
+                                   (int[]){ 1, 2 });
+        if (d == NULL ||
+            data_node_set(d, 2, "relation", mstrdup("figure", 6)) == NULL ||
+            (alternate &&
+             data_node_set_match(d, 3, "relation-data", buffer, &matches[4]) == NULL))
                 return NULL;
-        d->data->data[2].name = "relation";
-        d->data->data[2].value = mstrdup("figure", 6);
-        if (d->data->data[2].value == NULL) {
-                node_data_free(d->data);
-                free(d);
-                return NULL;
-        }
-        if (!alternate)
-                return d;
-        assert(matches[4].rm_so != -1);
-        assert(matches[4].rm_eo != -1);
-        d->data->data[3].name = "relation-data";
-        d->data->data[3].value = mstrdup(buffer + matches[4].rm_so,
-                                         matches[4].rm_eo - matches[4].rm_so);
-        if (d->data->data[3].value == NULL) {
-                node_data_free(d->data);
-                free(d);
-                return NULL;
-        }
         return d;
 }
 
 static struct nmc_data_node *
 link(const char *buffer, regmatch_t *matches)
 {
-        return data_node_new_link(2, buffer, matches);
+        return data_node_new_link(1 + (matches[6].rm_so != -1 ||
+                                       matches[4].rm_so != -1 ? 1 : 0), buffer, matches,
+                                  (int[]){ matches[6].rm_so != -1 ? 6 : -4, 8 });
 }
 
 static bool
@@ -649,7 +656,7 @@ definitions_init(struct nmc_error *error)
 {
         if (definitions != NULL)
                 return true;
-        return  definitions_push("^(.+) +at +([^ ]+)", link, error) &&
+        return  definitions_push("^(See +((the +)?(.+)(:| +at) +)?|(.+)(:| +at) +)([^ ]+)", link, error) &&
                 definitions_push("^(.+), +see +([^ ]+)( +\\((.+)\\))?", inline_figure, error) &&
                 definitions_push("^Abbreviation +for +(.+)", abbreviation, error);
 }

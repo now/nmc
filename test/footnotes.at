@@ -38,9 +38,27 @@ AT_NMC_CHECK_TRANSFORM([Link],
 
   Abbr¹
 
+¹ Wikipedia entry for “Abbreviation” at http://en.wikipedia.org/wiki/Abbreviation],
+[  <title>T</title>
+  <p><link title="Wikipedia entry for “Abbreviation”" uri="http://en.wikipedia.org/wiki/Abbreviation">Abbr</link></p>])
+
+AT_NMC_CHECK_TRANSFORM([See link with title],
+[T
+
+  Abbr¹
+
 ¹ See the Wikipedia entry for “Abbreviation” at http://en.wikipedia.org/wiki/Abbreviation],
 [  <title>T</title>
-  <p><link title="See the Wikipedia entry for “Abbreviation”" uri="http://en.wikipedia.org/wiki/Abbreviation">Abbr</link></p>])
+  <p><link title="Wikipedia entry for “Abbreviation”" uri="http://en.wikipedia.org/wiki/Abbreviation">Abbr</link></p>])
+
+AT_NMC_CHECK_TRANSFORM([See link],
+[T
+
+  Abbr¹
+
+¹ See  http://en.wikipedia.org/wiki/Abbreviation],
+[  <title>T</title>
+  <p><link uri="http://en.wikipedia.org/wiki/Abbreviation">Abbr</link></p>])
 
 AT_NMC_CHECK_TRANSFORM([Multiple footnotes],
 [T
