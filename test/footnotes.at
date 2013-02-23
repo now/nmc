@@ -56,9 +56,18 @@ AT_NMC_CHECK_TRANSFORM([See link],
 
   Abbr¹
 
-¹ See  http://en.wikipedia.org/wiki/Abbreviation],
+¹ See http://en.wikipedia.org/wiki/Abbreviation],
 [  <title>T</title>
   <p><link uri="http://en.wikipedia.org/wiki/Abbreviation">Abbr</link></p>])
+
+AT_NMC_CHECK_TRANSFORM([See link],
+[T
+
+  Abbr¹
+
+¹ See A: B: C],
+[  <title>T</title>
+  <p><link title="A: B" uri="C">Abbr</link></p>])
 
 AT_NMC_CHECK_TRANSFORM([Multiple footnotes],
 [T

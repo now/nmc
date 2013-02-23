@@ -397,17 +397,30 @@
       Links are defined using footnotes.  You can, for example, link to
       http://example.com¹ by writing
 
-    ¹ Visit IANA’s example domain page at http://example.com/
+    ¹ See IANA’s Example Domain at http://example.com/
 
           Links are defined using footnotes.  You can, for example, link to
           http://example.com¹ by writing
 
-        ¹ Visit IANA’s example domain page at http://example.com/
+        ¹ See IANA’s Example Domain at http://example.com/
 
-      Link definitions are rather free-form.  They contain a title, which can
-      be any string, followed by the word “at”, followed by a non-empty
-      sequence of non-space characters that constitute the uniform resource
-      identifier (URI) that the link should point to.
+      Link definitions come in a couple of varieties.  You can write any of the
+      following:
+
+    •   IANA’s Example Domain at http://example.com/
+    •   IANA’s Example Domain: http://example.com/
+    •   See IANA’s Example Domain at http://example.com/
+    •   See IANA’s Example Domain: http://example.com/
+    •   See the IANA Example Domain at http://example.com/
+    •   See the IANA Example Domain: http://example.com/
+    •   See http://example.com/
+
+      The text ahead of the final “ at ” or “: ” before the URI¹ is the link’s
+      title, minus any leading “See ” or “See the ”.  The last variant doesn’t
+      have a title.  The URI is of course the URI that the link should point
+      to.
+
+    ¹ Abbreviation for Uniform Resource Identifier
 
 § Installation Instructions
 
@@ -418,7 +431,7 @@
     via a package manager, as it’ll have all this covered for you.
 
 ¹ See the RELAX NG home page at http://relaxng.org/
-² XSL Transformations (XSLT) Version 1.0 at http://www.w3.org/TR/xslt
+² See XSL Transformations (XSLT) Version 1.0: http://www.w3.org/TR/xslt
 
 § Command-line Interface
 
@@ -455,10 +468,10 @@
 
       % man 7 nmt
 
-¹ Read up on HTML5 at http://www.w3.org/TR/html-markup/
-² Xsltproc belongs to libxslt at http://www.xmlsoft.org/
+¹ See HTML: The Markup Language: http://www.w3.org/TR/html-markup/
+² See the XML C parser and toolkit of Gnome: http://www.xmlsoft.org/
 
-§   XSL Templates
+§ XSL Templates
 
     The section on the command-line interface introduced the XSL templates that
     are come with the NoMarks distribution.  This section expands on their use
@@ -499,13 +512,13 @@
       functionality of the stylesheet the same between versions, but the “API⁷”
       is still in flux, so things may break.
 
-  ¹ Read up on HTML5 at http://www.w3.org/TR/html-markup/
+  ¹ See HTML: The Markup Language: http://www.w3.org/TR/html-markup/
   ² Abbreviation for Cascading Style Sheets
-  ³ Cascading Style Sheets home page at
+  ³ See the Cascading Style Sheets home page at
     http://www.w3.org/Style/CSS/Overview.en.html
-  ⁴ EXSLT – Common at http://www.exslt.org/exsl/
-  ⁵ EXSLT – Functions at http://www.exslt.org/func/
-  ⁶ Xsltproc belongs to libxslt at http://www.xmlsoft.org/
+  ⁴ See EXSLT – Common at http://www.exslt.org/exsl/
+  ⁵ See EXSLT – Functions at http://www.exslt.org/func/
+  ⁶ See the XML C parser and toolkit of Gnome: http://www.xmlsoft.org/
   ⁷ Abbreviation for Application Programming Interface
 
   § Manual Pages
@@ -561,10 +574,10 @@
       Xsltproc again implements these and is known to process the stylesheet
       correctly.
 
-  ¹ EXSLT – Common at http://www.exslt.org/exsl/
-  ² EXSLT – Dates And Times at http://www.exslt.org/dates-and-times/
-  ³ EXSLT – Functions at http://www.exslt.org/func/
-  ⁴ EXSLT – Strings at http://www.exslt.org/str/
+  ¹ See EXSLT – Common: http://www.exslt.org/exsl/
+  ² See EXSLT – Dates And Times: http://www.exslt.org/dates-and-times/
+  ³ See EXSLT – Functions: http://www.exslt.org/func/
+  ⁴ See EXSLT – Strings: http://www.exslt.org/str/
 
 § Validation
 
@@ -579,7 +592,7 @@
         README.nml
 
 ¹ See the RELAX NG home page at http://relaxng.org/
-² Jing – A RELAX NG validator in Java at
+² See Jing – A RELAX NG validator in Java at
   http://www.thaiopensource.com/relaxng/jing.html
 
 § Development Dependencies
@@ -608,19 +621,19 @@
     additional warnings that help ensure that the source stays both correct and
     conformant.
 
-¹ Read more about Autoconf at http://www.gnu.org/software/autoconf/
-² Check out the Automake homepage at http://www.gnu.org/software/automake/
-³ Find more information on Bison at http://www.gnu.org/software/bison/
-⁴ Xsltproc belongs to libxslt at http://www.xmlsoft.org/
-⁵ Visit Wget’s homepage at http://www.gnu.org/software/wget/
-⁶ Review the Unicode data files at http://www.unicode.org/Public/UNIDATA/
-⁷ More information on Valgrind at http://valgrind.org/
+¹ Autoconf: http://www.gnu.org/software/autoconf/
+² Automake: http://www.gnu.org/software/automake/
+³ Bison: http://www.gnu.org/software/bison/
+⁴ Xsltproc: http://www.xmlsoft.org/
+⁵ Wget: http://www.gnu.org/software/wget/
+⁶ Unicode repository: http://www.unicode.org/Public/UNIDATA/
+⁷ Valgrind: http://valgrind.org/
 
 § Build Dependencies
 
     The C source code requires a C99-compliant compiler, for example, GCC¹.
 
-  ¹ Read more about GCC at http://www.gnu.org/software/gcc/
+  ¹ See http://www.gnu.org/software/gcc/
 
 § Runtime Dependencies
 
@@ -630,13 +643,13 @@
     templates require (common, dates-and-times, functions, strings) and is
     widely available.
 
-  ¹ Xsltproc belongs to libxslt at http://www.xmlsoft.org/
+  ¹ See http://www.xmlsoft.org/
 
 § Reporting Bugs
 
     Please report any bugs that you encounter to the {issue tracker}¹.
 
-  ¹ Report NMC bugs to the issue tracker at https://github.com/now/nmc/issues
+  ¹ See https://github.com/now/nmc/issues
 
 § Authors
 
