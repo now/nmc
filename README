@@ -345,7 +345,8 @@
       seen as special for NoMarks, as long as it makes sense to mark them as
       code.  The end character, ‘›’, can occur at the end of a code inline, for
       example, ‹‹code is written like this››, by following the last ‘›’ by
-      another ‘›’.
+      another ‘›’.  Juxtaposed code inlines are merged, so ‹‹a›››‹‹b›› becomes
+      ‹a››‹b›.
 
   § Emphasis
 
