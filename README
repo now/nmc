@@ -258,6 +258,10 @@
       fact, having blocks in your lists at all is sort of messy, but let’s not
       digress…)
 
+      Footnotes nest all the way to the outermost section level.  To be
+      specific, content is checked for missing footnotes before the first level
+      1 section, then after each level 1 section.
+
   § Figures
 
       Figures may be used to place content to the right or left of the current
