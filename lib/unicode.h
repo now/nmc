@@ -2,6 +2,7 @@ typedef int32_t uchar;
 
 bool uc_issolid(uchar c);
 bool uc_isaletterornumeric(uchar c);
+bool uc_isformatorextend(uchar c);
 
 bool u_isafteraletterornumeric(const char *string, const char *p);
 void u_word_breaks(const char *string, size_t n, bool *breaks);

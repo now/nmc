@@ -1200,24 +1200,26 @@ is_inline_symbol(const char *end)
         }
 }
 
-static inline bool
-is_word_end(const char *string, const char *end)
-{
-        uchar c;
-        size_t l;
-        return is_space_or_end(end) ||
-                (is_inline_symbol(end) &&
-                 !u_isafteraletterornumeric(string, end)) ||
-                (((c = u_lref(end, &l)) == '}' ||
-                  (is_superscript(c) && (l += superscript(string + l), true))) &&
-                 !uc_isaletterornumeric(u_dref(end + l)));
-}
-
 static inline int
 word(struct parser *parser, YYLTYPE *location, YYSTYPE *value, const char *end)
 {
-        while (!is_word_end(parser->p, end))
-                end++;
+        while (true) {
+                if (is_space_or_end(end))
+                        break;
+                size_t l;
+                uchar c = u_lref(end, &l);
+                if ((c == '}' ||
+                     (is_superscript(c) && (l += superscript(end + l), true))) &&
+                    !uc_isaletterornumeric(u_dref(end + l)))
+                        break;
+                end += l;
+                if (!uc_isaletterornumeric(c) && !(c == ':' || c == '/')) {
+                        while (uc_isformatorextend(u_lref(end, &l)))
+                                end += l;
+                        if (is_inline_symbol(end))
+                                break;
+                }
+        }
         if (end == parser->p)
                 return token(parser, location, parser->p, END);
         return substring(parser, location, value, end, WORD);
@@ -1232,7 +1234,7 @@ quoted(struct parser *parser, YYLTYPE *location, YYSTYPE *value)
         const char *nend;
         if (is_end(end) ||
             (u_dref(nend = u_next(end)) != U_SINGLE_RIGHT_QUOTATION_MARK))
-                return word(parser, location, value, end);
+                return word(parser, location, value, parser->p);
         return substring(parser, location, value, nend, WORD);
 }
 

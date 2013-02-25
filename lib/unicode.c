@@ -99,6 +99,18 @@ uc_isaletterornumeric(uchar c)
         }
 }
 
+bool
+uc_isformatorextend(uchar c)
+{
+        switch (s_word_break(c)) {
+        case UNICODE_WORD_BREAK_FORMAT:
+        case UNICODE_WORD_BREAK_EXTEND:
+                return true;
+        default:
+                return false;
+        }
+}
+
 char *
 u_prev_s(const char *string, const char *p)
 {

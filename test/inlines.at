@@ -193,3 +193,10 @@ AT_NMC_CHECK_TRANSFORM([Inline start/termination rules: (…)],
   (/Parenthetical./)],
 [  <title>T</title>
   <p>(<emphasis>Parenthetical.</emphasis>)</p>])
+
+AT_NMC_CHECK_TRANSFORM([Inline non-start rules: http://…],
+[T
+
+  http://example.com],
+[  <title>T</title>
+  <p>http://example.com</p>])
