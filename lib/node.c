@@ -298,6 +298,8 @@ static struct {
         [NMC_NODE_ABBREVIATION] = { NAME("abbreviation"), data },
         [NMC_NODE_LINK] = { NAME("link"), data },
         [NMC_NODE_TEXT] = { NULL, 0, text_enter, NULL },
+        [NMC_NODE_BUFFER] = { NAME("buffer"), NULL, NULL },
+        [NMC_NODE_ANCHOR] = { NAME("anchor"), NULL, NULL },
 #undef NAME
 #undef indenting_block
 #undef text_block
@@ -376,4 +378,10 @@ nmc_node_xml(struct nmc_node *node, struct nmc_output *output, struct nmc_error 
                                   (nmc_node_traverse_fn)xml_leave, &closure,
                                   error) &&
                 outc(&closure, '\n');
+}
+
+const char *
+nmc_node_name(struct nmc_node *node)
+{
+        return names[node->name].name;
 }

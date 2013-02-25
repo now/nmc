@@ -141,6 +141,7 @@ void nmc_node_traverse_r(struct nmc_node *node, nmc_node_traverse_fn enter,
 void nmc_node_free(struct nmc_node *node);
 bool nmc_node_xml(struct nmc_node *node, struct nmc_output *output,
                   struct nmc_error *error);
+const char *nmc_node_name(struct nmc_node *node);
 
 struct nmc_location {
         int first_line;

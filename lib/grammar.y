@@ -211,20 +211,20 @@ static void nmc_node_unlink_and_free(struct nmc_node *node, struct parser *parse
         struct footnote *footnote;
 }
 
-%printer { fprintf(yyoutput, "%.*s", (int)$$.length, $$.string); } <substring>
+%printer { YYFPRINTF(yyoutput, "%.*s", (int)$$.length, $$.string); } <substring>
 %printer {
         if ($$.first != NULL) {
-                fprintf(yyoutput, "first: %d", $$.first->name);
+                YYFPRINTF(yyoutput, "%s", nmc_node_name($$.first));
                 if ($$.last != NULL)
-                        fprintf(yyoutput, ", last: %d", $$.last->name);
+                        YYFPRINTF(yyoutput, "…%s", nmc_node_name($$.last));
         }
 } <nodes>
-%printer { fprintf(yyoutput, "%d", $$->name); } <node>
+%printer { YYFPRINTF(yyoutput, "%s", nmc_node_name($$)); } <node>
 %printer {
         if ($$->node != NULL)
-                fprintf(yyoutput, "%s %d", $$->id.string, $$->node->node.node.name);
+                YYFPRINTF(yyoutput, "%s %s", $$->id.string, nmc_node_name(&$$->node->node.node));
         else
-                fprintf(yyoutput, "%s (unrecognized)", $$->id.string);
+                YYFPRINTF(yyoutput, "%s (unrecognized)", $$->id.string);
 } <footnote>
 
 %destructor { nmc_node_unlink_and_free($$.first, parser); } <nodes>
