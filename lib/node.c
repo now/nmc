@@ -263,7 +263,7 @@ static struct {
         size_t length;
         xmltraversefn enter;
         xmltraversefn leave;
-} types[] = {
+} names[] = {
 #define indenting_block indenting_block_enter, indenting_block_leave
 #define text_block text_block_enter, leave
 #define block block_enter, leave
@@ -309,8 +309,8 @@ static struct {
 static bool
 inline_enter(struct nmc_node *node, struct xml_closure *closure)
 {
-        return element_start(closure, types[node->name].name,
-                             types[node->name].length) &&
+        return element_start(closure, names[node->name].name,
+                             names[node->name].length) &&
                 text_enter(node, closure);
 }
 
@@ -333,8 +333,8 @@ static bool
 data_enter(struct nmc_data_node *node, struct xml_closure *closure)
 {
         return outc(closure, '<') &&
-                outs(closure, types[node->node.node.name].name,
-                     types[node->node.node.name].length) &&
+                outs(closure, names[node->node.node.name].name,
+                     names[node->node.node.name].length) &&
                 outattributes(closure, node->data->data) &&
                 outc(closure, '>');
 }
@@ -343,27 +343,27 @@ static bool
 block_enter(struct nmc_node *node, struct xml_closure *closure)
 {
         return indent(closure, closure->indent) &&
-                element_start(closure, types[node->name].name,
-                              types[node->name].length);
+                element_start(closure, names[node->name].name,
+                              names[node->name].length);
 }
 
 static bool
 leave(struct nmc_node *node, struct xml_closure *closure)
 {
-        return element_end(closure, types[node->name].name,
-                           types[node->name].length);
+        return element_end(closure, names[node->name].name,
+                           names[node->name].length);
 }
 
 static bool
 xml_enter(struct nmc_node *node, struct xml_closure *closure)
 {
-        return types[node->name].enter(node, closure);
+        return names[node->name].enter(node, closure);
 }
 
 static bool
 xml_leave(struct nmc_node *node, struct xml_closure *closure)
 {
-        return types[node->name].leave(node, closure);
+        return names[node->name].leave(node, closure);
 }
 
 bool
