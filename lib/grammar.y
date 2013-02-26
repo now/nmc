@@ -1703,12 +1703,6 @@ blockssections0: blocks
 sections0: footnotedsection { clear_anchors(parser); $$ = nodes($1); }
 | sections0 { clear_anchors(parser); } footnotedsection { $$ = sibling($1, $3); };
 
-/*footnotedsection0: section0
-| section0 footnotes { M($$ = reference(parser, &$2) ? $1 : NULL); };
-
-section0: SECTION { parser->want = INDENT; } title oblockssections { M($$ = parent_children(NMC_NODE_SECTION, $3, $4)); };
-*/
-
 blockssections: blocks
 | blocks sections { $$ = siblings($1, $2); }
 | sections;
