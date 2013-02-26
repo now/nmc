@@ -45,7 +45,7 @@
       elements.  The first paragraph of this document was thus written as
 
           NoMarks is a typesetting language without any markups or markdowns.  That’s
-          strictly not true, as it employs various symbols to define the structure, but
+          not strictly true, as it employs various symbols to define the structure, but
 
       Actually, this indention rule is common for all block elements.  Thus,
       the current indention tells you how deeply you are nested and tells an
@@ -64,7 +64,7 @@
       written as
 
                   NoMarks is a typesetting language without any markups or markdowns.  That’s
-                  strictly not true, as it employs various symbols to define the structure, but
+                  not strictly true, as it employs various symbols to define the structure, but
 
       Any blank lines “between” what would otherwise be seen as separate code
       blocks are included in the first code block, so they don’t require any
@@ -133,8 +133,8 @@
       The above list of definitions was thus written as
 
         = Definitions. = A list of definitions consist of one definition or more.
-        = Definition. = A definition consists of a term followed by one more blocks
-          that define the meaning of the term.
+        = Definition. = A definition consists of a term followed by one more
+          blocks that define the meaning of the term.
         = Term. = A term consists of a “= ” tag in the indent followed by
           unprocessed text up until a terminating “. = ”.
 
