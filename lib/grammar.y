@@ -1384,10 +1384,9 @@ parser_lex(struct parser *parser, YYLTYPE *location, YYSTYPE *value)
         uchar c = u_lref(parser->p, &length);
         switch (c) {
         case ' ': {
-                const char *end = parser->p;
-                do {
+                const char *end = parser->p + length;
+                while (*end == ' ')
                         end++;
-                } while (*end == ' ');
                 return substring(parser, location, value, end, SPACE);
         }
         case '\n':
