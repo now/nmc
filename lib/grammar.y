@@ -764,12 +764,14 @@ codeblock(struct parser *parser, YYLTYPE *location, YYSTYPE *value)
                 size_t lines = 1;
                 const char *sbegin = end + 1;
                 const char *send = sbegin;
-                while (*send == ' ' || *send == '\n') {
-                        if (*send == '\n') {
-                                lines++;
-                                sbegin = send + 1;
-                        }
-                        send++;
+                while (true) {
+                        while (*send == ' ')
+                                send++;
+                        if (*send != '\n')
+                                break;
+                        lines++;
+                        sbegin = send + 1;
+                        send = sbegin;
                 }
                 if ((size_t)(send - sbegin) < parser->indent + 4)
                         break;
