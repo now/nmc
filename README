@@ -1,20 +1,36 @@
                                    NoMarks
 
-  NoMarks is a typesetting language without any markups or markdowns.  That’s
-  not strictly true, as it employs various symbols to define the structure, but
-  it doesn’t try to overprice nor underprice you by trying its hardest to be as
-  unambigiuous as possible in how it treats your content.  This is achieved by
-  using indentation for structural nesting and placing various symbols (or,
-  well, marks) in said indentation to define what content follows.  This is of
-  course similar to how, for example, Markdown works.  The difference is that a
-  symbol appearing at the beginning of the textual content of a line can never
-  be misinterpreted as a symbol/mark.  The indentation also makes it easy to
-  see what level of nesting you’re content is at, making it easy to navigate.
-  Some symbols are also treated as special in inline content.  Here, too,
-  NoMarks tries very hard to make processing unambiguous.  To stay true to this
-  goal, there’s no escape mechanism using backslashes or similar.  But let’s
-  not waste any more time with this rather informal introduction.  Instead,
-  let’s look at the constructs that make up NoMarks.
+  NoMarks is a {“Lightweight markup language”} without any markups or
+  markdowns.  That’s not strictly true, as it employs various symbols to define
+  the structure, but it doesn’t try to overprice nor underprice you by trying
+  its hardest to be as unambiguous as possible in how it treats your content.
+  This is achieved by using indentation for structural nesting and placing
+  various symbols (or, well, marks) in said indentation to define what content
+  follows.  This is of course similar to how, for example, Markdown² works.
+  The difference is that a symbol appearing at the beginning of the textual
+  content of a line can never be misinterpreted as a symbol/mark.  The
+  indentation also makes it easy to see what level of nesting you’re content is
+  at, making it easy to navigate.  Some symbols are also treated as special in
+  inline content.  Here, too, NoMarks tries very hard to make processing
+  unambiguous.  To stay true to this goal, there’s no escape mechanism using
+  backslashes or similar.  But let’s not waste any more time with this rather
+  informal introduction.  Instead, let’s look at the constructs that make up
+  NoMarks.  But (!) first, lets clear up some possible confusions about the
+  NoMarks name.  NoMarks consists of a couple of components and may name any of
+  them at any time.  We have
+
+= NoMarks, the language. = The language used in input documents.
+= NoMarks, the converter. = The software that turns documents written in the
+    NoMarks language into NoMarks-specific XML documents.
+= NoMarks, the distribution. = The software and all supporting content.
+= NoMarks, the project. = The project that encapsulates the above components,
+    and more.
+
+  In this document, the NoMarks name may stand alone when it’s obvious from the
+  context what it means, but most often refers to /NoMarks, the language/.
+
+¹ See http://en.wikipedia.org/wiki/Lightweight_markup_language
+² See http://daringfireball.net/projects/markdown/
 
 § Block Structures
 
@@ -38,17 +54,20 @@
 
   § Paragraphs
 
-      A paragraph consists of one or more lines indented by 2×n spaces, where
-      /n/ is the current section level (nesting) followed by 2 additional
-      spaces, making up the tag of the content that follows.  A “tag” defines
-      what content follows and is seen at the beginning of all block-level
-      elements.  The first paragraph of this document was thus written as
+      A paragraph consists of one or more lines indented by 2×n
+      spaces, where /n/ is the current section level (nesting)
+      followed by 2 additional spaces, making up the tag of the
+      content that follows.  A “tag” defines what content follows and is seen
+      at the beginning of all block-level elements.  This paragraph was thus
+      written as
 
-          NoMarks is a typesetting language without any markups or markdowns.  That’s
-          not strictly true, as it employs various symbols to define the structure, but
+          A paragraph consists of one or more lines indented by 2×n
+          spaces, where /n/ is the current section level (nesting)
+          followed by 2 additional spaces, making up the tag of the
+          content that follows. …
 
       Actually, this indention rule is common for all block elements.  Thus,
-      the current indention tells you how deeply you are nested and tells an
+      the current indention tells you how deeply you are nested and tells a
       NoMarks processor how to properly treat different elements in the
       document.
 
@@ -63,8 +82,10 @@
       the previous section.  The code block from the previous section was thus
       written as
 
-                  NoMarks is a typesetting language without any markups or markdowns.  That’s
-                  not strictly true, as it employs various symbols to define the structure, but
+                  A paragraph consists of one or more lines indented by 2×n
+                  spaces, where /n/ is the current section level (nesting)
+                  followed by 2 additional spaces, making up the tag of the
+                  content that follows. …
 
       Any blank lines “between” what would otherwise be seen as separate code
       blocks are included in the first code block, so they don’t require any
@@ -186,8 +207,8 @@
       Tables consist of zero or one rows that make up the head of the table,
       followed by one or more rows that make up its body.  The head is, if
       present, separated from the body by a separator line.  Each row consists
-      of one or more cells demarkated by ‘‹|›’ symbols, where the first cells
-      left demarkation symbol appears, as is usual, in the indent.  The
+      of one or more cells demarcated by ‘‹|›’ symbols, where the first cells
+      left demarcation symbol appears, as is usual, in the indent.  The
       separator line is tagged by “‹|-›” and may be followed by any content.
       For clarity, it should display nicely with the rest of the table,
       continuing the sequence of ‘-’ across each column, using ‘+’ signs where
@@ -237,8 +258,8 @@
       This is a paragraph consisting of the text “Drop me a line”.  The word
       “line” has a footnote associated with it, identified by ‹¹›.  The
       footnote is defined as a link to “mailto:example@example.com”.  The link
-      title will be “Email me”.  In the NoMarks XML serialization, known as
-      NML, this will be converted to
+      title will be “Email me”.  In the NoMarks XML language, known as NML,
+      this will be converted to
 
         <p>Drop me a
           <link title="Email me"
@@ -427,6 +448,176 @@
 
     ¹ Abbreviation for Uniform Resource Identifier
 
+§ Rationale
+
+    So why would you want to write documents using NoMarks?  Well, if you’re
+    the kind of person who likes your “source” documents to look much like your
+    “target” documents, that is, your NoMarks text documents to look much like
+    your generated, for example, HTML5 documents will look in a web browser,
+    NoMarks may be for you.
+
+    The NoMarks text format has been designed with two criteria in mind: ease
+    of writing and – more importantly – ease of reading. These criteria are met
+    by applying the same constraints on the format:
+
+  •   Use as few constructs as possible
+  •   Make blocks and inlines stand out from their surrounding
+  •   Separate “meta-information” from “actual information”
+
+    All block formatting relies on the use of tags the margin to signify what
+    content follows.  These tags have been chosen to make it exceedingly easy
+    to see what they represent: section signs for sections, bullets for
+    itemizations, numbers for enumerations, e-mail quoting for quotes, and so
+    on.  The use of a margin also avoids (almost) all confusions about what is
+    what and clearly shows nesting relationships in an otherwise linear format.
+
+    For inlines, unlikely symbols have been chosen, to both stand out, but also
+    to avoid being confused for text.  Code inlines use seldom-used quotation
+    marks to pop out.  Grouping uses brackets that clearly divide their content
+    from their surrounding.  Emphasis uses a pre-existing convention that
+    actually makes its content look slanted.  The “escaping” mechanism uses the
+    convention of putting the symbol inside single quotes.  Footnotes clearly
+    separate out “meta-information” from actual “information”.  Abbreviations
+    and links aren’t necessarily important information while reading a passage,
+    but can provide vital information to some readers.  This metadata can be
+    rendered in even more beneficial ways in other document formats.
+
+§ Previous Work
+
+    NoMarks wasn’t created in a vacuum.  There already existed a plenitude of
+    different {lightweight markup languages}¹ and NoMarks was influenced by
+    quite a few of them, such as reStructuredText², Textile³, Markdown⁴,
+    AsciiDoc⁵, Org-mode⁶, and even TeX⁷, though TeX is hardly “lightweight”.
+    Let’s now review where NoMarks various constructs originate from.
+
+  ¹ See http://en.wikipedia.org/wiki/Lightweight_markup_language
+  ² See http://en.wikipedia.org/wiki/ReStructuredText
+  ³ See http://en.wikipedia.org/wiki/Textile_(markup_language)
+  ⁴ See http://en.wikipedia.org/wiki/Markdown
+  ⁵ See http://en.wikipedia.org/wiki/AsciiDoc
+  ⁶ See http://en.wikipedia.org/wiki/Org-mode
+  ⁷ See http://en.wikipedia.org/wiki/TeX
+
+    The idea of using indentation/a margin for nesting is an original idea, at
+    least in this context. Programmers use it all the time to make the nesting
+    structure of the code they’re writing clear to human readers of the code
+    and some programming languages, such as Python¹, use it for making it clear
+    to the computer as well.  XML documents are similarly indented to show the
+    nesting structure of elements.  For NoMarks, it came about by first using a
+    two-space margin for putting tags in, making these tags stand out and also
+    making sure that they wouldn’t be confused by the processor as text.  When
+    it came time to add sections and subsection it became clear that a wider
+    margin could be used to define nesting as well.
+
+  ¹ See Python (programming language):
+    http://en.wikipedia.org/wiki/Python_(programming_language)
+
+    The use of tags to mark what kind of block-level structure follows isn’t
+    new.  Textile and Markdown use it for headings, lists, and so on.  Putting
+    them in the margin, however, is, as already stated, new.  Using Unicode
+    symbols is also new.  This choice was made for two reasons: they stand out
+    more and they look better.
+
+    Paragraphs are written in much the same way as they would in TeX, though
+    TeX only cares about empty lines between blocks of text.
+
+    Quotes use an age-old convention used in e-mails¹ for quoting previous
+    e-mails.
+
+  ¹ See http://en.wikipedia.org/wiki/Posting_style#Quoted_line_prefix
+
+    Tables use the Org-mode table format, which makes them easy to edit in
+    Emacs.  Org-mode’s tables are actually not unique to Org-mode (and where
+    integrated from an older Emacs mode).  This way of formatting tables in
+    plain text is intuitive and can be seen in various other formats, such as
+    reStructuredText, Markdown, and MediaWiki¹.
+
+  ¹ See http://en.wikipedia.org/wiki/MediaWiki
+
+    Footnotes use Unicode symbols that, while actually being generic
+    superscripts, look much like footnotes would in a printed document.  This
+    use is sometimes used in e-mail, but hasn’t been seen in any other
+    lightweight markup language to date.  The use of footnotes for providing
+    meta-information exists in reStructuredText and Markdown, though these
+    formats are more explicit about their formatting and don’t read as well.
+
+    Figures are difficult to represent in text and other lightweight markup
+    languages often use rather ugly escapes.  NoMarks tries to make them at
+    least look nice, even though it can’t represent the actual image.
+
+    The use of ‘‹’ and ‘›’ to demarcate inline code is unique.  Markdown uses
+    pairs of ‘`’ characters.  Org-mode uses pairs of ‘=’ characters.  Using
+    unique start and end characters makes it possible to nest them properly,
+    though true nesting isn’t actually used; still, any sequence of characters
+    may be constructed inside inline code in NoMarks.
+
+    NoMarks use of ‘/’ characters around emphasized text seems to be
+    unique among lightweight markup languages.  It has it’s origin in e-mail
+    conventions and has been chosen over ‘*’ and ‘_’ as it looks better.
+
+    Escaping using “‘…’” is a convention often used when discussing symbols in
+    text processing and similar pursuits and is probably familiar to most
+    English readers.
+
+    Many of the existing lightweight markup languages are usually implemented
+    using regular expressions to substitute the various constructs with their
+    output format equivalent.  Thus, there’s usually only one output format and
+    there’s no real formal specification for the language.  Having only one
+    possible output format can be limiting, and even though this format, most
+    often being HTML, can often be parsed and molded into something else, not
+    having an intermediate format makes these languages hard to work with for
+    external software.  Lacking a formal specification also creates problems,
+    as it makes it hard to create compatible implementations.
+
+    The NoMarks language has an intermediate XML representation, known as
+    NoMarks XML, or NML for short.  NoMarks comes with a {RELAX NG}¹ grammar
+    for this XML representation and is easily malleable using XSLT².  The
+    NoMarks language is described, in software, using a BNF grammar, and even
+    though this grammar isn’t quite enough to implement it, as there are some
+    context-sensitivity in the language, it’s fairly easy to port grammar to
+    other software that may want to build upon it.
+
+  ¹ See the RELAX NG home page at http://relaxng.org/
+  ² See XSL Transformations (XSLT) Version 1.0: http://www.w3.org/TR/xslt
+
+§ Alternatives
+
+    As was mentioned in the previous section on previous work, there are a lot
+    of lightweight markup languages that one can use instead of NoMarks.
+    NoMarks tries to find a sweet spot between ease of use and functionality.
+    If you want advanced features, such as math and graph markup, AsciiDoc¹ may
+    be for you.  If you want a simple format for comment entry on a blog,
+    Markdown² may suit you well.
+
+  ¹ See http://www.methods.co.nz/asciidoc/
+  ² See http://daringfireball.net/projects/markdown/
+
+    But why use a lightweight markup language at all?  Why not use Word?  Well,
+    to be frank, if you’re actually asking and you’re actually expecting an
+    answer, then NoMarks, or other lightweight markup languages, is probably
+    not for you.  But let’s look at what makes NoMarks plus any text editor
+    more well-suited for writing documents than Word:
+
+  = Diffs. = Granted, Word comes with its own diffing tool, but NoMarks
+      documents can easily be diffed by a version-control system and integrated
+      in that kind of workflow.
+  = Conversions. = Granted, Word documents can now be converted to many
+      formats, but the output is often very complex and Office Open XML is
+      extremely complex to process.
+  = Automated changes. = Granted, Word can be programmed, so many changes to
+      also be automated, but they must be done using Word.  You have to own
+      Word.
+  = Control. = You have absolute control over your document.  There’s not a
+      piece of software between you and your words.
+  = Reading. = A Word document requires a piece of software capable of
+      processing an extremely complex document format, and there aren’t many of
+      those around.  A NoMarks document can be ready by any piece of software
+      that lets you display text.
+
+    All of these arguments more or less boil down to the fact that a Word
+    document requires a specific tool to view, change, or otherwise process
+    them, whereas a NoMarks document requires no such tool.
+
 § Installation Instructions
 
     The normal ‹configure && make && make install› routine applies.  There’s a
@@ -441,13 +632,13 @@
 § Command-line Interface
 
     The NoMarks distribution comes with a command-line utility that turns
-    NoMarks text documents into NoMarks XML documents.  It’s called ‹nmc› and
+    NoMarks documents into NoMarks XML documents.  It’s called ‹nmc› and
     may be invoked as follows:
 
       % nmc README > README.nml
 
     After execution, ‹README.nml› will contain the XML representation of the
-    NoMarks text document ‹README›.
+    NoMarks document ‹README›.
 
     This isn’t very useful by itself, so let’s convert it to an HTML5¹
     document using xsltproc²:
@@ -467,8 +658,8 @@
 
       % man 1 nmc
 
-    While we’re on the topic of manual pages, a description of the NoMarks text
-    format also exists in manual page format, if you ever need to refer to it
+    While we’re on the topic of manual pages, a description of the NoMarks
+    language also exists in manual page format, if you ever need to refer to it
     quickly:
 
       % man 7 nmt
@@ -550,7 +741,7 @@
     = Man:indent.figure. = The indent to use for figures.  Defaults to
         ‹man:indent›.
 
-      Manual page generation from NoMarks text documents can be automated using
+      Manual page generation from NoMarks documents can be automated using
       Makefile rules.  Looking at the Automake file ‹Makefile.am› that is used
       to build this project gives us, assuming that we’ve set ‹NMC› and
       ‹XSLTPROC› to appropriate values, the following rules:
@@ -624,7 +815,7 @@
     The ‹configure› script supports a non-standard option:
     ‹--enable-gcc-warnings›.  When given, this option enables a lot of
     additional warnings that help ensure that the source stays both correct and
-    conformant.
+    conforming.
 
 ¹ Autoconf: http://www.gnu.org/software/autoconf/
 ² Automake: http://www.gnu.org/software/automake/
