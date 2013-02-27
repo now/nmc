@@ -64,7 +64,7 @@ usage(void)
 {
         fprintf(stdout,
                 "Usage: %s [OPTION]... [FILE]\n"
-                "Process FILE or standard input as NoMarks text and turn it into its NoMarks XML.\n"
+                "Process FILE or standard input as NoMarks text and turn it into NoMarks XML.\n"
                 "\n"
                 "Options:\n",
                 PACKAGE_NAME);
