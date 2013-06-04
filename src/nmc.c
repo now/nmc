@@ -159,7 +159,7 @@ read_path(const char *path, char **content, struct nmc_error *error)
                 return false;
         }
         if (close(fd) == -1) {
-                free(content);
+                free(*content);
                 return nmc_error_init(error, errno, "error closing file");
         }
         return true;
