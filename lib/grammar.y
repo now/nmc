@@ -264,7 +264,7 @@ parser_oom(struct parser *parser)
         parser_errors(parser, &nmc_parser_oom_error, &nmc_parser_oom_error);
 }
 
-static bool
+static bool NMC_PRINTF(3, 0)
 parser_errorv(struct parser *parser, YYLTYPE *location,
               const char *message, va_list args)
 {

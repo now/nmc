@@ -13,7 +13,7 @@
 
 static void die(const char *message, ...) NORETURN;
 
-static void
+static void NMC_PRINTF(1, 2)
 die(const char *message, ...)
 {
         va_list args;
@@ -43,7 +43,7 @@ main(void)
                 if (s > e)
                         die("start after end: %u > %u\n", s, e);
                 if (e >= lengthof(data))
-                        die("end beyond last Unicode character: %u %= %zu\n", e, lengthof(data));
+                        die("end beyond last Unicode character: %u >= %zu\n", e, lengthof(data));
                 if (*prop == 'W' || *prop == 'F')
                         for (unsigned int i = s; i <= e; i++)
                                 data[i] = true;

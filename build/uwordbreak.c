@@ -57,7 +57,7 @@ main(void)
                 if (s > e)
                         die("start after end: %u > %u\n", s, e);
                 if (e >= lengthof(data))
-                        die("end beyond last Unicode character: %u %= %zu\n", e, lengthof(data));
+                        die("end beyond last Unicode character: %u >= %zu\n", e, lengthof(data));
                 for (unsigned int i = s; i <= e; i++)
                         data[i] = data_name(uname);
         }

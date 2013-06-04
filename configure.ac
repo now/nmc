@@ -48,6 +48,7 @@ if test "${enableval}" = yes; then
   nmc_WARN_ADD([-Winit-self])
   nmc_WARN_ADD([-Winline])
   nmc_WARN_ADD([-Wmissing-declarations])
+  nmc_WARN_ADD([-Wmissing-format-attribute])
   nmc_WARN_ADD([-Wmissing-include-dirs])
   nmc_WARN_ADD([-Wmissing-noreturn])
   nmc_WARN_ADD([-Wmissing-prototypes])
@@ -56,12 +57,14 @@ if test "${enableval}" = yes; then
   nmc_WARN_ADD([-Wpacked])
   nmc_WARN_ADD([-Wp,-D_FORTIFY_SOURCE=2])
   nmc_WARN_ADD([-Wpointer-arith])
+  nmc_WARN_ADD([-Wsign-compare])
   nmc_WARN_ADD([-Wstrict-aliasing=2])
   nmc_WARN_ADD([-Wsuggest-attribute=const])
   nmc_WARN_ADD([-Wsuggest-attribute=noreturn])
   nmc_WARN_ADD([-Wsuggest-attribute=pure])
   nmc_WARN_ADD([-Wundef])
   nmc_WARN_ADD([-Wwrite-strings])
+  nmc_WARN_ADD([-Wshorten-64-to-32])
 fi
 
 AC_CANONICAL_HOST

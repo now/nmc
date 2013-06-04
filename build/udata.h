@@ -8,7 +8,7 @@ datanamecmp(const void *a, const void *b)
 
 static void die(const char *message, ...) NORETURN;
 
-static void
+static void NMC_PRINTF(1, 2)
 die(const char *message, ...)
 {
         va_list args;
