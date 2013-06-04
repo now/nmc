@@ -1248,7 +1248,7 @@ code(struct parser *parser, YYLTYPE *location, YYSTYPE *value)
         const char *begin = parser->p + 3;
         const char *end = begin;
         size_t compact = 0;
-        size_t length;
+        size_t length = 0;
 again:
         while (!is_end(end) &&
                !(u_lref(end, &length) == U_SINGLE_RIGHT_POINTING_ANGLE_QUOTATION_MARK &&

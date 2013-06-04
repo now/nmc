@@ -309,7 +309,7 @@ decode(uchar *state, uchar *c, uchar b)
 uchar
 u_dref(const char *u)
 {
-        uchar c, state = ACCEPT;
+        uchar c = 0, state = ACCEPT;
         for (const unsigned char *p = (const unsigned char *)u; *p != '\0'; p++)
                 switch (decode(&state, &c, *p)) {
                 case ACCEPT:
