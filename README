@@ -1,6 +1,6 @@
                                    NoMarks
 
-  NoMarks is a {“Lightweight markup language”} without any markups or
+  NoMarks is a {“Lightweight markup language”}¹ without any markups or
   markdowns.  That’s not strictly true, as it employs various symbols to define
   the structure, but it doesn’t try to overprice nor underprice you by trying
   its hardest to be as unambiguous as possible in how it treats your content.
