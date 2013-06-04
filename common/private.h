@@ -4,8 +4,10 @@
 #  endif
 #endif
 
-#define NMC_PRINTF(format_index, first_argument_index) \
+#ifndef NMC_PRINTF
+#  define NMC_PRINTF(format_index, first_argument_index) \
         __attribute__((format(printf, format_index, first_argument_index)))
+#endif
 
 #ifndef NORETURN
 #  define NORETURN __attribute__((noreturn))
