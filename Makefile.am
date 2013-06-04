@@ -215,17 +215,17 @@ test/data/WordBreakTest.txt:
 	$(AM_V_at)$(WGET) -O$@.tmp $(UNICODE_AUXILIARY_URL)/WordBreakTest.txt
 	$(AM_V_at)mv $@.tmp $@
 
-lib/ucategory.h: $(srcdir)/build/ucategory data/UnicodeData.txt
+lib/ucategory.h: $(srcdir)/build/ucategory$(EXEEXT) data/UnicodeData.txt
 	$(AM_V_GEN)rm -f $@ $@.tmp
 	$(AM_V_at)$(srcdir)/build/ucategory < data/UnicodeData.txt > $@.tmp
 	$(AM_V_at)mv $@.tmp $@
 
-lib/uwide.h: $(srcdir)/build/uwide data/DerivedEastAsianWidth.txt
+lib/uwide.h: $(srcdir)/build/uwide$(EXEEXT) data/DerivedEastAsianWidth.txt
 	$(AM_V_GEN)rm -f $@ $@.tmp
 	$(AM_V_at)$(srcdir)/build/uwide < data/DerivedEastAsianWidth.txt > $@.tmp
 	$(AM_V_at)mv $@.tmp $@
 
-lib/uwordbreak.h: $(srcdir)/build/uwordbreak data/WordBreakProperty.txt
+lib/uwordbreak.h: $(srcdir)/build/uwordbreak$(EXEEXT) data/WordBreakProperty.txt
 	$(AM_V_GEN)rm -f $@ $@.tmp
 	$(AM_V_at)$(srcdir)/build/uwordbreak < data/WordBreakProperty.txt > $@.tmp
 	$(AM_V_at)mv $@.tmp $@
@@ -291,7 +291,7 @@ maintainer-check-valgrind: $(BUILT_SOURCES) all-am $(testdir)/atconfig $(testdir
 	fi
 
 .PHONY: maintainer-check-wordbreak
-maintainer-check-wordbreak: $(testdir)/wordbreak $(testdir)/data/WordBreakTest.txt
+maintainer-check-wordbreak: $(testdir)/wordbreak$(EXEEXT) $(testdir)/data/WordBreakTest.txt
 	$(testdir)/wordbreak < $(testdir)/data/WordBreakTest.txt
 
 .PHONY: maintainer-check
