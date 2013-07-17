@@ -17,7 +17,7 @@
 
 #define NODE_IS_NESTED(n) ((n)->name < NMC_NODE_TEXT)
 
-bool
+CONST bool
 nmc_node_traverse_null(UNUSED(struct nmc_node *node), UNUSED(void *closure))
 {
         return true;
@@ -180,7 +180,7 @@ static const struct entity attribute_entities[] = {
 #undef N
 #undef E
 
-static bool
+static PURE bool
 escape(struct xml_closure *closure, const char *string, size_t n_entities,
        const struct entity *entities)
 {
@@ -381,7 +381,7 @@ nmc_node_xml(struct nmc_node *node, struct nmc_output *output, struct nmc_error 
                 outc(&closure, '\n');
 }
 
-const char *
+PURE const char *
 nmc_node_name(struct nmc_node *node)
 {
         return names[node->name].name;

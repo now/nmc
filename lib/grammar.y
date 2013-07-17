@@ -65,7 +65,7 @@ struct id {
         char *string;
 };
 
-static struct id
+static PURE struct id
 id_new(char *string)
 {
         unsigned long h = 5381;
@@ -329,7 +329,7 @@ substring(struct parser *parser, YYLTYPE *location, YYSTYPE *value,
 
 typedef bool (*isfn)(uchar);
 
-static inline size_t
+static PURE inline size_t
 length_of_run(const char *p, isfn is)
 {
         const char *end = p;
@@ -359,7 +359,7 @@ is_superscript(uchar c)
         }
 }
 
-static inline size_t
+static PURE inline size_t
 superscript(const char *p)
 {
         return length_of_run(p, is_superscript);
@@ -374,7 +374,7 @@ is_subscript(uchar c)
         return U_SUBSCRIPT_0 <= c && c <= U_SUBSCRIPT_9;
 }
 
-static inline size_t
+static PURE inline size_t
 subscript(const char *p)
 {
         return length_of_run(p, is_subscript);
@@ -1550,12 +1550,12 @@ reference(struct parser *parser, struct footnote **footnotes)
         return true;
 }
 
-static inline struct footnote *
+static inline NON_NULL((2)) struct footnote *
 fibling(struct parser *parser, struct footnote *footnotes, struct footnote *footnote)
 {
         if (footnote == NULL)
                 return NULL;
-        struct footnote *last;
+        struct footnote *last = NULL;
         list_for_each(struct footnote, p, footnotes) {
                 if (id_eq(&footnote->id, &p->id)) {
                         if (!parser_error(parser, &footnote->location,
@@ -1678,6 +1678,9 @@ textify(struct parser *parser, struct nodes inlines)
 
 #define M(n) do { if ((n) == NULL) { parser_oom(parser); YYABORT; } } while (0)
 #define N(n) M((n).last)
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wsuggest-attribute=pure"
 }
 %%
 
@@ -1810,6 +1813,8 @@ oblocks: /* empty */ { $$ = nodes(NULL); }
 | ITEMINDENT blocks DEDENT { $$ = $2; };
 
 %%
+
+#pragma GCC diagnostic pop
 
 static YYSIZE_T
 token_name_unescape(char *result, const char *escaped)

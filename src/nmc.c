@@ -177,7 +177,7 @@ convert_path(const char *path)
         return convert(content, path);
 }
 
-static size_t
+static PURE size_t
 short_length(void)
 {
         size_t n = 0, length = 0;

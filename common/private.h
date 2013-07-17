@@ -13,12 +13,20 @@
 #  define NORETURN __attribute__((noreturn))
 #endif
 
+#ifndef CONST
+#  define CONST __attribute__((const))
+#endif
+
 #ifndef PURE
 #  define PURE __attribute__((pure))
 #endif
 
 #ifndef UNUSED
 #  define UNUSED(v) v __attribute__((__unused__))
+#endif
+
+#ifndef NON_NULL
+#  define NON_NULL(parameters) __attribute__((__nonnull__ parameters))
 #endif
 
 #if defined(__GNUC__) && __GNUC__ > 2 && defined(__OPTIMIZE__)

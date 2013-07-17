@@ -1,10 +1,10 @@
 typedef int32_t uchar;
 
-bool uc_issolid(uchar c);
-bool uc_isaletterornumeric(uchar c);
-bool uc_isformatorextend(uchar c);
+PURE bool uc_issolid(uchar c);
+PURE bool uc_isaletterornumeric(uchar c);
+PURE bool uc_isformatorextend(uchar c);
 
-bool u_isafteraletterornumeric(const char *string, const char *p);
+PURE bool u_isafteraletterornumeric(const char *string, const char *p);
 void u_word_breaks(const char *string, size_t n, bool *breaks);
 
 size_t u_width(const char *string, size_t length);
@@ -14,7 +14,7 @@ size_t u_width(const char *string, size_t length);
 extern const char * const u_skip_lengths;
 
 #define u_next(p) ((p) + u_skip_lengths[*(const unsigned char *)(p)])
-char *u_prev_s(const char *string, const char *p);
+PURE char *u_prev_s(const char *string, const char *p);
 
 PURE uchar u_dref(const char *u);
 
