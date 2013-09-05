@@ -381,6 +381,31 @@ subscript(const char *p)
 }
 
 static inline bool
+is_digit(uchar c)
+{
+        return '0' <= c && c <= '9';
+}
+
+static PURE inline size_t
+enumeration(const char *p)
+{
+        size_t length = length_of_run(p, is_digit);
+        if (length == 0) {
+                if ('a' <= *p && *p <= 'z')
+                        length = 1;
+                else
+                        return 0;
+        }
+        switch (*(p + length)) {
+        case ')':
+        case '.':
+                return length + 1;
+        default:
+                return 0;
+        }
+}
+
+static inline bool
 is_end(const char *end)
 {
         return *end == '\0' || *end == '\n';
@@ -1007,7 +1032,9 @@ is_bol_symbol(const char *end)
         case 'F':
                 return end[1] == 'i' && end[2] == 'g' && end[3] == '.';
         default:
-                return is_subscript(c) || is_superscript(c);
+                return is_subscript(c) ||
+                        is_superscript(c) ||
+                        enumeration(end) > 0;
         }
 }
 
@@ -1033,7 +1060,8 @@ bol(struct parser *parser, YYLTYPE *location, YYSTYPE *value)
         parser->bol = false;
 
         size_t length;
-        if ((length = subscript(parser->p)) > 0)
+        if ((length = subscript(parser->p)) > 0 ||
+            (length = enumeration(parser->p)) > 0)
                 return bol_item(parser, location, length, ENUMERATION);
         else if ((length = superscript(parser->p)) > 0)
                 return footnote(parser, location, value, length);

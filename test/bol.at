@@ -80,6 +80,21 @@ AT_NMC_CHECK_TRANSFORM([Two-item enumeration],
     </item>
   </enumeration>])
 
+AT_NMC_CHECK_TRANSFORM([Two-item simple enumeration],
+[T
+
+1)   1
+2)   2],
+[  <title>T</title>
+  <enumeration>
+    <item>
+      <p>1</p>
+    </item>
+    <item>
+      <p>2</p>
+    </item>
+  </enumeration>])
+
 AT_NMC_CHECK_FAIL_TRANSFORM([Broken enumeration],
 [T
 
