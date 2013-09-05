@@ -98,11 +98,14 @@
     <head>
       <meta charset="utf-8"/>
       <link rel="stylesheet" href="{$stylesheet}"/>
+      <xsl:call-template name="html.head.links"/>
       <title>
-        <xsl:value-of select="title"/>
+        <xsl:value-of select="/nml/title"/>
       </title>
     </head>
   </xsl:template>
+
+  <xsl:template name="html.head.links"/>
 
   <xsl:template name="html.body">
     <body>
