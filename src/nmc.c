@@ -59,6 +59,24 @@ report_nmc_error(const struct nmc_error *error, const char *path)
                 fputc('\n', stderr) != EOF;
 }
 
+static size_t
+option_width(struct nmc_option *option)
+{
+        // TODO Use u_width here instead
+        size_t length = strlen(option->name);
+        if (option->argument != NULL)
+                length += strlen(option->argument);
+        switch (option->has_arg) {
+        case required_argument:
+                length += 1;
+                break;
+        case optional_argument:
+                length += 3;
+                break;
+        }
+        return length;
+}
+
 static void
 usage(void)
 {
@@ -70,29 +88,31 @@ usage(void)
                 PACKAGE_NAME);
         size_t longest = 0;
         options_for_each(p) {
-                size_t length = p->argument == NULL ? 0 : strlen(p->argument);
-                switch (p->has_arg) {
-                case required_argument:
-                        length += 1;
-                        break;
-                case optional_argument:
-                        length += 3;
-                        break;
-                }
+                size_t length = option_width(p);
                 if (length > longest)
                         longest = length;
         }
         options_for_each(p) {
-                fprintf(stdout, "  -%c, --%s", p->c, p->name);
+                fputs("  -", stdout);
+                fputc(p->c, stdout);
+                fputs(", --", stdout);
+                fputs(p->name, stdout);
                 switch (p->has_arg) {
                 case required_argument:
-                        fprintf(stdout, "=%-*s", (int)longest, p->argument);
+                        fputc('=', stdout);
+                        fputs(p->argument, stdout);
                         break;
                 case optional_argument:
-                        fprintf(stdout, "[=%s]%*s", p->argument, (int)longest, " ");
+                        fputs("[=", stdout);
+                        fputs(p->argument, stdout);
+                        fputc(']', stdout);
                         break;
                 }
-                fprintf(stdout, "  %s\n", p->help);
+                for (size_t i = 0, n = longest - option_width(p); i < n; i++)
+                        fputc(' ', stdout);
+                fputs("  ", stdout);
+                fputs(p->help, stdout);
+                fputc('\n', stdout);
         }
 }
 
