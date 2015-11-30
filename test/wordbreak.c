@@ -41,7 +41,7 @@ main(void)
 {
         char line[1024];
         int failures = 0;
-        while ((fgets(line, sizeof(line), stdin)) != NULL) {
+        while (fgets(line, sizeof(line), stdin) != NULL) {
                 char *p = line;
                 if (*p == '#' || *p == '\n')
                         continue;

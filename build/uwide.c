@@ -31,7 +31,7 @@ main(void)
                 data[i] = false;
         char line[1024];
         unsigned int s, e;
-        while ((fgets(line, sizeof(line), stdin)) != NULL) {
+        while (fgets(line, sizeof(line), stdin) != NULL) {
                 if (line[0] == '#' || line[0] == '\n')
                         continue;
                 char padding[sizeof(line)], prop[sizeof(line)];

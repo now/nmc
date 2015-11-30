@@ -62,7 +62,7 @@ main(void)
         int last_char_part_1 = -1;
         char line[1024];
         int previous = -1;
-        while ((fgets(line, sizeof(line), stdin)) != NULL) {
+        while (fgets(line, sizeof(line), stdin) != NULL) {
                 char *p = line;
                 int c = (int)strtol(strsep(&p, ";"), NULL, 16);
                 if (c >= UNICODE_FIRST_CHAR_PART_2 && previous < UNICODE_FIRST_CHAR_PART_2)

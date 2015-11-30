@@ -44,7 +44,7 @@ main(void)
                 data[i] = xx;
         int last_char_part_1 = 0;
         char line[1024];
-        while ((fgets(line, sizeof(line), stdin)) != NULL) {
+        while (fgets(line, sizeof(line), stdin) != NULL) {
                 if (line[0] == '#' || line[0] == '\n')
                         continue;
                 unsigned int s, e;
@@ -61,7 +61,7 @@ main(void)
                 for (unsigned int i = s; i <= e; i++)
                         data[i] = data_name(uname);
         }
-        for(size_t i = UNICODE_FIRST_CHAR_PART_2 - 1; i > 0; i--)
+        for (int i = UNICODE_FIRST_CHAR_PART_2 - 1; i > 0; i--)
                 if (data[i] != xx) {
                         last_char_part_1 = i;
                         break;
