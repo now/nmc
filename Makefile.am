@@ -208,38 +208,31 @@ UNICODE_AUXILIARY_URL = $(UNICODE_BASE_URL)/auxiliary
 UNICODE_EXTRACTED_URL = $(UNICODE_BASE_URL)/extracted
 
 data/DerivedEastAsianWidth.txt: data/.dirstamp
-	$(AM_V_GEN)rm -f $@ $@.tmp
-	$(AM_V_at)$(WGET) -O$@.tmp $(UNICODE_EXTRACTED_URL)/DerivedEastAsianWidth.txt
+	$(AM_V_GEN)$(CURL) -Ls $(UNICODE_EXTRACTED_URL)/DerivedEastAsianWidth.txt > $@.tmp
 	$(AM_V_at)mv $@.tmp $@
 
 data/UnicodeData.txt: data/.dirstamp
-	$(AM_V_GEN)rm -f $@ $@.tmp
-	$(AM_V_at)$(WGET) -O$@.tmp $(UNICODE_BASE_URL)/UnicodeData.txt
+	$(AM_V_GEN)$(CURL) -Ls $(UNICODE_BASE_URL)/UnicodeData.txt > $@.tmp
 	$(AM_V_at)mv $@.tmp $@
 
 data/WordBreakProperty.txt: data/.dirstamp
-	$(AM_V_GEN)rm -f $@ $@.tmp
-	$(AM_V_at)$(WGET) -O$@.tmp $(UNICODE_AUXILIARY_URL)/WordBreakProperty.txt
+	$(AM_V_GEN)$(CURL) -Ls $(UNICODE_AUXILIARY_URL)/WordBreakProperty.txt > $@.tmp
 	$(AM_V_at)mv $@.tmp $@
 
 test/data/WordBreakTest.txt: test/data/.dirstamp
-	$(AM_V_GEN)rm -f $@ $@.tmp
-	$(AM_V_at)$(WGET) -O$@.tmp $(UNICODE_AUXILIARY_URL)/WordBreakTest.txt
+	$(AM_V_GEN)$(CURL) -Ls $(UNICODE_AUXILIARY_URL)/WordBreakTest.txt > $@.tmp
 	$(AM_V_at)mv $@.tmp $@
 
 lib/ucategory.h: $(srcdir)/build/ucategory$(EXEEXT) data/UnicodeData.txt
-	$(AM_V_GEN)rm -f $@ $@.tmp
-	$(AM_V_at)$(srcdir)/build/ucategory < data/UnicodeData.txt > $@.tmp
+	$(AM_V_GEN)$(srcdir)/build/ucategory < data/UnicodeData.txt > $@.tmp
 	$(AM_V_at)mv $@.tmp $@
 
 lib/uwide.h: $(srcdir)/build/uwide$(EXEEXT) data/DerivedEastAsianWidth.txt
-	$(AM_V_GEN)rm -f $@ $@.tmp
-	$(AM_V_at)$(srcdir)/build/uwide < data/DerivedEastAsianWidth.txt > $@.tmp
+	$(AM_V_GEN)$(srcdir)/build/uwide < data/DerivedEastAsianWidth.txt > $@.tmp
 	$(AM_V_at)mv $@.tmp $@
 
 lib/uwordbreak.h: $(srcdir)/build/uwordbreak$(EXEEXT) data/WordBreakProperty.txt
-	$(AM_V_GEN)rm -f $@ $@.tmp
-	$(AM_V_at)$(srcdir)/build/uwordbreak < data/WordBreakProperty.txt > $@.tmp
+	$(AM_V_GEN)$(srcdir)/build/uwordbreak < data/WordBreakProperty.txt > $@.tmp
 	$(AM_V_at)mv $@.tmp $@
 
 check_SCRIPTS = test/nmc
