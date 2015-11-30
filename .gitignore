@@ -10,7 +10,6 @@
 .tarball-version
 .version
 build/ar-lib
-build/autom4te.cache/
 build/compile
 build/config.guess
 build/config.sub
