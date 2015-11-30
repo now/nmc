@@ -148,6 +148,8 @@ u_isafteraletterornumeric(const char *string, const char *p)
         return true;
 }
 
+// Define the word break DFA.  This is similar to the table in the Word Break
+// Chart, ftp://ftp.unicode.org/Public/UNIDATA/auxiliary/WordBreakTest.html.
 #define ROW(other, cr, lf, newline, aletter, numeric, katakana, extendnumlet, \
             regional_indicator, midletter, midnumlet, midnum, format, extend) \
         { [UNICODE_WORD_BREAK_OTHER] = other, \
@@ -164,8 +166,11 @@ u_isafteraletterornumeric(const char *string, const char *p)
           [UNICODE_WORD_BREAK_MIDLETTER] = midletter, \
           [UNICODE_WORD_BREAK_MIDNUMLET] = midnumlet, \
           [UNICODE_WORD_BREAK_MIDNUM] = midnum }
+// Keep going (don’t break) and enter state s.
 #define K(s) (s | (1 << 4))
+// Break, but Save as a potential non-breaking position and enter state s.
 #define S(s) (s | (2 << 4))
+// Don’t break at this position nor at the saved position and enter state s.
 #define D(s) (s | (3 << 4))
 static const uint8_t wb_dfa[][UNICODE_WORD_BREAK_REGIONAL_INDICATOR + 1] = {
         ROW(0,1,  2 ,2,  3 ,  4 ,  5 ,  6 ,  7 ,  0 ,  0 ,  0 ,K(0),K(0)), // Other
@@ -190,6 +195,7 @@ u_word_breaks(const char *string, size_t n, bool *breaks)
         const char *end = p + n;
         bool *q = breaks;
         bool *s = NULL;
+        // We begin right after an assumed Newline.
         uint8_t state = 2;
         while (p < end) {
                 size_t l;
