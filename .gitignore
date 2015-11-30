@@ -3,10 +3,14 @@
 *.exe
 *.nml
 *.o
-.deps/
 *.dSYM/
-build/autom4te.cache/
+.build/
+.deps/
+.dirstamp
+.tarball-version
+.version
 build/ar-lib
+build/autom4te.cache/
 build/compile
 build/config.guess
 build/config.sub
@@ -21,9 +25,6 @@ data/catalog.xml
 data/DerivedEastAsianWidth.txt
 data/UnicodeData.txt
 data/WordBreakProperty.txt
-.dirstamp
-.tarball-version
-.version
 Makefile
 Makefile.in
 TAGS
