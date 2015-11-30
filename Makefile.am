@@ -78,7 +78,7 @@ NML_URI = http://disu.se/software/nml
 RELAXNG_URI = $(NML_URI)/relaxng/$(PACKAGE_VERSION_MM)/
 XSL_URI = $(NML_URI)/xsl/$(PACKAGE_VERSION_MM)/
 
-data/catalog.xml: $(srcdir)/data/catalog.xml.in Makefile
+data/catalog.xml: $(srcdir)/data/catalog.xml.in Makefile data/.dirstamp
 	$(AM_V_GEN)rm -f $@ $@.tmp
 	$(AM_V_at)sed \
 	  -e 's|@RELAXNG_URI[@]|$(RELAXNG_URI)|g' \
@@ -152,12 +152,21 @@ NMC_V_NMT2NML_0 = @echo "  GEN-NML " $@;
 
 define NMT2NML
 	$(NMC_V_NMT2NML)rm -f $@ $@.tmp
-	$(AM_V_at)$(srcdir)/src/nmc $< > $@.tmp
+	$(AM_V_at)src/nmc $< > $@.tmp
 	$(AM_V_at)mv $@.tmp $@
 endef
 
+data/.dirstamp \
+man/.dirstamp \
+test/data/.dirstamp:
+	$(V_at)$(MKDIR_P) $(@D)
+	$(V_at): > $@
+
 .nmt.nml:
 	$(NMT2NML)
+
+man/nmc.nml \
+man/nmt.nml: man/.dirstamp
 
 man/nmt.nml: README
 	$(NMT2NML)
@@ -170,12 +179,17 @@ $(MANS): data/xsl/man.xsl
 
 .nml.1:
 	$(NMC_V_NML2MAN)rm -f $@ $@.tmp
-	$(AM_V_at)$(XSLTPROC) --stringparam source "$(PACKAGE_STRING)" data/xsl/man.xsl $< > $@.tmp
+	$(AM_V_at)$(XSLTPROC) \
+	  --stringparam source "$(PACKAGE_STRING)" \
+	  $(srcdir)/data/xsl/man.xsl $< > $@.tmp
 	$(AM_V_at)mv $@.tmp $@
 
 .nml.7:
 	$(NMC_V_NML2MAN)rm -f $@ $@.tmp
-	$(AM_V_at)$(XSLTPROC) --stringparam section 7 --stringparam source "$(PACKAGE_STRING)" data/xsl/man.xsl $< > $@.tmp
+	$(AM_V_at)$(XSLTPROC) \
+	  --stringparam section 7 \
+	  --stringparam source "$(PACKAGE_STRING)" \
+	  $(srcdir)/data/xsl/man.xsl $< > $@.tmp
 	$(AM_V_at)mv $@.tmp $@
 
 SUFFIXES = .nmt .nml .1 .7
@@ -185,7 +199,7 @@ check_PROGRAMS = \
 
 test_wordbreak_SOURCES = \
 	test/wordbreak.c
-test_wordbreak_CFLAGS = -Ilib
+test_wordbreak_CPPFLAGS = $(AM_CPPFLAGS) -I$(srcdir)/lib
 test_wordbreak_LDADD = lib/libnmc.a
 
 UNICODE_VERSION = 6.2.0
@@ -193,27 +207,23 @@ UNICODE_BASE_URL = http://www.unicode.org/Public/$(UNICODE_VERSION)/ucd
 UNICODE_AUXILIARY_URL = $(UNICODE_BASE_URL)/auxiliary
 UNICODE_EXTRACTED_URL = $(UNICODE_BASE_URL)/extracted
 
-data/DerivedEastAsianWidth.txt:
+data/DerivedEastAsianWidth.txt: data/.dirstamp
 	$(AM_V_GEN)rm -f $@ $@.tmp
-	$(AM_V_at)$(MKDIR_P) $(srcdir)/data
 	$(AM_V_at)$(WGET) -O$@.tmp $(UNICODE_EXTRACTED_URL)/DerivedEastAsianWidth.txt
 	$(AM_V_at)mv $@.tmp $@
 
-data/UnicodeData.txt:
+data/UnicodeData.txt: data/.dirstamp
 	$(AM_V_GEN)rm -f $@ $@.tmp
-	$(AM_V_at)$(MKDIR_P) $(srcdir)/data
 	$(AM_V_at)$(WGET) -O$@.tmp $(UNICODE_BASE_URL)/UnicodeData.txt
 	$(AM_V_at)mv $@.tmp $@
 
-data/WordBreakProperty.txt:
+data/WordBreakProperty.txt: data/.dirstamp
 	$(AM_V_GEN)rm -f $@ $@.tmp
-	$(AM_V_at)$(MKDIR_P) $(srcdir)/data
 	$(AM_V_at)$(WGET) -O$@.tmp $(UNICODE_AUXILIARY_URL)/WordBreakProperty.txt
 	$(AM_V_at)mv $@.tmp $@
 
-test/data/WordBreakTest.txt:
+test/data/WordBreakTest.txt: test/data/.dirstamp
 	$(AM_V_GEN)rm -f $@ $@.tmp
-	$(AM_V_at)$(MKDIR_P) $(testdir)/data
 	$(AM_V_at)$(WGET) -O$@.tmp $(UNICODE_AUXILIARY_URL)/WordBreakTest.txt
 	$(AM_V_at)mv $@.tmp $@
 
@@ -243,14 +253,21 @@ TESTSUITE_AT = \
 	test/title.at \
 	test/xml.at
 
-TESTSUITE = $(testdir)/testsuite
+TESTSUITE = $(srcdir)/test/testsuite
+
+EXTRA_DIST = \
+	     test/atlocal.in \
+	     test/package.m4 \
+	     test/testsuite.at \
+	     $(TESTSUITE_AT) \
+	     $(TESTSUITE)
+
+RUN_TESTSUITE = $(SHELL) $(TESTSUITE) -C test $(TESTSUITEFLAGS)
 
 AUTOTEST = $(AUTOM4TE) --language=autotest
-AUTOTESTFLAGS = -I $(testdir)
+AUTOTESTFLAGS = -I $(srcdir)/test
 
-testdir = $(srcdir)/test
-
-$(testdir)/package.m4: $(top_srcdir)/configure.ac
+$(srcdir)/test/package.m4: $(srcdir)/configure.ac
 	$(AM_V_GEN)rm -f $@ $@.tmp
 	$(AM_V_at){ \
 	  echo 'm4_define([AT_PACKAGE_NAME], [$(PACKAGE_NAME)])' && \
@@ -262,46 +279,39 @@ $(testdir)/package.m4: $(top_srcdir)/configure.ac
 	} > $@.tmp
 	$(AM_V_at)mv $@.tmp $@
 
-check-local: $(testdir)/atconfig $(testdir)/atlocal $(TESTSUITE)
-	@echo '$(TESTSUITE): Entering directory `$(testdir)'\'
-	$(SHELL) '$(TESTSUITE)' -C '$(testdir)' $(TESTSUITEFLAGS)
-	@echo '$(TESTSUITE): Leaving directory `$(testdir)'\'
-
-installcheck-local: $(testdir)/atconfig $(testdir)/atlocal $(TESTSUITE)
-	@echo '$(TESTSUITE): Entering directory `$(testdir)'\'
-	$(SHELL) '$(TESTSUITE)' -C '$(testdir)' AUTOTEST_PATH='$(bindir)' $(TESTSUITEFLAGS)
-	@echo '$(TESTSUITE): Leaving directory `$(testdir)'\'
-
-clean-local:
-	if test -f '$(TESTSUITE)'; then \
-	  echo '$(TESTSUITE): Entering directory `$(testdir)'\'; \
-	  $(SHELL) '$(TESTSUITE)' -C '$(testdir)' --clean; \
-	  echo '$(TESTSUITE): Leaving directory `$(testdir)'\'; \
-	fi
-
-$(TESTSUITE): $(testdir)/testsuite.at $(testdir)/package.m4 $(TESTSUITE_AT)
+$(TESTSUITE): test/testsuite.at test/package.m4 $(TESTSUITE_AT)
 	$(AM_V_GEN)$(AUTOTEST) $(AUTOTESTFLAGS) -o $@.tmp $<
 	$(AM_V_at)mv $@.tmp $@
 
+check-local: test/atconfig test/atlocal $(TESTSUITE)
+	@echo '$(TESTSUITE): Entering directory `test'\'
+	$(RUN_TESTSUITE)
+	@echo '$(TESTSUITE): Leaving directory `test'\'
+
+installcheck-local: test/atconfig test/atlocal $(TESTSUITE)
+	@echo '$(TESTSUITE): Entering directory `test'\'
+	$(RUN_TESTSUITE) AUTOTEST_PATH='$(bindir)'
+	@echo '$(TESTSUITE): Leaving directory `test'\'
+
+clean-local:
+	if test -f '$(TESTSUITE)'; then \
+	  echo '$(TESTSUITE): Entering directory `test'\'; \
+	  $(SHELL) $(TESTSUITE) -C test --clean; \
+	  echo '$(TESTSUITE): Leaving directory `test'\'; \
+	fi
+
 .PHONY: maintainer-check-valgrind
-maintainer-check-valgrind: $(BUILT_SOURCES) all-am $(testdir)/atconfig $(testdir)/atlocal $(TESTSUITE)
+maintainer-check-valgrind: $(BUILT_SOURCES) all-am test/atconfig test/atlocal $(TESTSUITE)
 	if test -n '$(VALGRIND)'; then \
-	  echo '$(TESTSUITE): Entering directory `$(testdir)'\'; \
-	  $(SHELL) '$(TESTSUITE)' -C '$(testdir)' $(TESTSUITEFLAGS) PRENMC='$(VALGRIND) -q' \
+	  echo '$(TESTSUITE): Entering directory `test'\'; \
+	  $(RUN_TESTSUITE) PRENMC='$(VALGRIND) -q' \
 	    VALGRIND_OPTS='--leak-check=full --show-reachable=yes'; \
-	  echo '$(TESTSUITE): Leaving directory `$(testdir)'\'; \
+	  echo '$(TESTSUITE): Leaving directory `test'\'; \
 	fi
 
 .PHONY: maintainer-check-wordbreak
-maintainer-check-wordbreak: $(testdir)/wordbreak$(EXEEXT) $(testdir)/data/WordBreakTest.txt
-	$(testdir)/wordbreak < $(testdir)/data/WordBreakTest.txt
+maintainer-check-wordbreak: test/wordbreak$(EXEEXT) test/data/WordBreakTest.txt
+	test/wordbreak < test/data/WordBreakTest.txt
 
 .PHONY: maintainer-check
 maintainer-check: maintainer-check-valgrind maintainer-check-wordbreak
-
-EXTRA_DIST = \
-	     $(testdir)/atlocal.in \
-	     $(testdir)/package.m4 \
-	     $(testdir)/testsuite.at \
-	     $(TESTSUITE_AT) \
-	     $(TESTSUITE)
