@@ -54,11 +54,10 @@ main(void)
                         if (*s == '#' || p == NULL)
                                 break;
                         expected[q - chars] = u_dref(s) == 0xf7;
-                        char b[4];
                         s = strsep(&p, " \t");
                         if (*s == '#' || p == NULL)
                                 break;
-                        q += uchar_to_utf8(strtol(s, NULL, 16), q);
+                        q += uchar_to_utf8((uchar)strtol(s, NULL, 16), q);
                 }
                 *q = '\0';
                 bool actual[lengthof(expected)];
