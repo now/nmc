@@ -141,7 +141,7 @@ outc(struct xml_closure *closure, char c)
 #define MAX_INDENT 64
 
 static bool
-indent(struct xml_closure *closure, int n)
+indent(struct xml_closure *closure, size_t n)
 {
         if (!outc(closure, '\n'))
                 return false;
@@ -268,7 +268,7 @@ static struct {
 #define indenting_block indenting_block_enter, indenting_block_leave
 #define text_block text_block_enter, leave
 #define block block_enter, leave
-#define inline inline_enter, leave
+#define nline inline_enter, leave
 #define data (xmltraversefn)data_enter, leave
 #define data_block (xmltraversefn)data_block_enter, leave
 #define NAME(n) n, sizeof(n) - 1
@@ -293,8 +293,8 @@ static struct {
         [NMC_NODE_CELL] = { NAME("cell"), block },
         [NMC_NODE_FIGURE] = { NAME("figure"), indenting_block },
         [NMC_NODE_IMAGE] = { NAME("image"), data_block },
-        [NMC_NODE_CODE] = { NAME("code"), inline },
-        [NMC_NODE_EMPHASIS] = { NAME("emphasis"), inline },
+        [NMC_NODE_CODE] = { NAME("code"), nline },
+        [NMC_NODE_EMPHASIS] = { NAME("emphasis"), nline },
         [NMC_NODE_GROUP] = { NULL, 0, (xmltraversefn)nmc_node_traverse_null, (xmltraversefn)nmc_node_traverse_null },
         [NMC_NODE_ABBREVIATION] = { NAME("abbreviation"), data },
         [NMC_NODE_LINK] = { NAME("link"), data },
@@ -305,7 +305,7 @@ static struct {
 #undef indenting_block
 #undef text_block
 #undef block
-#undef inline
+#undef nline
 #undef data
 };
 

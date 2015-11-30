@@ -15,22 +15,6 @@ AM_PROG_AR
 AC_PATH_PROG([XMLCATALOG], [xmlcatalog])
 AC_PATH_PROG([XSLTPROC], [xsltproc])
 
-AC_DEFUN([nmc_WARN_ADD],
-[AS_VAR_PUSHDEF([nmc_Warn], [nmc_cv_warn_$1])dnl
-AC_CACHE_CHECK([whether compiler handles $1], [nmc_Warn], [
-  save_CPPFLAGS="$CPPFLAGS"
-  CPPFLAGS="${CPPFLAGS} $1"
-  AC_PREPROC_IFELSE([AC_LANG_PROGRAM([])],
-                    [AS_VAR_SET([nmc_Warn], [yes])],
-                    [AS_VAR_SET([nmc_Warn], [no])])
-  CPPFLAGS="$save_CPPFLAGS"
-])
-AS_VAR_PUSHDEF([nmc_Flags], m4_if([$2], [], [[WARN_CFLAGS]], [[$2]]))dnl
-AS_VAR_IF([nmc_Warn], [yes], [AS_VAR_APPEND([nmc_Flags], [" $1"])])
-AS_VAR_POPDEF([nmc_Flags])dnl
-AS_VAR_POPDEF([nmc_Warn])dnl
-m4_ifval([$2], [AS_LITERAL_IF([$2], [AC_SUBST([$2])], [])], [AC_SUBST([WARN_CFLAGS])])dnl
-])
 AC_ARG_ENABLE([gcc-warnings],
 [  --enable-gcc-warnings   turn on lots of GCC warnings],
 [case "${enableval}" in
@@ -39,32 +23,36 @@ AC_ARG_ENABLE([gcc-warnings],
  esac],
  [enableval=no])
 if test "${enableval}" = yes; then
-  nmc_WARN_ADD([-pedantic])
-  nmc_WARN_ADD([-Werror], [WERROR_CFLAGS])
-  nmc_WARN_ADD([-Wall])
-  nmc_WARN_ADD([-Wcast-align])
-  nmc_WARN_ADD([-Wextra])
-  nmc_WARN_ADD([-Wformat=2])
-  nmc_WARN_ADD([-Winit-self])
-  nmc_WARN_ADD([-Winline])
-  nmc_WARN_ADD([-Wmissing-declarations])
-  nmc_WARN_ADD([-Wmissing-format-attribute])
-  nmc_WARN_ADD([-Wmissing-include-dirs])
-  nmc_WARN_ADD([-Wmissing-noreturn])
-  nmc_WARN_ADD([-Wmissing-prototypes])
-  nmc_WARN_ADD([-Wnested-externs])
-  nmc_WARN_ADD([-Wold-style-definition])
-  nmc_WARN_ADD([-Wpacked])
-  nmc_WARN_ADD([-Wp,-D_FORTIFY_SOURCE=2])
-  nmc_WARN_ADD([-Wpointer-arith])
-  nmc_WARN_ADD([-Wsign-compare])
-  nmc_WARN_ADD([-Wstrict-aliasing=2])
-  nmc_WARN_ADD([-Wsuggest-attribute=const])
-  nmc_WARN_ADD([-Wsuggest-attribute=noreturn])
-  nmc_WARN_ADD([-Wsuggest-attribute=pure])
-  nmc_WARN_ADD([-Wundef])
-  nmc_WARN_ADD([-Wwrite-strings])
-  nmc_WARN_ADD([-Wshorten-64-to-32])
+  gl_WARN_ADD([-pedantic])
+  gl_WARN_ADD([-Werror], [WERROR_CFLAGS])
+  gl_WARN_ADD([-Wall])
+  gl_WARN_ADD([-Wcast-align])
+  gl_WARN_ADD([-Wextra])
+  gl_WARN_ADD([-Wformat=2])
+  gl_WARN_ADD([-Winit-self])
+  gl_WARN_ADD([-Winline])
+  gl_WARN_ADD([-Wmissing-declarations])
+  gl_WARN_ADD([-Wmissing-format-attribute])
+  gl_WARN_ADD([-Wmissing-include-dirs])
+  gl_WARN_ADD([-Wmissing-noreturn])
+  gl_WARN_ADD([-Wmissing-prototypes])
+  gl_WARN_ADD([-Wnested-externs])
+  gl_WARN_ADD([-Wold-style-definition])
+  gl_WARN_ADD([-D_FORTIFY_SOURCE=2])
+  gl_WARN_ADD([-Wpacked])
+  gl_WARN_ADD([-Wpointer-arith])
+  gl_WARN_ADD([-Wshorten-64-to-32])
+  gl_WARN_ADD([-Wsign-compare])
+  gl_WARN_ADD([-Wstrict-aliasing=2])
+  gl_WARN_ADD([-Wsuggest-attribute=const])
+  gl_WARN_ADD([-Wsuggest-attribute=noreturn])
+  gl_WARN_ADD([-Wsuggest-attribute=pure], [WSUGGESTATTRIBUTEPURE_CFLAGS])
+  gl_WARN_ADD([-Wundef])
+  gl_WARN_ADD([-Wwrite-strings])
+  if test -n "$WSUGGESTATTRIBUTEPURE_CFLAGS"; then
+    AC_DEFINE([HAVE_WSUGGESTATTRIBUTE_PURE], [1],
+              [Define to 1 if compiler supports -Wsuggestattribute=pure.])
+  fi
 fi
 
 AC_CANONICAL_HOST

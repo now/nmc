@@ -16,9 +16,9 @@
 
 #include <private.h>
 
-#include "buffer.h"
-#include "error.h"
-#include "unicode.h"
+#include <common/buffer.h>
+#include <lib/error.h>
+#include <lib/unicode.h>
 
 #define YYLTYPE struct nmc_location
 #define YY_LOCATION_PRINT(File, Loc) \
@@ -1708,7 +1708,9 @@ textify(struct parser *parser, struct nodes inlines)
 #define N(n) M((n).last)
 
 #pragma GCC diagnostic push
+#ifdef HAVE_WSUGGESTATTRIBUTE_PURE
 #pragma GCC diagnostic ignored "-Wsuggest-attribute=pure"
+#endif
 }
 %%
 

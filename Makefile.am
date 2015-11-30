@@ -1,12 +1,14 @@
-BUILT_SOURCES = $(top_srcdir)/.version
-$(top_srcdir)/.version: configure
+BUILT_SOURCES = $(srcdir)/.version
+$(srcdir)/.version: configure
 	$(AM_V_GEN)echo $(VERSION) > $@.tmp
 	$(AM_V_at)mv $@.tmp $@
 dist-hook:
 	$(AM_V_GEN)echo $(VERSION) > $(distdir)/.tarball-version
 
-AM_CFLAGS = $(WARN_CFLAGS) $(WERROR_CFLAGS)
-AM_CPPFLAGS = -I$(top_srcdir)/common -I$(top_srcdir)/include
+ACLOCAL_AMFLAGS = -I build/m4
+
+AM_CFLAGS = $(WARN_CFLAGS) $(WSUGGESTATTRIBUTEPURE_CFLAGS) $(WERROR_CFLAGS)
+AM_CPPFLAGS = -I$(srcdir)/common -I$(srcdir)/include
 
 AM_YFLAGS = --warnings=all,error --report=all
 
