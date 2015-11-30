@@ -226,7 +226,7 @@ main(int argc, char *const *argv)
         case 'h':
                 usage();
                 return EXIT_SUCCESS;
-        case 'v':
+        case 'V':
                 fprintf(stdout, "%s\n", PACKAGE_STRING);
                 return EXIT_SUCCESS;
         case '?':
