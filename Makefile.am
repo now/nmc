@@ -10,7 +10,7 @@ ACLOCAL_AMFLAGS = -I build/m4
 AM_CFLAGS = $(WARN_CFLAGS) $(WSUGGESTATTRIBUTEPURE_CFLAGS) $(WERROR_CFLAGS)
 AM_CPPFLAGS = -I$(srcdir)/common -I$(srcdir)/include
 
-AM_YFLAGS = --warnings=all,error --report=all
+AM_YFLAGS = --warnings=all,no-yacc,error --report=all
 
 noinst_PROGRAMS = \
 	build/ucategory \
